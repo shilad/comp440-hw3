@@ -105,7 +105,8 @@ def report(items, results_by_method):
               f"{sum(r['cost_usd'] for r in rows) / n:>10.4f}")
     errors = sum(r["verdict"] is None for rows in results_by_method.values() for r in rows)
     if errors:
-        print(f"\n{errors} runs gave no verdict (an error, a refusal or out of steps). "
+        print(f"\n{errors} runs gave no verdict (an error, a refusal, out of steps or its "
+              "answer rejected three times). "
               "They count as wrong. Look for them in the saved files.")
 
 

@@ -85,6 +85,33 @@ def test_made_up_evidence_is_rejected():
     assert len(rejected) == 1
 
 
+def test_supported_or_refuted_needs_a_quote():
+    claude = ScriptedClaude([
+        reply(tool_use("read", {"title": "Forrest Gump"}, 1)),
+        reply(tool_use("answer", {"verdict": "supported", "evidence": [],
+                                  "explanation": "x"}, 2)),
+        reply(tool_use("answer", {"verdict": "refuted", "evidence": [" "],
+                                  "explanation": "x"}, 3)),
+        reply(tool_use("answer", {"verdict": "doesn't say", "evidence": [],
+                                  "explanation": "The page doesn't give a birthplace."}, 4)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    assert result["verdict"] == "doesn't say"
+    rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
+    assert len(rejected) == 2
+    assert all("needs at least one quote" in t["result"] for t in rejected)
+
+
+def test_rejected_answers_stop_the_agent():
+    made_up = {"verdict": "supported", "evidence": ["Zemeckis was born in Ohio."],
+               "explanation": "x"}
+    claude = ScriptedClaude([reply(tool_use("answer", made_up, i)) for i in range(10)])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    assert result["verdict"] is None
+    assert "rejected 3 times" in result["explanation"]
+    assert len(claude.sent) == 3
+
+
 def test_step_budget_stops_the_agent():
     claude = ScriptedClaude([reply(tool_use("search", {"query": f"q{i}"}, i)) for i in range(10)])
     result = agent.run_agent("claim", client=claude, max_steps=3, lookup=fake_lookup)
