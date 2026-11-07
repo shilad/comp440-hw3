@@ -1,0 +1,13 @@
+[project]
+name = "comp440-hw3"
+version = "0.1.0"
+description = "COMP 440 HW3: Checking Claims Against Wikipedia"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=2.0",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]

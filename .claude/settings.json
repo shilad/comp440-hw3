@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run python lookup.py:*)",
+      "Bash(uv run python check.py:*)",
+      "Bash(uv run python evaluate.py:*)",
+      "Bash(uv run pytest:*)"
+    ]
+  }
+}
