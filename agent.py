@@ -7,8 +7,8 @@ below. Each turn of the loop:
   2. runs whatever tool Claude asked for,
   3. adds the tool's result to the conversation,
 
-and stops when Claude calls answer() with evidence that checks out, or when
-it runs out of steps.
+and stops when Claude calls answer() with evidence that checks out, when it
+runs out of steps, or when its answer has been sent back three times.
 """
 
 import re
@@ -20,6 +20,7 @@ import wiki
 
 MODEL = "claude-haiku-5-5"
 MAX_STEPS = 12          # the most tool calls the agent may make for one claim
+MAX_REJECTED = 3        # the most answers the loop sends back before it gives up
 INSTRUCTIONS = Path(__file__).parent / "instructions.md"
 VERDICTS = ["supported", "refuted", "doesn't say"]
 
@@ -64,7 +65,8 @@ TOOLS = [
     },
     {
         "name": "answer",
-        "description": ("Give your final verdict and end the check. Each evidence item must be "
+        "description": ("Give your final verdict and end the check. A verdict of supported or "
+                        "refuted needs at least one evidence item. Each evidence item must be "
                         "copied word for word from a read() or wikidata() result in this check."),
         "input_schema": {
             "type": "object",
@@ -104,6 +106,18 @@ def unsupported_quotes(evidence, read_so_far):
     return [quote for quote in evidence if normalize(quote) not in seen]
 
 
+def answer_problem(answer, read_so_far):
+    """Say what is wrong with an answer, or return None if it passes."""
+    quotes = [quote for quote in answer["evidence"] if quote.strip()]
+    if answer["verdict"] != "doesn't say" and not quotes:
+        return ("A verdict of supported or refuted needs at least one quote from something "
+                "you read in this check. If you found none, the verdict is \"doesn't say\".")
+    bad = unsupported_quotes(quotes, read_so_far)
+    if bad:
+        return "These quotes are not in anything you read in this check: " + " | ".join(bad)
+    return None
+
+
 # ---------- the loop ----------
 
 def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
@@ -115,6 +129,7 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     trace, read_so_far = [], []
     tokens = {"input": 0, "output": 0}
     steps = 0
+    rejected = 0        # how many answers the loop has sent back
     warned = False      # has it been told it is out of steps?
 
     while True:
@@ -143,13 +158,18 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
         warned_before = warned
         for call in calls:
             if call.name == "answer":
-                bad = unsupported_quotes(call.input["evidence"], read_so_far)
-                if not bad:
+                problem = answer_problem(call.input, read_so_far)
+                if problem is None:
                     trace.append({"tool": "answer", "input": call.input, "result": "accepted"})
                     return finish(claim, call.input["verdict"], call.input["evidence"],
                                   call.input["explanation"], trace, tokens, steps)
-                result = ("Answer rejected. These quotes are not in anything you read in this "
-                          "check: " + " | ".join(bad))
+                result = "Answer rejected. " + problem
+                rejected += 1
+                if rejected >= MAX_REJECTED:
+                    trace.append({"tool": "answer", "input": call.input, "result": result})
+                    return finish(claim, None, [],
+                                  f"The agent's answer was rejected {rejected} times.",
+                                  trace, tokens, steps)
             elif steps >= max_steps:
                 if warned_before:
                     # It was told last turn that it was out of steps: stop here.
