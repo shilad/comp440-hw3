@@ -14,12 +14,15 @@ import argparse
 import json
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 import wiki
 
 LOG = Path(__file__).parent / "runs" / "part1" / "lookups.jsonl"
 
 
 def main():
+    load_dotenv()  # for WIKIPEDIA_CONTACT, so Wikipedia counts these lookups as yours
     parser = argparse.ArgumentParser(description="Run one lookup tool by hand.")
     tools = parser.add_subparsers(dest="tool", required=True)
     tools.add_parser("search").add_argument("query")
