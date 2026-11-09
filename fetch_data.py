@@ -1,15 +1,17 @@
-"""Build data/dev.jsonl and data/eval.jsonl from HoVer and FEVER.
+"""Build data/dev.jsonl and data/eval.jsonl from HoVer.
 
     python fetch_data.py
 
 The instructor runs this once; students get the files it writes. It draws a
 fixed, seeded sample, so running it again gives the same claims.
 
-- HoVer's labelled dev set (4,000 claims) comes from the HoVer GitHub
-  repository. Its test set's labels are withheld, so the dev set is the one we
-  can score against.
-- FEVER's "paper_dev" set comes from fever.ai. If that download fails, the
-  files are written with HoVer claims only and a warning is printed.
+HoVer's labelled dev set (4,000 claims) comes from the HoVer GitHub repository.
+Its test set's labels are withheld, so the dev set is the one we can score
+against. The sample is the one the instructor's baselines use: for each of 2,
+3 and 4 articles, 50 supported and 50 not supported claims, drawn with
+random.Random(440) after sorting by uid, 300 claims in all. Two thirds of it,
+200 claims, are the eval set; the dev set is 12 claims from the other third,
+2 for each number of articles and label, so the two never share a claim.
 """
 
 import json
@@ -19,14 +21,11 @@ from pathlib import Path
 
 HOVER_URL = ("https://raw.githubusercontent.com/hover-nlp/hover/main/"
              "data/hover/hover_dev_release_v1.1.json")
-FEVER_URL = "https://fever.ai/download/fever/paper_dev.jsonl"
 
 DATA = Path(__file__).parent / "data"
 SEED = 440
-EVAL_PER_CELL = 10   # HoVer claims per (hops, label): 3 hop counts x 2 labels x 10 = 60
-DEV_PER_CELL = 2     # 3 x 2 x 2 = 12
-FEVER_EVAL = {"SUPPORTS": 7, "REFUTES": 7, "NOT ENOUGH INFO": 6}
-FEVER_DEV = {"SUPPORTS": 1, "REFUTES": 1, "NOT ENOUGH INFO": 1}
+PER_CELL = 50        # sampled claims per (hops, label): 3 hop counts x 2 labels x 50 = 300
+DEV_PER_CELL = 2     # dev claims per (hops, label), from the third not in eval: 12
 
 
 def download(url):
@@ -35,46 +34,32 @@ def download(url):
         return response.read().decode()
 
 
-def hover_claims():
+def hover_sample():
+    """The 300-claim sample, in the order it was drawn."""
     rows = json.loads(download(HOVER_URL))
+    rng = random.Random(SEED)
+    sample = []
+    for hops in (2, 3, 4):
+        for label in ("SUPPORTED", "NOT_SUPPORTED"):
+            pool = sorted((r for r in rows if r["num_hops"] == hops and r["label"] == label),
+                          key=lambda r: r["uid"])
+            sample += rng.sample(pool, PER_CELL)
     return [{"id": f"hover-{r['uid']}", "claim": r["claim"], "source": "hover",
              "label": r["label"], "hops": r["num_hops"],
              "articles": sorted({title for title, _ in r["supporting_facts"]})}
-            for r in rows]
-
-
-def fever_claims():
-    rows = [json.loads(line) for line in download(FEVER_URL).splitlines() if line.strip()]
-    return [{"id": f"fever-{r['id']}", "claim": r["claim"], "source": "fever",
-             "label": r["label"]} for r in rows]
-
-
-def sample(items, key, counts, rng, taken):
-    picked = []
-    for cell, n in counts.items():
-        pool = [x for x in items if key(x) == cell and x["id"] not in taken]
-        chosen = rng.sample(pool, n)
-        taken.update(x["id"] for x in chosen)
-        picked += chosen
-    return picked
+            for r in sample]
 
 
 def main():
+    sample = hover_sample()
+    eval_set = [x for i, x in enumerate(sample) if i % 3 != 2]
+    rest = [x for i, x in enumerate(sample) if i % 3 == 2]
+    dev_set = []
+    for hops in (2, 3, 4):
+        for label in ("SUPPORTED", "NOT_SUPPORTED"):
+            dev_set += [x for x in rest if x["hops"] == hops and x["label"] == label][:DEV_PER_CELL]
+
     rng = random.Random(SEED)
-    taken = set()
-    hover = hover_claims()
-    cells = [(hops, label) for hops in (2, 3, 4) for label in ("SUPPORTED", "NOT_SUPPORTED")]
-    key = lambda x: (x["hops"], x["label"])  # noqa: E731
-    eval_set = sample(hover, key, {c: EVAL_PER_CELL for c in cells}, rng, taken)
-    dev_set = sample(hover, key, {c: DEV_PER_CELL for c in cells}, rng, taken)
-
-    try:
-        fever = fever_claims()
-        eval_set += sample(fever, lambda x: x["label"], FEVER_EVAL, rng, taken)
-        dev_set += sample(fever, lambda x: x["label"], FEVER_DEV, rng, taken)
-    except OSError as error:
-        print(f"Warning: could not download FEVER ({error}). Writing HoVer claims only.")
-
     rng.shuffle(eval_set)
     rng.shuffle(dev_set)
     DATA.mkdir(exist_ok=True)
