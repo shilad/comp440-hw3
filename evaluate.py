@@ -36,7 +36,10 @@ FEVER = {"SUPPORTS": "supported", "REFUTES": "refuted", "NOT ENOUGH INFO": "does
 def is_correct(item, verdict):
     """HoVer only says SUPPORTED or NOT_SUPPORTED, so for HoVer "refuted" and
     "doesn't say" both count as not supported. FEVER keeps all three, and so
-    do your own claims, which carry your verdict as their label."""
+    do your own claims, which carry your verdict as their label. A run that
+    gave no verdict is wrong, whatever the label."""
+    if verdict is None:  # otherwise None would count as "not supported" on HoVer
+        return False
     if item["source"] == "hover":
         return (verdict == "supported") == (item["label"] == "SUPPORTED")
     if item["source"] == "fever":

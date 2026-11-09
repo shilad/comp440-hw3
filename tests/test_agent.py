@@ -213,6 +213,14 @@ def test_scoring_hover_and_fever():
     assert evaluate.group_of(fever_nei) == "FEVER"
 
 
+def test_no_verdict_is_always_wrong():
+    for label in ["SUPPORTED", "NOT_SUPPORTED"]:
+        assert not evaluate.is_correct({"source": "hover", "label": label}, None)
+    for label in ["SUPPORTS", "REFUTES", "NOT ENOUGH INFO"]:
+        assert not evaluate.is_correct({"source": "fever", "label": label}, None)
+    assert not evaluate.is_correct({"source": "mine", "label": "doesn't say"}, None)
+
+
 def test_sections_and_read(monkeypatch):
     text = "Intro line.\n\n== Early life ==\nBorn in Chicago.\n\n=== School ===\nWent to school.\n"
     monkeypatch.setattr(wiki, "page_text", lambda title: (text, "Robert Zemeckis"))
