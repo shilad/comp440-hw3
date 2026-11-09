@@ -60,7 +60,12 @@ def one_search(claim, client=None, search=wiki.search, read=wiki.read):
     response = client.messages.create(
         model=MODEL, max_tokens=4000, messages=[{"role": "user", "content": QUERY + claim}],
     )
-    query = "".join(b.text for b in response.content if b.type == "text").strip().strip('"')
+    query = "".join(b.text for b in response.content if b.type == "text").strip()
+    # Take off quote marks only when the whole query is one quoted phrase. A
+    # query that starts with a quoted title, like "One Dance" Drake song, keeps
+    # them: taking off just the first would leave a quote mark with no partner.
+    if len(query) > 1 and query[0] == query[-1] == '"' and '"' not in query[1:-1]:
+        query = query[1:-1].strip()
     first = {"input": response.usage.input_tokens, "output": response.usage.output_tokens}
     hits = search(query)
     trace = [{"tool": "search", "input": {"query": query}, "result": hits}]

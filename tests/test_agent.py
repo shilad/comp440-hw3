@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace as NS
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import agent  # noqa: E402
@@ -102,6 +104,57 @@ def test_supported_or_refuted_needs_a_quote():
     assert all("needs at least one quote" in t["result"] for t in rejected)
 
 
+def test_evidence_as_one_string_is_checked_as_one_quote():
+    # The schema asks for a list, but Claude sometimes sends a plain string.
+    claude = ScriptedClaude([
+        reply(tool_use("read", {"title": "Forrest Gump"}, 1)),
+        reply(tool_use("answer", {"verdict": "supported",
+                                  "evidence": "Zemeckis was born in Ohio.",
+                                  "explanation": "x"}, 2)),
+        reply(tool_use("answer", {"verdict": "supported",
+                                  "evidence": "directed by Robert Zemeckis",
+                                  "explanation": "x"}, 3)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
+    assert len(rejected) == 1
+    assert "Zemeckis was born in Ohio." in rejected[0]["result"]
+    assert result["verdict"] == "supported"
+    assert result["evidence"] == ["directed by Robert Zemeckis"]
+
+
+def test_missing_evidence_is_an_empty_list():
+    claude = ScriptedClaude([
+        reply(tool_use("answer", {"verdict": "doesn't say", "explanation": "x"}, 1)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    assert result["verdict"] == "doesn't say"
+    assert result["evidence"] == []
+
+
+def test_missing_explanation_is_empty():
+    claude = ScriptedClaude([
+        reply(tool_use("answer", {"verdict": "doesn't say", "evidence": []}, 1)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    assert result["verdict"] == "doesn't say"
+    assert result["explanation"] == ""
+
+
+def test_missing_or_unknown_verdict_is_rejected():
+    claude = ScriptedClaude([
+        reply(tool_use("answer", {"evidence": [], "explanation": "x"}, 1)),
+        reply(tool_use("answer", {"verdict": "true", "evidence": [], "explanation": "x"}, 2)),
+        reply(tool_use("answer", {"verdict": "doesn't say", "evidence": [],
+                                  "explanation": "x"}, 3)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    assert result["verdict"] == "doesn't say"
+    rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
+    assert len(rejected) == 2
+    assert all("The verdict must be" in t["result"] for t in rejected)
+
+
 def test_rejected_answers_stop_the_agent():
     made_up = {"verdict": "supported", "evidence": ["Zemeckis was born in Ohio."],
                "explanation": "x"}
@@ -162,6 +215,14 @@ def test_scoring_hover_and_fever():
     assert evaluate.group_of(fever_nei) == "FEVER"
 
 
+def test_no_verdict_is_always_wrong():
+    for label in ["SUPPORTED", "NOT_SUPPORTED"]:
+        assert not evaluate.is_correct({"source": "hover", "label": label}, None)
+    for label in ["SUPPORTS", "REFUTES", "NOT ENOUGH INFO"]:
+        assert not evaluate.is_correct({"source": "fever", "label": label}, None)
+    assert not evaluate.is_correct({"source": "mine", "label": "doesn't say"}, None)
+
+
 def test_sections_and_read(monkeypatch):
     text = "Intro line.\n\n== Early life ==\nBorn in Chicago.\n\n=== School ===\nWent to school.\n"
     monkeypatch.setattr(wiki, "page_text", lambda title: (text, "Robert Zemeckis"))
@@ -171,6 +232,85 @@ def test_sections_and_read(monkeypatch):
     assert "Sections: Early life, School" in wiki.read("zemeckis")
     assert "Born in Chicago." in wiki.read("zemeckis", "early life")
     assert "no section called" in wiki.read("zemeckis", "Career")
+
+
+class FakeResponse:
+    """What requests.get() returns, for a scripted Wikipedia."""
+
+    def __init__(self, status, data=None, retry_after=None):
+        self.status_code = status
+        self.headers = {"Retry-After": retry_after} if retry_after else {}
+        self.data = data
+
+    def json(self):
+        return self.data
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise wiki.requests.HTTPError(f"{self.status_code} error")
+
+
+FOUND = {"query": {"search": [{"title": "Forrest Gump", "snippet": "1994 film"}]}}
+
+
+def scripted_wikipedia(monkeypatch, tmp_path, responses):
+    """Send wiki.py's requests to the scripted responses, in order, with the
+    cache in tmp_path. Returns the headers of each request and each pause."""
+    sent, pauses = [], []
+    responses = list(responses)
+    monkeypatch.setattr(wiki, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(wiki.requests, "get",
+                        lambda url, **kwargs: sent.append(kwargs["headers"]) or responses.pop(0))
+    monkeypatch.setattr(wiki.time, "sleep", pauses.append)
+    return sent, pauses
+
+
+def test_user_agent_gives_a_web_address(monkeypatch, tmp_path):
+    sent, _ = scripted_wikipedia(monkeypatch, tmp_path, [FakeResponse(200, FOUND)])
+    assert wiki.search("Forrest Gump").startswith("1. Forrest Gump")
+    assert "https://" in sent[0]["User-Agent"]
+
+
+def test_too_many_requests_waits_as_long_as_asked(monkeypatch, tmp_path):
+    _, pauses = scripted_wikipedia(monkeypatch, tmp_path, [
+        FakeResponse(429, retry_after="7"), FakeResponse(200, FOUND)])
+    assert wiki.search("Forrest Gump").startswith("1. Forrest Gump")
+    assert pauses == [7]
+    # With no Retry-After header, it waits 2, 4, 8, ... seconds.
+    _, pauses = scripted_wikipedia(monkeypatch, tmp_path, [
+        FakeResponse(429), FakeResponse(429), FakeResponse(200, FOUND)])
+    assert wiki.search("Robert Zemeckis").startswith("1. Forrest Gump")
+    assert pauses == [2, 4]
+
+
+def test_too_many_requests_for_too_long_is_an_error(monkeypatch, tmp_path):
+    _, pauses = scripted_wikipedia(monkeypatch, tmp_path,
+                                   [FakeResponse(429, retry_after="100")] * 20)
+    with pytest.raises(wiki.RateLimited):
+        wiki.search("Forrest Gump")
+    assert pauses == [wiki.MAX_PAUSE] * 5   # 60 seconds at most each time, 300 in all
+    assert list(tmp_path.iterdir()) == []   # nothing cached
+
+
+def test_a_claim_that_fails_is_not_saved_and_runs_again(monkeypatch, tmp_path, capsys):
+    item = {"id": "c1", "claim": "claim", "source": "hover", "label": "NOT_SUPPORTED", "hops": 2}
+
+    def rate_limited(claim):
+        raise wiki.RateLimited("too many requests")
+
+    monkeypatch.setitem(evaluate.METHODS, "agent", rate_limited)
+    [result] = evaluate.run_method("agent", [item], tmp_path, workers=1)
+    assert result["verdict"] is None and not result["correct"]
+    assert (tmp_path / "agent.jsonl").read_text() == ""
+    evaluate.report([item], {"agent": [result]})
+    assert "run the same command again" in capsys.readouterr().out
+
+    answer = {"verdict": "doesn't say", "evidence": [], "explanation": "x"}
+    monkeypatch.setitem(evaluate.METHODS, "agent", lambda claim: agent.run_agent(
+        claim, client=ScriptedClaude([reply(tool_use("answer", answer, 1))]), lookup=fake_lookup))
+    [result] = evaluate.run_method("agent", [item], tmp_path, workers=1)
+    assert result["verdict"] == "doesn't say" and result["correct"]
+    assert len((tmp_path / "agent.jsonl").read_text().splitlines()) == 1
 
 
 def test_one_search_reads_the_top_hit():
@@ -187,6 +327,22 @@ def test_one_search_reads_the_top_hit():
     assert result["tokens"] == {"input": 200, "output": 20}
     assert result["verdict"] == "refuted"
     assert result["steps"] == 2
+
+
+def test_one_search_unwraps_only_a_wholly_quoted_query():
+    cases = {'"1994 Best Picture"': "1994 Best Picture",
+             '"One Dance" Drake Wizkid Kyla song': '"One Dance" Drake Wizkid Kyla song',
+             '"One Dance" "Drake"': '"One Dance" "Drake"',
+             "Forrest Gump director": "Forrest Gump director"}
+    for written, searched in cases.items():
+        query = NS(type="text", text=written)
+        answer = NS(type="text", text='{"verdict": "refuted", "explanation": "x"}')
+        claude = ScriptedClaude([reply(query, stop="end_turn"), reply(answer, stop="end_turn")])
+        queries = []
+        baselines.one_search("claim", client=claude,
+                             search=lambda q: queries.append(q) or "1. Forrest Gump: snippet",
+                             read=lambda title: "page text")
+        assert queries == [searched]
 
 
 def test_lookup_prints_and_logs(monkeypatch, tmp_path, capsys):

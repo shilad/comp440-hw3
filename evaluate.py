@@ -9,7 +9,9 @@ the dataset's own; for your own claims it is your verdict, written as one of
 "supported", "refuted" or "doesn't say".
 
 Every result is saved as it finishes, so if a run stops partway you can start
-it again and it picks up where it left off.
+it again and it picks up where it left off. A claim that fails with an error,
+such as Wikipedia refusing requests, is not saved, so the next run tries it
+again.
 """
 
 import argparse
@@ -36,7 +38,10 @@ FEVER = {"SUPPORTS": "supported", "REFUTES": "refuted", "NOT ENOUGH INFO": "does
 def is_correct(item, verdict):
     """HoVer only says SUPPORTED or NOT_SUPPORTED, so for HoVer "refuted" and
     "doesn't say" both count as not supported. FEVER keeps all three, and so
-    do your own claims, which carry your verdict as their label."""
+    do your own claims, which carry your verdict as their label. A run that
+    gave no verdict is wrong, whatever the label."""
+    if verdict is None:  # otherwise None would count as "not supported" on HoVer
+        return False
     if item["source"] == "hover":
         return (verdict == "supported") == (item["label"] == "SUPPORTED")
     if item["source"] == "fever":
@@ -49,7 +54,9 @@ def run_one(method, item):
     try:
         result = METHODS[method](item["claim"])
     except Exception as error:  # a failed claim shouldn't stop the whole run
+        print(f"{method}: {item['id']} failed and was not saved: {error}")
         result = {"verdict": None, "evidence": [], "explanation": f"error: {error}",
+                  "error": True,
                   "trace": [], "steps": 0, "tokens": {"input": 0, "output": 0}, "cost_usd": 0}
     result.update(id=item["id"], method=method, seconds=round(time.time() - start, 2),
                   correct=is_correct(item, result["verdict"]))
@@ -67,9 +74,11 @@ def run_method(method, items, out_dir, workers):
     print(f"{method}: {len(done)} already done, running {len(todo)}")
     with path.open("a") as f, ThreadPoolExecutor(workers) as pool:
         for result in pool.map(lambda item: run_one(method, item), todo):
+            done[result["id"]] = result
+            if "error" in result:
+                continue  # not saved, so the next run tries this claim again
             f.write(json.dumps(result) + "\n")
             f.flush()
-            done[result["id"]] = result
     return [done[item["id"]] for item in items]
 
 
@@ -103,11 +112,17 @@ def report(items, results_by_method):
         print(f"{method:22}{sum(r['steps'] for r in rows) / n:>10.1f}{tokens:>10.0f}"
               f"{sum(r['seconds'] for r in rows) / n:>10.1f}"
               f"{sum(r['cost_usd'] for r in rows) / n:>10.4f}")
-    errors = sum(r["verdict"] is None for rows in results_by_method.values() for r in rows)
-    if errors:
-        print(f"\n{errors} runs gave no verdict (an error, a refusal, out of steps or its "
-              "answer rejected three times). "
+    every_run = [r for rows in results_by_method.values() for r in rows]
+    failed = sum("error" in r for r in every_run)
+    no_verdict = sum(r["verdict"] is None for r in every_run) - failed
+    if no_verdict:
+        print(f"\n{no_verdict} runs gave no verdict (for example a refusal, out of steps or "
+              "its answer rejected three times). "
               "They count as wrong. Look for them in the saved files.")
+    if failed:
+        print(f"\n{failed} runs stopped with an error, such as Wikipedia refusing requests. "
+              "They count as wrong above, but they were not saved: run the same command "
+              "again to retry them.")
 
 
 def main():

@@ -18,10 +18,32 @@ import requests
 WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 
-# Wikipedia asks every program that calls its API to say who it is.
-HEADERS = {"User-Agent": "COMP440-HW3/0.1 (Macalester College course assignment)"}
+# Wikipedia asks every program that calls its API to say who it is and how to
+# reach whoever runs it. It lets a program that gives a web address or an email
+# make far more requests a minute than one that doesn't.
+HEADERS = {"User-Agent": "COMP440-HW3/0.1 (https://shilad.github.io/comp440-website/; "
+                         "Macalester College course assignment)"}
 
 CACHE_DIR = Path(__file__).parent / ".cache"
+
+# When Wikipedia says "too many requests", wait as long as it asks, but no more
+# than MAX_PAUSE seconds at a time, and give up on a request after MAX_WAIT.
+MAX_PAUSE = 60
+MAX_WAIT = 300
+
+
+class RateLimited(Exception):
+    """Wikipedia kept saying "too many requests" for longer than MAX_WAIT."""
+
+
+def _pause(response, tries):
+    """Seconds to wait after a "too many requests" reply: what its Retry-After
+    header asks for or, if it doesn't say, 2, 4, 8, ... seconds."""
+    try:
+        seconds = float(response.headers["Retry-After"])
+    except (KeyError, ValueError):
+        seconds = 2 ** tries
+    return min(max(seconds, 1), MAX_PAUSE)
 
 
 def _get(url, params):
@@ -31,11 +53,20 @@ def _get(url, params):
     path = CACHE_DIR / f"{key}.json"
     if path.exists():
         return json.loads(path.read_text())
-    for wait in (2, 4, 8, 16, None):
+    tries, waited = 0, 0
+    while True:
         response = requests.get(url, params=params, headers=HEADERS, timeout=30)
-        if response.status_code != 429 or wait is None:
+        if response.status_code != 429:  # 429 means "too many requests"
             break
-        time.sleep(wait)  # Wikipedia asked us to slow down
+        tries += 1
+        pause = _pause(response, tries)
+        if waited + pause > MAX_WAIT:
+            # An error, not an empty result, so that a rate limit never looks
+            # to the agent like a page that doesn't exist.
+            raise RateLimited(f"Wikipedia still says \"too many requests\" after {waited:.0f} "
+                              "seconds of waiting. Wait a few minutes, then run again.")
+        time.sleep(pause)
+        waited += pause
     response.raise_for_status()
     data = response.json()
     CACHE_DIR.mkdir(exist_ok=True)
