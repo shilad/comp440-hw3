@@ -107,17 +107,20 @@ def unsupported_quotes(evidence, read_so_far):
 
 
 def clean_answer(args):
-    """The answer() call's input, with the evidence always a list of quotes.
-    The tool asks for a list, but Claude sometimes sends one quote as a plain
-    string, and looping over a string would check it one letter at a time."""
+    """The answer() call's input, with the evidence always a list of quotes and
+    always an explanation. Claude doesn't always follow the tool's schema: it
+    sometimes sends one quote as a plain string (and looping over a string
+    would check it one letter at a time), or leaves the explanation out."""
     evidence = args.get("evidence") or []
     if isinstance(evidence, str):
         evidence = [evidence]
-    return {**args, "evidence": evidence}
+    return {**args, "evidence": evidence, "explanation": args.get("explanation") or ""}
 
 
 def answer_problem(answer, read_so_far):
     """Say what is wrong with an answer, or return None if it passes."""
+    if answer.get("verdict") not in VERDICTS:
+        return "The verdict must be \"supported\", \"refuted\" or \"doesn't say\"."
     quotes = [quote for quote in answer["evidence"] if quote.strip()]
     if answer["verdict"] != "doesn't say" and not quotes:
         return ("A verdict of supported or refuted needs at least one quote from something "

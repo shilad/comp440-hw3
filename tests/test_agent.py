@@ -130,6 +130,29 @@ def test_missing_evidence_is_an_empty_list():
     assert result["evidence"] == []
 
 
+def test_missing_explanation_is_empty():
+    claude = ScriptedClaude([
+        reply(tool_use("answer", {"verdict": "doesn't say", "evidence": []}, 1)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    assert result["verdict"] == "doesn't say"
+    assert result["explanation"] == ""
+
+
+def test_missing_or_unknown_verdict_is_rejected():
+    claude = ScriptedClaude([
+        reply(tool_use("answer", {"evidence": [], "explanation": "x"}, 1)),
+        reply(tool_use("answer", {"verdict": "true", "evidence": [], "explanation": "x"}, 2)),
+        reply(tool_use("answer", {"verdict": "doesn't say", "evidence": [],
+                                  "explanation": "x"}, 3)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    assert result["verdict"] == "doesn't say"
+    rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
+    assert len(rejected) == 2
+    assert all("The verdict must be" in t["result"] for t in rejected)
+
+
 def test_rejected_answers_stop_the_agent():
     made_up = {"verdict": "supported", "evidence": ["Zemeckis was born in Ohio."],
                "explanation": "x"}
