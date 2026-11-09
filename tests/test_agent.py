@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace as NS
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import agent  # noqa: E402
@@ -267,6 +269,48 @@ def test_user_agent_gives_a_web_address(monkeypatch, tmp_path):
     sent, _ = scripted_wikipedia(monkeypatch, tmp_path, [FakeResponse(200, FOUND)])
     assert wiki.search("Forrest Gump").startswith("1. Forrest Gump")
     assert "https://" in sent[0]["User-Agent"]
+
+
+def test_too_many_requests_waits_as_long_as_asked(monkeypatch, tmp_path):
+    _, pauses = scripted_wikipedia(monkeypatch, tmp_path, [
+        FakeResponse(429, retry_after="7"), FakeResponse(200, FOUND)])
+    assert wiki.search("Forrest Gump").startswith("1. Forrest Gump")
+    assert pauses == [7]
+    # With no Retry-After header, it waits 2, 4, 8, ... seconds.
+    _, pauses = scripted_wikipedia(monkeypatch, tmp_path, [
+        FakeResponse(429), FakeResponse(429), FakeResponse(200, FOUND)])
+    assert wiki.search("Robert Zemeckis").startswith("1. Forrest Gump")
+    assert pauses == [2, 4]
+
+
+def test_too_many_requests_for_too_long_is_an_error(monkeypatch, tmp_path):
+    _, pauses = scripted_wikipedia(monkeypatch, tmp_path,
+                                   [FakeResponse(429, retry_after="100")] * 20)
+    with pytest.raises(wiki.RateLimited):
+        wiki.search("Forrest Gump")
+    assert pauses == [wiki.MAX_PAUSE] * 5   # 60 seconds at most each time, 300 in all
+    assert list(tmp_path.iterdir()) == []   # nothing cached
+
+
+def test_a_claim_that_fails_is_not_saved_and_runs_again(monkeypatch, tmp_path, capsys):
+    item = {"id": "c1", "claim": "claim", "source": "hover", "label": "NOT_SUPPORTED", "hops": 2}
+
+    def rate_limited(claim):
+        raise wiki.RateLimited("too many requests")
+
+    monkeypatch.setitem(evaluate.METHODS, "agent", rate_limited)
+    [result] = evaluate.run_method("agent", [item], tmp_path, workers=1)
+    assert result["verdict"] is None and not result["correct"]
+    assert (tmp_path / "agent.jsonl").read_text() == ""
+    evaluate.report([item], {"agent": [result]})
+    assert "run the same command again" in capsys.readouterr().out
+
+    answer = {"verdict": "doesn't say", "evidence": [], "explanation": "x"}
+    monkeypatch.setitem(evaluate.METHODS, "agent", lambda claim: agent.run_agent(
+        claim, client=ScriptedClaude([reply(tool_use("answer", answer, 1))]), lookup=fake_lookup))
+    [result] = evaluate.run_method("agent", [item], tmp_path, workers=1)
+    assert result["verdict"] == "doesn't say" and result["correct"]
+    assert len((tmp_path / "agent.jsonl").read_text().splitlines()) == 1
 
 
 def test_one_search_reads_the_top_hit():
