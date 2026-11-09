@@ -329,6 +329,22 @@ def test_one_search_reads_the_top_hit():
     assert result["steps"] == 2
 
 
+def test_one_search_unwraps_only_a_wholly_quoted_query():
+    cases = {'"1994 Best Picture"': "1994 Best Picture",
+             '"One Dance" Drake Wizkid Kyla song': '"One Dance" Drake Wizkid Kyla song',
+             '"One Dance" "Drake"': '"One Dance" "Drake"',
+             "Forrest Gump director": "Forrest Gump director"}
+    for written, searched in cases.items():
+        query = NS(type="text", text=written)
+        answer = NS(type="text", text='{"verdict": "refuted", "explanation": "x"}')
+        claude = ScriptedClaude([reply(query, stop="end_turn"), reply(answer, stop="end_turn")])
+        queries = []
+        baselines.one_search("claim", client=claude,
+                             search=lambda q: queries.append(q) or "1. Forrest Gump: snippet",
+                             read=lambda title: "page text")
+        assert queries == [searched]
+
+
 def test_lookup_prints_and_logs(monkeypatch, tmp_path, capsys):
     import lookup
     monkeypatch.setattr(lookup, "LOG", tmp_path / "lookups.jsonl")
