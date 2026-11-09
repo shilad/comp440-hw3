@@ -106,6 +106,16 @@ def unsupported_quotes(evidence, read_so_far):
     return [quote for quote in evidence if normalize(quote) not in seen]
 
 
+def clean_answer(args):
+    """The answer() call's input, with the evidence always a list of quotes.
+    The tool asks for a list, but Claude sometimes sends one quote as a plain
+    string, and looping over a string would check it one letter at a time."""
+    evidence = args.get("evidence") or []
+    if isinstance(evidence, str):
+        evidence = [evidence]
+    return {**args, "evidence": evidence}
+
+
 def answer_problem(answer, read_so_far):
     """Say what is wrong with an answer, or return None if it passes."""
     quotes = [quote for quote in answer["evidence"] if quote.strip()]
@@ -158,11 +168,12 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
         warned_before = warned
         for call in calls:
             if call.name == "answer":
-                problem = answer_problem(call.input, read_so_far)
+                answer = clean_answer(call.input)
+                problem = answer_problem(answer, read_so_far)
                 if problem is None:
                     trace.append({"tool": "answer", "input": call.input, "result": "accepted"})
-                    return finish(claim, call.input["verdict"], call.input["evidence"],
-                                  call.input["explanation"], trace, tokens, steps)
+                    return finish(claim, answer["verdict"], answer["evidence"],
+                                  answer["explanation"], trace, tokens, steps)
                 result = "Answer rejected. " + problem
                 rejected += 1
                 if rejected >= MAX_REJECTED:

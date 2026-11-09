@@ -102,6 +102,34 @@ def test_supported_or_refuted_needs_a_quote():
     assert all("needs at least one quote" in t["result"] for t in rejected)
 
 
+def test_evidence_as_one_string_is_checked_as_one_quote():
+    # The schema asks for a list, but Claude sometimes sends a plain string.
+    claude = ScriptedClaude([
+        reply(tool_use("read", {"title": "Forrest Gump"}, 1)),
+        reply(tool_use("answer", {"verdict": "supported",
+                                  "evidence": "Zemeckis was born in Ohio.",
+                                  "explanation": "x"}, 2)),
+        reply(tool_use("answer", {"verdict": "supported",
+                                  "evidence": "directed by Robert Zemeckis",
+                                  "explanation": "x"}, 3)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
+    assert len(rejected) == 1
+    assert "Zemeckis was born in Ohio." in rejected[0]["result"]
+    assert result["verdict"] == "supported"
+    assert result["evidence"] == ["directed by Robert Zemeckis"]
+
+
+def test_missing_evidence_is_an_empty_list():
+    claude = ScriptedClaude([
+        reply(tool_use("answer", {"verdict": "doesn't say", "explanation": "x"}, 1)),
+    ])
+    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    assert result["verdict"] == "doesn't say"
+    assert result["evidence"] == []
+
+
 def test_rejected_answers_stop_the_agent():
     made_up = {"verdict": "supported", "evidence": ["Zemeckis was born in Ohio."],
                "explanation": "x"}
