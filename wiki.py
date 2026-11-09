@@ -18,8 +18,11 @@ import requests
 WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 
-# Wikipedia asks every program that calls its API to say who it is.
-HEADERS = {"User-Agent": "COMP440-HW3/0.1 (Macalester College course assignment)"}
+# Wikipedia asks every program that calls its API to say who it is and how to
+# reach whoever runs it. It lets a program that gives a web address or an email
+# make far more requests a minute than one that doesn't.
+HEADERS = {"User-Agent": "COMP440-HW3/0.1 (https://shilad.github.io/comp440-website/; "
+                         "Macalester College course assignment)"}
 
 CACHE_DIR = Path(__file__).parent / ".cache"
 

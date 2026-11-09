@@ -232,6 +232,43 @@ def test_sections_and_read(monkeypatch):
     assert "no section called" in wiki.read("zemeckis", "Career")
 
 
+class FakeResponse:
+    """What requests.get() returns, for a scripted Wikipedia."""
+
+    def __init__(self, status, data=None, retry_after=None):
+        self.status_code = status
+        self.headers = {"Retry-After": retry_after} if retry_after else {}
+        self.data = data
+
+    def json(self):
+        return self.data
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise wiki.requests.HTTPError(f"{self.status_code} error")
+
+
+FOUND = {"query": {"search": [{"title": "Forrest Gump", "snippet": "1994 film"}]}}
+
+
+def scripted_wikipedia(monkeypatch, tmp_path, responses):
+    """Send wiki.py's requests to the scripted responses, in order, with the
+    cache in tmp_path. Returns the headers of each request and each pause."""
+    sent, pauses = [], []
+    responses = list(responses)
+    monkeypatch.setattr(wiki, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(wiki.requests, "get",
+                        lambda url, **kwargs: sent.append(kwargs["headers"]) or responses.pop(0))
+    monkeypatch.setattr(wiki.time, "sleep", pauses.append)
+    return sent, pauses
+
+
+def test_user_agent_gives_a_web_address(monkeypatch, tmp_path):
+    sent, _ = scripted_wikipedia(monkeypatch, tmp_path, [FakeResponse(200, FOUND)])
+    assert wiki.search("Forrest Gump").startswith("1. Forrest Gump")
+    assert "https://" in sent[0]["User-Agent"]
+
+
 def test_one_search_reads_the_top_hit():
     query = NS(type="text", text='"1994 Best Picture"')
     answer = NS(type="text", text='{"verdict": "refuted", "explanation": "wrong state"}')
