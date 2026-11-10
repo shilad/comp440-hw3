@@ -454,6 +454,9 @@ def run_facts(run: R.Run) -> str:
         if run.bad.get(m):
             out.append(f'<p class="note">{plural(run.bad[m], "line")} in <code>{e(m)}.jsonl</code> could '
                        'not be read. If the run is still going, it may be writing that line now.</p>')
+    if len(run.versions) > 1:
+        out.append(f'<p class="note">The agent\'s results here were made by {len(run.versions)} different versions '
+                   'of its files (<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>).</p>')
     relabelled = len(run.relabelled)
     if relabelled:
         out.append(f'<p class="note">For {plural(relabelled, "result")}, the label in <code>data/</code> '
@@ -936,6 +939,13 @@ def compare_page(repo: Path, q: dict) -> str:
                f'{a(link("/compare", a=B.rel, b=A.rel), "Swap A and B")}</p>')
     if A.rel == B.rel:
         out.append('<p class="note">A and B are the same run.</p>')
+    if A.versions and B.versions and "agent" in A.methods and "agent" in B.methods:
+        files = '<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>'
+        if set(A.versions) == set(B.versions):
+            out.append(f'<p class="note">The agent in A and the agent in B were made from the same version of '
+                       f'its files ({files}).</p>')
+        else:
+            out.append(f'<p class="small">The agent\'s files ({files}) were different when A and B were made.</p>')
     for side, ms in (("A", only_a), ("B", only_b)):
         if ms:
             out.append(f'<p class="small">Only in {side}, so not compared: '
@@ -1129,11 +1139,12 @@ def open_page(repo: Path, q: dict) -> str:
         return redirect(link("/") + "#" + anchor(rel))
     if path.name == "lookups.jsonl":
         return redirect(link("/") + "#" + anchor(rel))
-    if path.suffix == ".jsonl" and R.is_run(path.parent, root_real):
-        return redirect(link("/run", dir=rel.rsplit("/", 1)[0]))
     if path.suffix == ".json" and R.CACHE.get(path, R.load_check) is not None:
         return redirect(link("/check", file=rel))
-    return redirect(link("/"))
+    if R.is_run(path.parent, root_real):  # a results file, report.txt or run.json
+        return redirect(link("/run", dir=rel.rsplit("/", 1)[0]))
+    folder = rel.rsplit("/", 1)[0]
+    return redirect(link("/") + ("#" + anchor(folder) if folder != "runs" else ""))
 
 
 def redirect(to: str) -> str:

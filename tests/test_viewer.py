@@ -538,3 +538,44 @@ def test_standalone_server_uses_next_free_port(repo):
         server.shutdown()
         server.server_close()
         taken.close()
+
+
+# ------------------------------------------------------------------ what evaluate.py saves beside the results
+
+def test_run_json_names_the_claims_file(repo, tmp_path_factory):
+    folder = repo / "runs" / "part2"
+    (folder / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}) + "\n")
+    write_jsonl(folder / "agent.jsonl", full_rows()["agent"][:3])
+    run = R.get_run(repo, folder, "runs/part2")
+    assert run.file == ("data/claims.jsonl", 5)
+    assert "the agent has 3 of 5" in text_of(get(repo, "/results/run?dir=runs/part2")[2])
+    # A run.json that points outside the repository is not followed.
+    outside = tmp_path_factory.mktemp("elsewhere") / "claims.jsonl"
+    write_jsonl(outside, HOVER)
+    for named in (str(outside), "../" + outside.parent.name + "/claims.jsonl", "data/../../x.jsonl"):
+        (folder / "run.json").write_text(json.dumps({"claims": named}))
+        assert R.named_claims_file(repo, folder) is None
+        assert get(repo, "/results/run?dir=runs/part2")[0] == 200
+    (folder / "run.json").write_text("not json")
+    assert get(repo, "/results/run?dir=runs/part2")[0] == 200
+
+
+def test_report_txt_and_run_json_open_their_run(repo):
+    (repo / "runs" / "part2" / "report.txt").write_text("tables")
+    (repo / "runs" / "part2" / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}))
+    for name in ("report.txt", "run.json"):
+        page = get(repo, f"/results/open?path=runs/part2/{name}")[2]
+        assert 'url=/results/run?dir=runs%2Fpart2"' in page
+
+
+def test_compare_says_whether_the_agent_changed(repo):
+    def with_version(rows, v):
+        return [dict(r, agent_version=v) for r in rows]
+    write_jsonl(repo / "runs" / "part2" / "agent.jsonl", with_version(full_rows()["agent"], "aaa"))
+    write_jsonl(repo / "runs" / "b" / "agent.jsonl", with_version(full_rows()["agent"], "aaa"))
+    words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
+    assert "made from the same version of its files" in words
+    write_jsonl(repo / "runs" / "b" / "agent.jsonl", with_version(full_rows()["agent"], "bbb"))
+    words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
+    assert "were different when A and B were made" in words
+    assert "No claim changed" in words

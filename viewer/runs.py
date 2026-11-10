@@ -364,6 +364,15 @@ class Claims:
                 self.by_id.setdefault(str(item["id"]), (item, name, pos))
                 self.by_text.setdefault(norm_claim(item["claim"]), (item, name, pos))
 
+    def prefer(self, path: Path, name: str) -> set:
+        """Put one claims file ahead of the others (the one a run says it used). Returns its ids."""
+        items = CACHE.get(path, load_claims) or []
+        self.files[name] = items
+        for pos, item in enumerate(items):
+            self.by_id[str(item["id"])] = (item, name, pos)
+            self.by_text.setdefault(norm_claim(item["claim"]), (item, name, pos))
+        return {str(item["id"]) for item in items}
+
     def best_file(self, ids) -> tuple[str, int] | None:
         """The smallest claim file that holds every one of these ids: (name, size)."""
         ids = set(ids)
@@ -374,6 +383,25 @@ class Claims:
 
 def norm_claim(text) -> str:
     return " ".join(str(text).split()).lower()
+
+
+def named_claims_file(repo: Path, folder: Path) -> tuple[Path, str] | None:
+    """The claims file evaluate.py says the run in `folder` used (its run.json), if that is a
+    .jsonl file inside the repository: (path, path relative to the repository)."""
+    meta = folder / "run.json"
+    if not meta.is_file() or not inside(meta, (repo / "runs").resolve()):
+        return None
+    try:
+        claims = json.loads(meta.read_text()).get("claims")
+    except (OSError, ValueError, AttributeError):
+        return None
+    if not isinstance(claims, str) or not claims.endswith(".jsonl"):
+        return None
+    target = Path(claims) if Path(claims).is_absolute() else repo / claims
+    repo_real = repo.resolve()
+    if not inside(target, repo_real) or not target.is_file():
+        return None
+    return target, target.resolve().relative_to(repo_real).as_posix()
 
 
 # ------------------------------------------------------------------ what one claim's label means
@@ -437,6 +465,8 @@ class Run:
             self.started = min(self.started, made_time(f))
         self.started = self.started if self.rows else 0.0
         self.methods = sorted(self.rows, key=method_key)
+        named = named_claims_file(repo, path)
+        named_ids = claims.prefer(*named) if named else set()
         seen: dict[str, None] = {}
         for m in self.methods:
             for i in self.rows[m]:
@@ -472,8 +502,14 @@ class Run:
                         now = row["correct"]
                     if now != row["correct"]:
                         self.relabelled[(m, i)] = True
-        self.file = claims.best_file(self.ids)
+        if named and set(self.ids) <= named_ids:
+            self.file = (named[1], len(named_ids))  # the file the run says it used
+        else:
+            self.file = claims.best_file(self.ids)
         self.position = {i: n for n, i in enumerate(self.ids)}
+        # evaluate.py saves a fingerprint of the agent's files with each of the agent's results.
+        self.versions = sorted({str(r["agent_version"]) for r in self.rows.get("agent", {}).values()
+                                if r.get("agent_version")})
 
     def group(self, i: str) -> str:
         item = self.items[i]
@@ -543,8 +579,10 @@ def get_run(repo: Path, path: Path, rel: str) -> Run | None:
     if not files:
         return None
     data = sorted((repo / "data").glob("*.jsonl")) if (repo / "data").is_dir() else []
+    named = named_claims_file(repo, path)
+    extra = [path / "run.json"] + ([named[0]] if named else [])
     sig = []
-    for f in files + data:
+    for f in files + data + extra:
         try:
             st = f.stat()
         except OSError:
