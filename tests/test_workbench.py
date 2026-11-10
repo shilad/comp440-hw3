@@ -532,6 +532,10 @@ def test_a_true_conflict_changes_nothing_and_says_so(tmp_path):
     assert "could not be applied automatically" in text and "nothing in your files was changed" in text
     assert "#comp440-f26" in text
     assert not any(x["kind"] == "update" for x in app.current_notices())   # the button is gone
+    upstream_commit(h, "README.md", "# HW9\n\nNewer.\n", "A newer fix")        # until there is more
+    app.updates.fetch()
+    notices = {x["kind"]: x for x in app.current_notices()}
+    assert "update-failed" not in notices and "A newer fix" in notices["update"]["items"]
 
 
 def test_an_untracked_file_in_the_way_changes_nothing(tmp_path):

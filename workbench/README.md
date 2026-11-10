@@ -1,0 +1,147 @@
+# The homework page
+
+A local web page for a homework. It lists the steps, ticks the ones that are complete by reading
+`WRITEUP.md` and the student's files, and gives each step its own Claude Code session, which the
+student starts in a terminal with the command the page shows. Python's standard library only; it
+serves this computer only.
+
+## Starting it
+
+In the homework's folder:
+
+```bash
+uv run python -m workbench              # opens http://localhost:8450 in the browser
+uv run python -m workbench --no-open    # without opening the browser
+uv run python -m workbench --port 8460  # look for a free port from 8460
+```
+
+It serves the repository it sits in, with that repository's `steps.toml`. If port 8450 is taken
+it uses the next free one and prints it (other course tools use 8440). If the page is already
+running for this folder, it says where and opens that instead of starting a second one. It needs
+Python 3.11 or later; `.python-version` asks `uv` for 3.12.
+
+## What it does by itself
+
+- **Ticks steps.** A step is complete when every slot it names in `WRITEUP.md` is filled and every
+  file it names exists, read fresh every time. Steps open in order.
+- **Commits each part.** When every step of Part N is complete, the page writes `TRANSCRIPT.md`
+  and `record/`, then commits `Part N done`: the write-up, every tracked file the student changed,
+  the part's step files, the transcript and the record.
+- **Commits later changes.** If an answer of a committed part changes, or one of its step files
+  is added or changed, the page commits `Part N updated` once nothing has changed for 30 seconds,
+  so a student who is still typing gets one commit, not many. An answer in a part that isn't
+  committed yet waits for that part's own commit.
+- **Pushes.** With `push = true` in `steps.toml`, every commit the page makes is pushed to
+  `origin` (`git push origin HEAD`). A push never asks for a login and never blocks anything. If
+  it fails, the commit stays on the laptop, the page says in one sentence that the work is
+  committed but not pushed and how to push by hand (`git push`), and it tries again every five
+  minutes. It also pushes, at start, commits from before a restart that never reached `origin`.
+- **Never commits a key.** A staged file that holds something like `sk-ant-...`, or a file named
+  in `never_read`, is left out of the commit, and the page says so.
+- **Offers updates.** See below.
+
+## The conversations: TRANSCRIPT.md
+
+Before each commit the page writes every Claude conversation of the homework into `TRANSCRIPT.md`:
+each step's session under a heading naming the step (`# 0b. Ask the model on its own`), in step
+order, then any session started in this folder some other way. A step's session id is kept in
+`.workbench/state.json`; resuming the session adds to the same conversation. A conversation that
+is in the file but no longer on the laptop is kept as it was. `uv run python -m workbench.transcript`
+writes the file by hand.
+
+Each conversation uses the format of HW2's `dump_transcript.py`, which the grading tools read
+(the `transcript-session` and `end-session` markers, the `## Session` line, the line counting the
+student's turns, `**User:**` and `**Claude:**`, one line per tool call starting `- 🔧`). It
+differs in four ways: each tool call is followed by the first 12 lines of what it returned, in a
+fenced block; a shell call shows its command (up to 200 characters) rather than its description;
+parts of one turn are separated by a blank line; and Claude Code's own notes around a slash
+command's output are left out. Anything that looks like an API key becomes `[key removed]`.
+
+## What the page showed: record/
+
+Also before each commit, one JSON file per started step in `record/`: which checkpoints were
+reached, the student's answers and who last wrote each one (the student, or Claude in which
+step's session), what they predicted, asked and ran and what came back, with times, and what
+Claude told the page.
+
+## Updates from the class repository
+
+The steps file's `upstream` is the class repository (the environment variable
+`WORKBENCH_UPSTREAM` overrides it, for trying the page out without GitHub). At start the page
+makes sure a remote named `upstream` points there; it never changes `origin`. If `origin` is the
+class repository itself, the student cloned without forking: the page says so, with the command
+that points `origin` at their fork, and doesn't push.
+
+At start and about every 30 minutes the page fetches `upstream` quietly (20-second limit; any
+failure is silent). When the class repository's `main` has commits the student's branch lacks,
+the page lists their subjects with an **Update** button. The button:
+
+1. commits the student's changes as `Save work before update`, so nothing they typed can be lost
+   and git never refuses for want of a clean folder;
+2. runs `git merge --no-edit upstream/main`;
+3. if the merge fails (a real conflict, or an untracked file in the way), runs `git merge --abort`
+   where needed, so every file is as it was, and says: the update could not be applied
+   automatically, nothing in your files was changed, post in #comp440-f26 on Slack.
+
+After an update the page reads `steps.toml` and the brief's pages again without a restart (it
+does this whenever they change). If anything under `workbench/` or `viewer/` changed, it asks the
+student to restart the page: Ctrl-C in its terminal, then start it again.
+
+## The results viewer
+
+Pages under `/results` belong to the results viewer in `viewer/`, if it is there:
+`viewer.app.handle(method, path, query, repo)` returns `(status, content type, body)`, where
+`path` is what follows `/results` (`/results/run` arrives as `/run`; `/results` itself redirects
+to `/results/`, which arrives as `/`), `query` is a dict of lists and `repo` a `pathlib.Path`.
+Without `viewer/`, `/results` says in one sentence that the viewer isn't installed. A step whose
+`files` exist links to `/results/open?path=<the newest file of its first files entry that has one>`.
+
+## A step's Claude session
+
+The page writes two files per step into the git-ignored `.workbench/` folder, and the step's
+command uses them:
+
+```bash
+claude -n "0b Ask the model on its own" --session-id <id> --model claude-opus-5-5 --effort medium \
+    --setting-sources user --settings .workbench/0b.json \
+    --append-system-prompt-file .workbench/0b.md --plugin-dir .workbench/plugin "Start step 0b."
+```
+
+- `0b.md` is the step's prompt: the tutor rules, then this step's text, brief, checkpoints and slots.
+- `0b.json` holds the calls the step may make without asking, and the hook (`guard.py`, run by the
+  page's own Python) that refuses commits, pushes and anything touching `.env`.
+- `--setting-sources user` keeps this repository's `CLAUDE.md` and `.claude/` out, so the prompt
+  is the whole brief. `CLAUDE.md` is for a student who starts plain `claude` here: it sends them
+  to the page. It is written from `steps.toml` by `uv run python -m workbench.claude_md`; a test
+  fails when the two are out of step.
+- `--plugin-dir` loads the `page` skill: Claude posts a status line, the student's prediction,
+  and the checkpoints it ticks, by running `.workbench/page.py`, which finds the server's port in
+  `.workbench/server.json`.
+- Under the command the page says: if Claude says the model is not available, delete
+  `--model claude-opus-5-5 --effort medium` and run it again.
+
+## The steps file
+
+`steps.toml` at the top of the repository. Top-level keys the page reads: `title`, `writeup`,
+`tutor`, `model`, `effort`, `commit_parts` (default true), `push` (default false), `upstream`,
+`allow`, `never_read`, `overview`, `sample_claim`. Then `[[part]]` tables (`number`, `title`,
+`due`) and `[[step]]` tables. A step's id is its name on the page (`"0b"`); its section in
+`WRITEUP.md` starts with that name (`## 0b. Ask the model on its own`), and `slots = ["0b.*"]`
+takes every question, table and pasted block in that section. A key the page doesn't know is
+ignored, with a note in the terminal.
+
+## Files
+
+| File | What it is |
+|---|---|
+| `server.py` | The web server, the commits and pushes, the update button, the results mount |
+| `steps.py` | Reads `steps.toml` and the `WRITEUP.md` slots; which steps are complete or locked |
+| `sessions.py` | Each step's prompt, settings and command; what its session did; the record |
+| `transcript.py` | Writes `TRANSCRIPT.md` |
+| `updates.py` | The `upstream` remote, the fetch, the merge |
+| `claude_md.py` | Writes `CLAUDE.md` from `steps.toml` |
+| `labels.py` | A plain label for each tool call ("Ran check.py") |
+| `guard.py`, `page.py`, `plugin/` | Copied into `.workbench/`: the hook, and the `page` skill and its script |
+| `static/` | The page: HTML, CSS and JavaScript, no build step |
+
+The tests are in `tests/test_workbench.py` (`uv run --frozen pytest -q`): no network, no Claude.

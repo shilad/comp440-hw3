@@ -173,6 +173,11 @@ class App:
                 f"can't save your work to GitHub. Fork {web(u.url)} on GitHub, then run this in a "
                 "terminal in this folder, with your GitHub username:"),
                 "code": "git remote set-url origin https://github.com/YOUR-USERNAME/" + Path(normal(u.url)).name})
+        failed = self.notices.get("update-failed")
+        if failed and failed["missing"] != u.missing:   # newer commits since: let them try again
+            self.notice("update-failed", None)
+        if u.missing:
+            self.notice("updated", None)
         if u.missing and "update-failed" not in self.notices:
             out.append({"kind": "update", "text": "There is an update to the homework. It brings:",
                         "items": u.missing[:8] + ([f"and {len(u.missing) - 8} more"] if len(u.missing) > 8 else []),
@@ -357,7 +362,7 @@ class App:
         if not result["ok"]:
             say(f"The update didn't go through: {result.get('why', '')}")
             self.notice("update-failed", "The update could not be applied automatically, and nothing in your "
-                        f"files was changed. Please {HELP}.")
+                        f"files was changed. Please {HELP}.", missing=list(self.updates.missing))
             return {"ok": False}
         self.notice("update-failed", None)
         self.fresh()
