@@ -103,15 +103,15 @@ these claims come from, gives each claim, *supported* or *not supported*.
 2. Open **Results** at the top of the homework page, then "runs/part2".
 3. Click "Clear the filters" under the claims filters.
 4. Set "Verdict" in "The agent" box to "supported or refuted"; leave "Order" at "Order of the claims file".
-5. Take rows 1 to 10.
+5. Take rows 1 to 5.
 6. Click row 1. Under "Quoted evidence", click "entry N" to read each quote highlighted.
 7. Decide whether the quoted evidence supports the agent's verdict.
 8. Click "open the live page" whenever you're unsure, to see today's page at that quote.
-9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 10.
+9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 5.
 10. Answer the two questions.
 
 **What you'll see:** The "Row" column counts the rows shown, in the order of the claims file, so rows 1
-to 10 are fixed by the rule. I ask for the first ten so that nobody, you or Claude, chooses which claims
+to 5 are fixed by the rule. I ask for the first five so that nobody, you or Claude, chooses which claims
 get checked. A claim's page says, under "The agent", whether its verdict "matches the dataset's label":
 that is the table's fourth column. To read more of a page as the agent read it, ask Claude to run one of these (`--no-log`
 keeps them out of your record from 1b):
@@ -123,11 +123,11 @@ uv run python lookup.py --no-log read "<page title>" "<section>"
 
 **What to write:** In `WRITEUP.md`, under 2c, fill in the table and answer:
 
-- The first ten claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
-- Of the ten, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
+- The first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
+- Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
-**You're done when:** The homework page ticks 2c: all ten rows are filled, and both answers have text
+**You're done when:** The homework page ticks 2c: all five rows are filled, and both answers have text
 after the `>`. That finishes Part 2, so the page commits your work as `Part 2 done` and pushes it to
 your fork.
 
@@ -140,7 +140,7 @@ judgment is what this step is about.
 Part 2 is 35% of the homework. At a minimum I am looking for the following:
 
 - Accuracy and cost: 50% - Your answers to 2a and 2b use numbers from your run, by number of articles.
-- Evidence check: 50% - Each of your ten checks in 2c says whether the quote supports the verdict and
+- Evidence check: 50% - Each of your five checks in 2c says whether the quote supports the verdict and
   why, and your answer weighs accuracy against how good the evidence is.
 
 ## Extra credit: find where Wikipedia has changed

@@ -926,27 +926,27 @@ part = 2
 title = "Check the evidence yourself"
 page = "instructions/part2.md"
 section = "2c. Check the evidence yourself"
-minutes = 35
+minutes = 20
 slots = ["2c.*"]
 allow = ["Bash(uv run python lookup.py:*)"]
-summary = "Check whether the agent's quoted evidence really supports its verdicts, for ten claims."
+summary = "Check whether the agent's quoted evidence really supports its verdicts, for five claims."
 goal = "Whether the agent's quoted evidence really supports its verdicts, and so whether accuracy alone is a fair measure of the agent."
 checkpoints = [
-  "You have checked the quoted evidence for the first ten claims where the agent answered \"supported\" or \"refuted\"",
+  "You have checked the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\"",
   { text = "Your table and answers are in WRITEUP.md", slots = ["2c.*"] },
 ]
 brief = '''
-The student checks, for ten claims, whether the quoted evidence supports the verdict. That is the
+The student checks, for five claims, whether the quoted evidence supports the verdict. That is the
 one judgment in this step, and its one phrase: say "the quoted evidence supports the verdict",
 not "accept", "sound" or "settles". A quote can be real and still not support the verdict. For a
 verdict of *refuted*, the question is whether the quotes show that the claim is false.
 
-Which ten claims is fixed by a rule, so that nobody chooses them (they differ between students,
+Which five claims is fixed by a rule, so that nobody chooses them (they differ between students,
 because they depend on each student's own agent's verdicts): in the results viewer, on the page for
 runs/part2, click "Clear the filters", then set "Verdict" in "The agent"
-box to "supported or refuted", and leave "Order" at "Order of the claims file". Rows 1 to 10 of
-the claims table are the ten. Do not pick claims yourself, and do not suggest others. If they ask
-which ten, give them that rule.
+box to "supported or refuted", and leave "Order" at "Order of the claims file". Rows 1 to 5 of
+the claims table are the five. Do not pick claims yourself, and do not suggest others. If they ask
+which five, give them that rule.
 
 On a claim's page, under "Quoted evidence", each quote says "Found in entry N of the trace
 (read), highlighted below"; "entry N" jumps to it in the trace, and "open the live page" opens
@@ -962,7 +962,7 @@ what they ask, with `--no-log` so that 1b's record in runs/part1/lookups.jsonl s
 Never say whether the quoted evidence supports the verdict, whether a quote is relevant, or
 whether the agent was right. The student types the whole table under 2c and the answers after it;
 you may show the
-facts the table asks for in the chat. Tick checkpoint 1 when they say they have checked all ten.
+facts the table asks for in the chat. Tick checkpoint 1 when they say they have checked all five.
 '''
 
 # ---- Part 3: Your own claims --------------------------------------------------------------

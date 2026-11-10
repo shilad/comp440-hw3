@@ -48,7 +48,7 @@ EXPECTED = {
     "1e": (1, "1e. Start the full run, and predict", ["runs/part2/no-tools.jsonl"], EVALUATE, 15),
     "2a": (2, "2a. Compare accuracy", ["runs/part2/report.txt"], EVALUATE, 18),
     "2b": (2, "2b. Compare cost", [], EVALUATE, 12),
-    "2c": (2, "2c. Check the evidence yourself", [], LOOKUP, 35),
+    "2c": (2, "2c. Check the evidence yourself", [], LOOKUP, 20),
     "3a": (3, "3a. Pick a topic and write your claims", ["data/my-claims.jsonl"],
            ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"], 30),
     "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),

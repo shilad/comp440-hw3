@@ -169,7 +169,7 @@ Did the agent ever use all 12 lookups? If so, pick one such claim and say what i
 
 ## 2c. Check the evidence yourself
 
-The first ten claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
+The first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 
 | # | Claim (first few words) | Agent's verdict | Matched the dataset's label? | Does the quoted evidence support that verdict? | Why or why not |
 |---|---|---|---|---|---|
@@ -178,13 +178,8 @@ The first ten claims in your Part 2 run, in the order of the claims file, where 
 | 3 | | | | | |
 | 4 | | | | | |
 | 5 | | | | | |
-| 6 | | | | | |
-| 7 | | | | | |
-| 8 | | | | | |
-| 9 | | | | | |
-| 10 | | | | | |
 
-Of the ten, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
+Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 
 >
 
