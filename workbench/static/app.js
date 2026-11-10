@@ -126,7 +126,7 @@ function build() {
         <li class="step" id="step-${s.label}">
           <button class="step-head" data-step="${s.id}" aria-expanded="false" aria-controls="body-${s.label}" type="button">
             <span class="dot"></span>
-            <span class="step-title"><span class="id">${esc(s.label)}</span>${esc(s.title)}</span>
+            <span class="step-title"><span class="id">${esc(s.label)}</span>${esc(s.title)}${minutes(s)}</span>
             <span class="badge-slot" id="badge-${s.label}"></span><span class="chev"></span></button>
           ${s.summary ? `<p class="step-sum">${esc(s.summary)}</p>` : ""}
           <div class="step-body" id="body-${s.label}" hidden>
@@ -134,6 +134,12 @@ function build() {
             <div class="col record" id="pg-${s.label}"></div>
           </div></li>`).join("")}</ol>
     </section>`).join("");
+}
+
+// How long a step takes, in plain words, when the steps file says.
+function minutes(s) {
+  const m = Number(s.minutes);
+  return m > 0 ? `<span class="mins">about ${m} minute${m === 1 ? "" : "s"}</span>` : "";
 }
 
 function leftCol(s) {

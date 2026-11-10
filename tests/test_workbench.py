@@ -378,6 +378,53 @@ def test_a_finished_part_is_committed_with_its_conversations_and_pushed(tmp_path
     assert subjects(h.student).count("Part 0 done") == 1                # once only
 
 
+def test_a_part_commit_takes_everything_that_is_not_ignored(tmp_path):
+    h = homework(tmp_path, {"instructions.md": "You check claims.\n", "agent.py": "print(1)\n",
+                            ".gitignore": open(ROOT / ".gitignore").read()})
+    app = server.App(h.student)
+    (h.student / "instructions.md").write_text("You check claims. Read two pages.\n")
+    (h.student / "agent.py").write_text("print(2)\n")
+    for rel in ("data/my-claims.jsonl", "runs/part2/agent.jsonl", "runs/part1/after/agent.jsonl",
+                "runs/part3/claude-labels.md", ".cache/abc.json", ".env", ".DS_Store",
+                ".claude/settings.local.json", "__pycache__/x.pyc"):
+        (h.student / rel).parent.mkdir(parents=True, exist_ok=True)
+        (h.student / rel).write_text("x\n")
+    finish_part0(h.student)
+    app.commit_finished_parts()
+    shipped = set(git(h.student, "show", "--name-only", "--format=", "HEAD").split())
+    assert {"instructions.md", "agent.py", "data/my-claims.jsonl", "runs/part2/agent.jsonl",
+            "runs/part1/after/agent.jsonl", "runs/part3/claude-labels.md", "WRITEUP.md"} <= shipped
+    assert not shipped & {".cache/abc.json", ".env", ".DS_Store", ".claude/settings.local.json", "__pycache__/x.pyc"}
+
+
+def test_a_20_megabyte_result_file_is_committed_and_pushed_while_the_page_answers(tmp_path):
+    import os
+    import time
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    finish_part0(h.student)
+    (h.student / "runs/part2").mkdir(parents=True)
+    (h.student / "runs/part2/agent.jsonl").write_bytes(os.urandom(20 * 1024 * 1024))   # incompressible
+    srv, base = serving(app)
+    try:
+        worker = threading.Thread(target=app.commit_finished_parts)
+        started = time.time()
+        worker.start()
+        slowest = 0.0
+        while worker.is_alive():
+            t = time.time()
+            assert fetch(base + "/api/state")[0] == 200
+            slowest = max(slowest, time.time() - t)
+            time.sleep(0.05)
+        worker.join()
+        assert subjects(h.student)[0] == "Part 0 done" and subjects(h.fork, "main")[0] == "Part 0 done"
+        assert "runs/part2/agent.jsonl" in git(h.student, "show", "--name-only", "--format=", "HEAD")
+        assert slowest < 2.0, f"the page took {slowest:.1f}s to answer during a {time.time() - started:.1f}s commit"
+    finally:
+        srv.shutdown()
+        srv.server_close()
+
+
 def test_a_push_that_fails_keeps_the_commit_and_says_how_to_push(tmp_path):
     h = homework(tmp_path)
     git(h.student, "remote", "set-url", "origin", str(tmp_path / "gone.git"))
@@ -419,7 +466,13 @@ def test_a_file_holding_a_key_is_never_committed(tmp_path):
     assert subjects(h.student)[0] == "Part 0 done"
     assert "notes.txt" not in git(h.student, "show", "--name-only", "--format=", "HEAD")
     assert "sk-ant" not in git(h.student, "show", "HEAD")
-    assert "notes.txt" in app.notices["key"]["text"]
+    assert "notes.txt" in app.notices["key"]["text"] and "Remove the key from it" in app.notices["key"]["text"]
+    (h.student / "notes.txt").write_text("nothing here now\n")         # fixed: the next commit takes it
+    (h.student / "WRITEUP.md").write_text(FILLED.replace("it guessed", "it guessed, I think"))
+    server.SETTLE = 0
+    app.commit_changes()
+    assert "notes.txt" in git(h.student, "show", "--name-only", "--format=", "HEAD")
+    assert "key" not in app.notices
 
 
 def test_the_record_of_each_started_step_is_saved(tmp_path):
@@ -435,6 +488,84 @@ def test_the_record_of_each_started_step_is_saved(tmp_path):
     assert any(x["kind"] in ("expected", "said") for x in rec["record"])
     assert {a["written_by"] for a in rec["answers"]} == {"the student"}
     assert not (h.student / "record/1a.json").exists()                  # never started
+
+
+def test_env_as_a_steps_file_is_only_ever_checked_for_existence(tmp_path, monkeypatch):
+    h = homework(tmp_path, {"steps.toml": STEPS.replace('slots = ["Name"]', 'slots = ["Name"]\nfiles = [".env"]')})
+    app = server.App(h.student)
+    (h.student / "WRITEUP.md").write_text(FILLED)
+    assert not {x["id"]: x for x in steps.status(app.a, h.student, set())}["0a"]["complete"]
+    (h.student / ".env").write_text("ANTHROPIC_API_KEY=" + FAKE_KEY + "\n")
+    opened = []
+    real_open, real_read_text, real_read_bytes = open, Path.read_text, Path.read_bytes
+
+    def watch(path):
+        if Path(path).name == ".env":
+            opened.append(str(path))
+
+    monkeypatch.setattr("builtins.open", lambda f, *a, **k: (watch(f), real_open(f, *a, **k))[1])
+    monkeypatch.setattr(Path, "read_text", lambda self, *a, **k: (watch(self), real_read_text(self, *a, **k))[1])
+    monkeypatch.setattr(Path, "read_bytes", lambda self, *a, **k: (watch(self), real_read_bytes(self, *a, **k))[1])
+    assert {x["id"]: x for x in steps.status(app.a, h.student, set())}["0a"]["complete"]
+    for s in app.hub.sessions.values():
+        s.snapshot()
+        s.record(last=None)
+    app.state()
+    app.assignment()
+    srv, base = serving(app)
+    try:
+        assert fetch(base + "/api/file?path=.env")[0] == 403
+    finally:
+        srv.shutdown()
+        srv.server_close()
+    finish_part0(h.student)
+    app.commit_finished_parts()
+    assert subjects(h.student)[0] == "Part 0 done"
+    assert ".env" not in git(h.student, "show", "--name-only", "--format=", "HEAD").split()
+    assert opened == []
+
+
+def test_a_claim_with_quotes_and_an_apostrophe_reaches_every_place_intact(tmp_path):
+    claims = ['The composer of "Persian Surgery Dervishes" was born on June 24, 1935.',
+              "The film's director was born in O'Fallon, Illinois."]
+    for n, claim in enumerate(claims):
+        literal = "'''" + claim + "'''"          # a TOML literal string, as steps.toml carries it
+        quoted = (STEPS.replace('title = "COMP 440 HW9: A small homework"',
+                                'title = "COMP 440 HW9: A small homework"\nsample_claim = ' + literal)
+                  .replace('title = "Ask the model on its own"', 'title = "Ask the model\'s own view"\nclaim = true'))
+        (tmp_path / str(n)).mkdir()
+        h = homework(tmp_path / str(n), {"steps.toml": quoted})
+        app = server.App(h.student)
+        assert app.a.sample_claim == claim
+        assert json.loads(json.dumps(app.assignment()))["sample_claim"] == claim
+        s = app.hub.sessions["0b"]
+        (h.student / "WRITEUP.md").write_text(WRITEUP.replace("Name:", "Name: Sam"))
+        snap = s.snapshot()
+        assert claim in (app.hub.dir / "0b.md").read_text()
+        import shlex
+        words = shlex.split(snap["command"])
+        assert words[words.index("-n") + 1] == "0b Ask the model's own view" and words[-1] == "Start step 0b."
+    placeholder = STEPS.replace('title = "COMP 440 HW9: A small homework"',
+                                'title = "COMP 440 HW9: A small homework"\nsample_claim = "[[SAMPLE_CLAIM]]"')
+    (tmp_path / "p").mkdir()
+    h = homework(tmp_path / "p", {"steps.toml": placeholder})
+    assert server.App(h.student).assignment()["sample_claim"] == "[[SAMPLE_CLAIM]]"
+
+
+def test_a_steps_prompt_carries_the_questions_not_the_answers(tmp_path):
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    secret_answer = "My own label is WRONG-PAGE, typed before Claude looks."
+    (h.student / "WRITEUP.md").write_text(FILLED.replace("It said supported.", secret_answer))
+    app.hub.sessions["0b"].prepare()
+    prompt = (app.hub.dir / "0b.md").read_text()
+    assert "What did it say?" in prompt and "How much would you trust it, and why?" in prompt
+    assert secret_answer not in prompt and "Not much: it guessed" not in prompt and "Sam Student" not in prompt
+    # The line about reading WRITEUP.md comes before the step's own brief, which may say "not yet".
+    assert "Read it when you need them, unless this step's" in prompt
+    assert prompt.index("Read it when you need them") < prompt.index("What you do in this step:")
+    assert "Read it at the start" not in prompt
+    assert "only where WRITEUP.md itself says to ask Claude" in prompt
 
 
 # -- the conversations ---------------------------------------------------------------------------
@@ -677,7 +808,10 @@ def test_the_page_and_every_steps_api_answer(tmp_path):
         srv.server_close()
 
 
-def test_results_go_to_the_viewer_when_there_is_one(tmp_path):
+def test_results_go_to_the_viewer_when_there_is_one(tmp_path, monkeypatch):
+    for k in [k for k in sys.modules if k == "viewer" or k.startswith("viewer.")]:
+        monkeypatch.delitem(sys.modules, k)          # the real viewer/ beside this test, if loaded
+    monkeypatch.setattr(sys, "path", [p for p in sys.path if Path(p or ".").resolve() != ROOT])
     h = homework(tmp_path)
     app = server.App(h.student)
     srv, base = serving(app)
@@ -694,6 +828,15 @@ def test_results_go_to_the_viewer_when_there_is_one(tmp_path):
         assert code == 301 and headers["Location"] == "/results/?x=1"
         assert fetch(base + "/results/run?id=r1&id=r2")[2] == b"GET /run {'id': ['r1', 'r2']} student"
         assert fetch(base + "/results/")[2].startswith(b"GET / {}")
+        # A viewer that also gives headers (respond) gets a real redirect.
+        (h.student / "viewer/app.py").write_text(
+            "def handle(method, path, query, repo):\n    return 200, 'text/plain', b'page'\n"
+            "def respond(method, path, query, repo):\n"
+            "    return 303, 'text/plain', b'', {'Location': '/results/check?id=1'}\n")
+        for k in [k for k in sys.modules if k == "viewer" or k.startswith("viewer.")]:
+            del sys.modules[k]
+        code, headers, _ = fetch(base + "/results/open?path=runs/part0")
+        assert code == 303 and headers["Location"] == "/results/check?id=1"
     finally:
         srv.shutdown()
         srv.server_close()
@@ -703,12 +846,19 @@ def test_results_go_to_the_viewer_when_there_is_one(tmp_path):
 
 
 def test_a_step_with_results_links_to_the_newest(tmp_path):
-    h = homework(tmp_path)
+    steps_ = STEPS.replace('slots = ["Name"]', 'slots = ["Name"]\nfiles = [".env"]').replace(
+        'slots = ["1a.*"]', 'slots = ["1a.*"]\nfiles = ["data/my-claims.jsonl"]')
+    h = homework(tmp_path, {"steps.toml": steps_})
     app = server.App(h.student)
     finish_part0(h.student)
     (h.student / "runs/part0/no-tools-2.json").write_text("{}")
     assert app.hub.sessions["0b"].snapshot()["results"] in ("runs/part0/no-tools-1.json", "runs/part0/no-tools-2.json")
-    assert app.hub.sessions["0a"].snapshot()["results"] is None
+    (h.student / ".env").write_text("not read\n")
+    (h.student / "data").mkdir()
+    (h.student / "data/my-claims.jsonl").write_text("{}\n")
+    assert app.hub.sessions["0a"].snapshot()["results"] is None       # never .env
+    assert app.hub.sessions["1a"].snapshot()["results"] is None       # only files under runs/
+    assert all(c["files"] == [] for c in app.hub.sessions["0a"].record()["checkpoints"])
 
 
 # -- the fallback CLAUDE.md ------------------------------------------------------------------

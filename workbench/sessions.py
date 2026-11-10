@@ -331,7 +331,7 @@ class StepSession:
                 keys = step_keys(Step(id=s.id, part=s.part, title="", slots=c.slots), slots) if c.slots else []
                 covered.update(keys)
                 ok = all(present(repo, pat) for pat in c.files) and all(filled(slots.get(k)) for k in keys)
-                item["files"] = found[-2:]
+                item["files"] = [f for f in found if not self.hub.secret(f)][-2:]   # never a link to .env
                 item["slots"] = [{"question": k.split(" / ")[-1], "answer": slots.get(k, ""),
                                   "filled": filled(slots.get(k))} for k in keys]
                 wp = repo / a.writeup
@@ -430,9 +430,11 @@ class StepSession:
         return sorted(out, key=lambda x: x["t"])
 
     def results(self) -> str | None:
-        """The newest file of the first `files` entry that has one, for the results viewer."""
+        """The newest file under runs/ of the first `files` entry that has one, for the results
+        viewer, which opens nothing outside runs/ (so never .env, never the student's claims)."""
         for pattern in self.step.files:
-            found = present(self.hub.repo, pattern)
+            found = [f for f in present(self.hub.repo, pattern)
+                     if f.relative_to(self.hub.repo).parts[:1] == ("runs",)]
             if found:
                 return str(max(found, key=lambda f: f.stat().st_mtime).relative_to(self.hub.repo))
         return None
@@ -486,6 +488,10 @@ class Hub:
             self.sessions[s.id] = old.get(s.id) or StepSession(self, s)
             self.sessions[s.id].step, self.sessions[s.id].seen = s, None
         self.write_guard()
+
+    def secret(self, rel: str) -> bool:
+        """A file the page never shows or links to, such as .env."""
+        return any(Path(rel).name == x or Path(rel).match(x) for x in self.assignment.never_read)
 
     def write_guard(self) -> None:
         (self.dir / "guard.json").write_text(json.dumps({
@@ -634,10 +640,11 @@ class Hub:
                 lines.append(f'- "### {k.split(" / ", 1)[1]}" under "## Part {s.part}"')
         slot_lines = "\n".join(lines) or "- (none: the step is complete from its files, or once the student has done it)"
         if quote and keys:
-            slot_lines += ("\nWhen the student asks you to paste a program's output into one of these: a table is "
-                           "filled by replacing its blank template row with real rows, one per item; pasted output "
-                           "goes inside the empty ``` block. Never change a question, a heading, a table's header "
-                           "row or the student's own words, and never write on a \"> \" answer line.")
+            slot_lines += ("\nWrite in these only where " + a.writeup + " itself says to ask Claude, and only when "
+                           "the student asks: put the program's output where it says (rows of a table, a column it "
+                           "names, or inside an empty ``` block). Write nowhere else in " + a.writeup + ". Never "
+                           "change a question, a heading, a table's header row or the student's own words, and never "
+                           "write on a \"> \" answer line.")
         files = ", ".join(s.files)
         others = "\n".join(f"- {a.label(o)}: Part {o.part}, {o.title}" for o in a.steps if o.id != s.id)
         counts = []
@@ -666,6 +673,9 @@ each with its own Claude Code session, and this step's instructions, which say:
 
 {a.sample_claim}
 """ if s.claim and a.sample_claim else ""}
+Earlier steps' answers are in {a.writeup}. Read it when you need them, unless this step's
+instructions below say not to open it yet.
+
 What you do in this step:
 
 {s.brief.strip()}
@@ -688,7 +698,6 @@ How the page works, so you don't duplicate it:
 - It marks this step complete by itself, from {a.writeup}{" and the files" if files else ""}. Don't announce it.
 - It commits "Part {s.part} done" when every step of Part {s.part} is complete. Never run git commit,
   git push or anything that rewrites history; those calls are refused.
-- Earlier steps' answers are in {a.writeup}. Read it at the start.
 - If the student asks about another step, say in one line that it has its own session: they
   copy its command from that step on the page. Name the step. The other steps are:
 {others}

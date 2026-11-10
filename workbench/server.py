@@ -229,9 +229,10 @@ class App:
         return [str(f.relative_to(self.repo)) for s in self.a.steps if s.part in parts
                 for pat in s.files for f in stepmod.present(self.repo, pat)]
 
-    def save(self, message: str, parts, empty: bool = False) -> bool:
-        """Commit the student's work as `message`: the write-up and every tracked file they changed,
-        the files of `parts`' steps, TRANSCRIPT.md and record/. True if committed (or nothing to)."""
+    def save(self, message: str, empty: bool = False) -> bool:
+        """Commit the student's work as `message`: everything in the repository that isn't
+        git-ignored, with TRANSCRIPT.md and record/ written first, but never uv.lock and never a
+        file holding something like a key. True if committed (or nothing to commit)."""
         with self.commit_lock:
             ids = {s.id: self.hub.session_id(s.id) for s in self.a.steps}
             try:
@@ -244,28 +245,23 @@ class App:
             except Exception as err:  # noqa: BLE001
                 traceback.print_exc()
                 say(f"Couldn't write record/: {err}")
-            self.git("add", "-u")
+            self.git("add", "-A", timeout=300)          # everything that isn't git-ignored
             self.git("reset", "-q", "--", *GENERATED)   # uv.lock is uv's, not the student's work
-            paths = [self.a.writeup, transcript.NAME, "record"] + self.part_files(parts)
-            paths = [p for p in dict.fromkeys(paths) if (self.repo / p).exists()]
-            if paths:  # git refuses the whole add if one path is git-ignored
-                ignored = set(self.git("check-ignore", "--", *paths).stdout.split("\n"))
-                paths = [p for p in paths if p not in ignored]
-            if paths:
-                self.git("add", "--", *paths)
             # Never commit a key: the student's fork is public.
             keyed = [f for f in self.git("diff", "--cached", "--name-only", "-G", "sk-ant-").stdout.split("\n") if f]
             keyed += [x for x in self.a.never_read
                       if self.git("diff", "--cached", "--quiet", "--", x).returncode == 1]
             if keyed:
                 self.git("reset", "-q", "--", *keyed)
-                self.notice("key", f"The page didn't commit {', '.join(dict.fromkeys(keyed))}, because it holds "
-                            "what looks like an API key, and your repository on GitHub is public.")
+                names = ", ".join(dict.fromkeys(keyed))
+                self.notice("key", f"The page didn't commit {names}, because it holds what looks like an API "
+                            "key and your repository on GitHub is public. Remove the key from it; the key "
+                            "belongs only in .env.")
             else:
                 self.notice("key", None)
             if not empty and self.git("diff", "--cached", "--quiet").returncode == 0:
                 return True
-            r = self.git("commit", "-q", "--allow-empty", "-m", message)
+            r = self.git("commit", "-q", "--allow-empty", "-m", message, timeout=300)
             if r.returncode:
                 self.retry_at = time.time() + 60    # don't write the transcript again every few seconds
                 self.notice("save", f"The page couldn't commit “{message}”: "
@@ -286,7 +282,7 @@ class App:
             for n in sorted(self.a.parts):
                 mine = [s for s in status if s["part"] == n]
                 if mine and n not in done and all(s["complete"] for s in mine):
-                    self.save(f"Part {n} done", [n], empty=True)
+                    self.save(f"Part {n} done", empty=True)
 
     def changed_parts(self) -> list[int]:
         """Committed parts whose answers or files have changed since the last commit."""
@@ -318,7 +314,7 @@ class App:
             newest = max((f.stat().st_mtime for f in files if f.exists()), default=0)
             if time.time() - newest >= SETTLE:
                 names = " and ".join(str(n) for n in changed)
-                self.save(f"Part{'s' if len(changed) > 1 else ''} {names} updated", changed)
+                self.save(f"Part{'s' if len(changed) > 1 else ''} {names} updated")
 
     def push_soon(self) -> None:
         if self.a.push and not self.updates.copy_of_class:
@@ -334,7 +330,7 @@ class App:
             env = {}
             if not os.environ.get("GIT_SSH_COMMAND") and self.git("config", "core.sshCommand").returncode:
                 env["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes"   # never wait for a passphrase
-            r = self.git("push", "-q", "origin", "HEAD", timeout=90, env=env)
+            r = self.git("push", "-q", "origin", "HEAD", timeout=600, env=env)
             if r.returncode == 0:
                 self.pushed, self.push_due = True, 0.0
                 self.notice("push", None)
@@ -364,7 +360,7 @@ class App:
     def update(self) -> dict:
         """The Update button: save the student's work, then merge the class repository's commits."""
         with self.commit_lock:
-            result = self.updates.apply(lambda: self.save("Save work before update", list(self.a.parts)))
+            result = self.updates.apply(lambda: self.save("Save work before update"))
         if not result["ok"]:
             say(f"The update didn't go through: {result.get('why', '')}")
             self.notice("update-failed", "The update could not be applied automatically, and nothing in your "
@@ -381,16 +377,19 @@ class App:
         return {"ok": True}
 
     # -- the results viewer, under /results -----------------------------------------------------
-    def results(self, method: str, path: str, query: dict) -> tuple[int, str, bytes]:
+    def results(self, method: str, path: str, query: dict) -> tuple[int, str, bytes, dict]:
         if str(self.repo) not in sys.path:
             sys.path.insert(0, str(self.repo))
         try:
             from viewer import app as viewer   # noqa: PLC0415  imported when first asked for
         except ModuleNotFoundError as err:
             if err.name in ("viewer", "viewer.app"):
-                return 200, "text/html; charset=utf-8", NO_VIEWER.encode()
+                return 200, "text/html; charset=utf-8", NO_VIEWER.encode(), {}
             raise
-        return viewer.handle(method, path, query, self.repo)
+        respond = getattr(viewer, "respond", None)    # its answer with headers, as a real redirect
+        if respond:
+            return respond(method, path, query, self.repo)
+        return (*viewer.handle(method, path, query, self.repo), {})
 
 
 def web(url: str) -> str:
@@ -432,11 +431,12 @@ def handler(app: App):
             if not u.path.startswith("/results/"):
                 return False
             try:
-                code, ctype, body = app.results(method, u.path[len("/results"):], parse_qs(u.query))
+                code, ctype, body, headers = app.results(method, u.path[len("/results"):], parse_qs(u.query))
             except Exception as err:  # noqa: BLE001
                 traceback.print_exc()
-                code, ctype, body = 500, "text/plain; charset=utf-8", f"The results viewer ran into a problem: {err}".encode()
-            self.send(code, ctype, body)
+                code, ctype, body, headers = (500, "text/plain; charset=utf-8",
+                                              f"The results viewer ran into a problem: {err}".encode(), {})
+            self.send(code, ctype, body, headers)
             return True
 
         def do_GET(self):

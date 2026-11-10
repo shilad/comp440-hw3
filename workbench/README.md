@@ -25,8 +25,11 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
 - **Ticks steps.** A step is complete when every slot it names in `WRITEUP.md` is filled and every
   file it names exists, read fresh every time. Steps open in order.
 - **Commits each part.** When every step of Part N is complete, the page writes `TRANSCRIPT.md`
-  and `record/`, then commits `Part N done`: the write-up, every tracked file the student changed,
-  the part's step files, the transcript and the record.
+  and `record/`, then commits `Part N done`: everything in the repository that isn't git-ignored
+  (`git add -A`), so `instructions.md`, the student's claims, every result under `runs/` and any
+  change to the starter code go in. `.gitignore` keeps out `.env`, `.cache/` (Wikipedia's
+  answers), `.venv/`, `.workbench/`, `__pycache__/`, `.pytest_cache/`, `.DS_Store` and
+  `.claude/settings.local.json`.
 - **Commits later changes.** If an answer of a committed part changes, or one of its step files
   is added or changed, the page commits `Part N updated` once nothing has changed for 30 seconds,
   so a student who is still typing gets one commit, not many. An answer in a part that isn't
@@ -38,7 +41,8 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
   minutes. It also pushes, at start, commits from before a restart that never reached `origin`.
 - **Never commits `uv.lock`.** A student's own `uv` may rewrite it; it is uv's file, not their work.
 - **Never commits a key.** A staged file that holds something like `sk-ant-...`, or a file named
-  in `never_read`, is left out of the commit, and the page says so.
+  in `never_read`, is left out of the commit (the rest is committed), and the page names the file
+  and says to remove the key from it. Once the key is gone, the next commit takes the file.
 - **Offers updates.** See below.
 
 ## The conversations: TRANSCRIPT.md
@@ -95,8 +99,11 @@ Pages under `/results` belong to the results viewer in `viewer/`, if it is there
 `viewer.app.handle(method, path, query, repo)` returns `(status, content type, body)`, where
 `path` is what follows `/results` (`/results/run` arrives as `/run`; `/results` itself redirects
 to `/results/`, which arrives as `/`), `query` is a dict of lists and `repo` a `pathlib.Path`.
-Without `viewer/`, `/results` says in one sentence that the viewer isn't installed. A step whose
-`files` exist links to `/results/open?path=<the newest file of its first files entry that has one>`.
+When the viewer also has `respond(...)`, which adds a headers dict, the page uses it, so
+`/results/open` is a real redirect. Without `viewer/`, `/results` says in one sentence that the
+viewer isn't installed. A step whose `files` exist under `runs/` links to
+`/results/open?path=<the newest such file of its first files entry that has one>`; there is no
+link for files elsewhere (`.env`, `data/my-claims.jsonl`).
 
 ## A step's Claude session
 
@@ -126,7 +133,9 @@ claude -n "0b Ask the model on its own" --session-id <id> --model claude-opus-5-
 
 `steps.toml` at the top of the repository. Top-level keys the page reads: `title`, `writeup`,
 `tutor`, `model`, `effort`, `commit_parts` (default true), `push` (default false), `upstream`,
-`allow`, `never_read`, `overview`, `sample_claim`. Then `[[part]]` tables (`number`, `title`,
+`allow`, `never_read`, `overview`, `sample_claim` (any text, quotes included). A step's `minutes`
+shows in its header as "about 25 minutes". A `files` entry is only ever checked for existence, so
+`files = [".env"]` is safe; the page never opens, shows or links to a `never_read` file. Then `[[part]]` tables (`number`, `title`,
 `due`) and `[[step]]` tables. A step's id is its name on the page (`"0b"`); its section in
 `WRITEUP.md` starts with that name (`## 0b. Ask the model on its own`), and `slots = ["0b.*"]`
 takes every question, table and pasted block in that section. A key the page doesn't know is

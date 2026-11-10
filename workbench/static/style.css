@@ -197,3 +197,4 @@ details.stuck[open] summary::before { content: "− "; }
 .notice.update, .notice.updated { border-left-color: var(--link); }
 .notice p, .notice ul, .notice pre { margin: 0; }
 .notice ul { padding-left: 20px; color: var(--muted); }
+.step-title .mins { margin-left: 10px; font-size: 13.5px; color: var(--faint); white-space: nowrap; }
