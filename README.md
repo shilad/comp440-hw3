@@ -10,8 +10,8 @@ measure what it adds over simpler methods. You will:
   what it read.
 - Compare the agent with two simpler methods, and measure where it helps, where it doesn't, and what
   it costs.
-- Apply it to claims you write about a topic you know well, and find out where Wikipedia, which is
-  written by its volunteer editors, is thin, out of date or wrong.
+- Run it on the dataset's claims about a few topics you know well, and find out where Wikipedia,
+  which is written by its volunteer editors, is thin, out of date or wrong.
 
 ## The task
 
@@ -33,6 +33,10 @@ fact has to be found before you know which page to read next. Whether one search
 is one of the things you'll measure. The agent works out what a claim is made of, looks up each piece,
 and puts the pieces together, and how it does that is what you'll study.
 
+You study it on HoVer's claims about a few topics you know better than most people. In step 0b you pick
+the topics and select 112 claims about them, and every run after that uses them. I ask for topics you
+know because then you can judge the agent's answers, and the dataset's labels, for yourself.
+
 ## What you need before you start
 
 You used all of these in earlier homeworks:
@@ -44,7 +48,7 @@ You used all of these in earlier homeworks:
 - A text editor. You type every answer in it.
 - Your API key. I sent you your own API key by Slack direct message. The agent calls the Claude API
   directly, not through your Claude Code account, so it needs this key. Doing the whole homework once
-  costs less than a dollar on your key. That is charged to my account for the course, not to you.
+  costs about 65 cents on your key. That is charged to my account for the course, not to you.
 
 ## Getting started
 
@@ -76,7 +80,7 @@ You used all of these in earlier homeworks:
 
 ## How this homework works
 
-- The homework page lists every step, 0a to 3e, and ticks each one when it is done. For each step it
+- The homework page lists every step, 0a to 3c, and ticks each one when it is done. For each step it
   shows what the step is for and its tasks. Under "If you're stuck" it shows the step's
   full instructions, from the pages in `instructions/`. Open it for every step, stuck or not: it has
   the exact commands and what I am looking for. Step 0a, the set-up step, shows them in full.
@@ -98,6 +102,10 @@ You used all of these in earlier homeworks:
   opens in a new tab. It shows each run's accuracy and cost, each claim's verdicts from all three
   versions, the agent's trace for a claim one entry at a time, and two runs side by side. Long results
   are easier to read there.
+- The claim finder is where you select your claims, in step 0b. Open **Find claims** at the top of the
+  homework page. You search the dataset's claims one topic at a time, select the ones you want, and save
+  112 of them: 12 in `data/dev.jsonl` and 100 in `data/eval.jsonl`. Every run in the homework uses them,
+  so each student's homework runs on claims about their own topics.
 - Your work is saved when you finish each part. When every step of a part is ticked, the homework page
   saves your conversations with Claude in `TRANSCRIPT.md`, commits your work as `Part N done`, and
   pushes it to your fork. The commit holds everything in the repository that git does not ignore: your
@@ -105,57 +113,65 @@ You used all of these in earlier homeworks:
   page's own record of each step. If you change
   an answer after that, it commits the change too. I read `TRANSCRIPT.md` when I grade, so start every Claude session in the homework's folder. Don't edit
   `TRANSCRIPT.md` yourself: the page writes it again before each commit.
-- The one long run, in step 1e, takes about 20 minutes. You start it yourself, in a terminal tab of
-  its own, because a run started by Claude stops if you close that Claude session.
+- Two runs are long: the full run in step 1e takes about 10 minutes, and the run after your change in
+  step 3b about 8 minutes. You start each of them yourself, in a terminal tab of its own, because a run
+  started by Claude stops if you close that Claude session.
 
 ## The parts
 
 | Part | What you do | Weight |
 |---|---|---|
-| [Part 0: Set up](instructions/part0.md) | Get your copy running, then check one claim three ways: the model alone, one search, and the agent | 10% |
+| [Part 0: Set up and find your claims](instructions/part0.md) | Get your copy running, select the dataset's claims about a few topics you know, then check one claim three ways: the model alone, one search, and the agent | 10% |
 | [Part 1: How the agent works](instructions/part1.md) | Write the agent's loop, check two claims yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 25% |
 | [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy and cost by how many articles a claim needs, and check the agent's evidence yourself | 35% |
-| [Part 3: Your own claims](instructions/part3.md) | Write claims about a topic you know, sort the agent's failures, make one change, and write up what you found | 30% |
+| [Part 3: Why the agent fails, and one change](instructions/part3.md) | Sort the agent's failures on your claims, make one change, and write up what you found | 30% |
 
 Everything is due 8:00am Tuesday, November 24.
 
-I expect this homework to take about 6 hours and 30 minutes in all, in four sittings: about 50 minutes
-for Part 0, about 3 hours and 5 minutes for Part 1, about 50 minutes for Part 2, and about 1 hour and 50 minutes for
-Part 3. On top of that, the full run in Part 1 takes about 20 minutes, while you do other things.
+I expect this homework to take about 6 hours and 40 minutes in all, in four sittings: about 1 hour and
+35 minutes for Part 0, about 3 hours and 5 minutes for Part 1, about 50 minutes for Part 2, and about 1
+hour and 10 minutes for Part 3. On top of that, the full run in Part 1 takes about 10 minutes and the
+run after your change in Part 3 about 8 minutes, while you do other things.
 
 ## Words this homework uses
 
-- **claim**: one sentence that is either true or false.
-- **verdict**: the answer to a claim, always one of *supported*, *refuted* or *doesn't say*.
-- **evidence**: the sentences quoted from Wikipedia that a verdict rests on.
-- **the agent**: the program in `agent.py` and the loop that drives it: `my_loop.py` once yours passes,
-  `reference_loop.py` until then. In the loop, the model picks the next lookup, reads what comes back, and
-  decides when to answer.
-- **the reference loop**: the loop in `reference_loop.py`, which your copy uses until your own loop
+- A **claim** is one sentence that is either true or false.
+- A **verdict** is the answer to a claim, always one of *supported*, *refuted* or *doesn't say*.
+- The **evidence** is the sentences quoted from Wikipedia that a verdict rests on.
+- **The agent** is the program in `agent.py` and the loop that drives it: `my_loop.py` once yours
+  passes, `reference_loop.py` until then. In the loop, the model picks the next lookup, reads what comes
+  back, and decides when to answer.
+- **The reference loop** is the loop in `reference_loop.py`, which your copy uses until your own loop
   passes the check in step 1a.
-- **lookup**: one call to `search`, `read` or `wikidata`.
-- **tool**: one of the four things the agent can call: `search`, `read`, `wikidata` and `answer`.
-- **trace**: the list of the agent's lookups for one claim, in order, with what each returned.
-- **entry**: one numbered line of a trace, a lookup or an answer. The numbers count every entry; a
+- A **lookup** is one call to `search`, `read` or `wikidata`.
+- A **tool** is one of the four things the agent can call: `search`, `read`, `wikidata` and `answer`.
+- A **trace** is the list of the agent's lookups for one claim, in order, with what each returned.
+- An **entry** is one numbered line of a trace, a lookup or an answer. The numbers count every entry; a
   "Lookups" count counts only `search`, `read` and `wikidata`.
-- **baseline**: a simpler method the agent is compared with. There are two: **the no-tools baseline**
-  (the model answers from memory) and **the one-search baseline** (one search, one page, then an
-  answer).
-- **the three versions**: the no-tools baseline, the one-search baseline and the agent.
-- **the model**: Claude Haiku, the small Claude model that the agent and both baselines call.
-- **Claude**: your Claude Code session, your tutor and lab assistant. It is not the model.
-- **the number of articles**: how many Wikipedia articles a claim needs (2, 3 or 4), from the dataset.
-- **HoVer**: the public dataset the claims come from. It labels each claim *supported* or
-  *not supported*.
-- **the dataset's label**: HoVer's *supported* or *not supported*. A verdict of *refuted* or
-  *doesn't say* counts as *not supported*.
-- **the development claims**: the 12 claims in `data/dev.jsonl`, a small set for trying things out.
-- **the evaluation claims**: the 200 claims in `data/eval.jsonl`.
-- **a run**: one use of `evaluate.py`, saved in a folder under `runs/`.
-- **the limit of 12 lookups**: the most lookups the loop allows for one claim.
-- **API**: the way one program asks another for something over the network. The agent's program uses
-  the Claude API to call the model, and Wikipedia's API to search and read pages.
-- **token**: the unit the Claude API counts text in and charges by, about three quarters of a word.
+- A **baseline** is a simpler method the agent is compared with. There are two: **the no-tools
+  baseline** (the model answers from memory) and **the one-search baseline** (one search, one page, then
+  an answer).
+- **The three versions** are the no-tools baseline, the one-search baseline and the agent.
+- **The model** is Claude Haiku, the small Claude model that the agent and both baselines call.
+- **Claude** is your Claude Code session, your tutor and lab assistant. It is not the model.
+- **The number of articles** is how many Wikipedia articles a claim needs (2, 3 or 4), from the dataset.
+- **HoVer** is the public dataset the claims come from. It labels each claim *supported* or *not
+  supported*.
+- **The dataset's label** is HoVer's *supported* or *not supported*. A verdict of *refuted* or *doesn't
+  say* counts as *not supported*.
+- **The claim finder** is the screen where you search the dataset's claims for your topics in step 0b.
+  You open it with **Find claims** at the top of the homework page.
+- **Your claims** are the 112 claims you select and save with the claim finder in step 0b, all about
+  your topics.
+- **Your development claims** are 12 of your claims, in `data/dev.jsonl`, a small set for trying things
+  out in Part 1.
+- **Your evaluation claims** are the other 100 of your claims, in `data/eval.jsonl`, which the full run
+  in step 1e checks and Parts 2 and 3 study.
+- A **run** is one use of `evaluate.py`, saved in a folder under `runs/`.
+- **The limit of 12 lookups** is the most lookups the loop allows for one claim.
+- An **API** is the way one program asks another for something over the network. The agent's program
+  uses the Claude API to call the model, and Wikipedia's API to search and read pages.
+- A **token** is the unit the Claude API counts text in and charges by, about three quarters of a word.
 
 ## Submitting
 
@@ -170,6 +186,7 @@ In your repository I look for:
 - `WRITEUP.md`, with every answer filled in;
 - your `instructions.md`;
 - your loop, `my_loop.py`;
+- your claims, `data/dev.jsonl`, `data/eval.jsonl` and `data/my-topic.json`;
 - your runs, in `runs/`;
 - `TRANSCRIPT.md`, your conversations with Claude.
 
@@ -214,13 +231,22 @@ your own judgment. Ask questions in `#comp440-f26` on Slack. Follow the class's
 
 ## Resources
 
-- [The HoVer paper](https://arxiv.org/abs/2011.03088) (Jiang et al., 2020): where the claims come from,
-  and how each was built to need two to four Wikipedia articles. The claims in `data/dev.jsonl` and
-  `data/eval.jsonl` are a sample of [HoVer](https://hover-nlp.github.io/)'s, which its authors share
-  under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) licence; the sample
-  carries the same licence.
-- [Wikipedia's API documentation](https://www.mediawiki.org/wiki/API:Main_page): what the agent's tools
-  use to search and read pages.
+- [The HoVer paper](https://arxiv.org/abs/2011.03088) (Jiang et al., 2020) says where the claims come
+  from, and how each was built to need two to four Wikipedia articles. The claims in `data/dev.jsonl`,
+  `data/eval.jsonl` and the claim finder are [HoVer](https://hover-nlp.github.io/)'s, which its authors
+  share under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) licence; they carry
+  the same licence here.
+- The word vectors that the claim finder's search by meaning uses, in `finder/data/word_vectors.json.gz`
+  and `finder/data/claim_vectors.json.gz`, were made from
+  [potion-base-8M](https://huggingface.co/minishlab/potion-base-8M), a set of word vectors from the
+  model2vec project, which its authors share under the MIT licence. `finder/build_data.py` says how.
+- The one-line descriptions of the articles that the claim finder shows with each claim, in
+  `finder/data/claims.json.gz`, are Wikipedia's short descriptions, fetched on November 10, 2026. Like
+  the rest of Wikipedia, they are shared under the
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) licence, and they carry the same
+  licence here.
+- [Wikipedia's API documentation](https://www.mediawiki.org/wiki/API:Main_page) describes what the
+  agent's tools use to search and read pages.
 
 ## Extra credit
 
@@ -234,7 +260,7 @@ find where Wikipedia has changed". Do it any time after Part 2.
 **Give the agent a fifth tool.** Give the agent a fifth tool that reads one other well-known public
 site, for example a government statistics site or an encyclopedia other than Wikipedia. Tell me which
 site before you start. Do it only after Part 3 is done, because it changes the agent. Then run the agent
-on your own claims again. When do the two sources disagree, and how should the agent decide which to
+on your evaluation claims again. When do the two sources disagree, and how should the agent decide which to
 believe?
 
 Write what you found under a heading `## Extra credit` at the end of `WRITEUP.md`. Keep the homework

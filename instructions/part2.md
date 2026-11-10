@@ -8,15 +8,16 @@ should take about 50 minutes.
 
 ## 2a. Compare accuracy
 
-In this step you find out how often each of the three versions matched the dataset's label on the 200
+In this step you find out how often each of the three versions matched the dataset's label on your 100
 evaluation claims. You compare those numbers with your predictions from 1e.
 
-**Words in this step:** *the three versions*: the no-tools baseline (the model, Claude Haiku, answers
+**Words in this step:** *The three versions* are the no-tools baseline (the model, Claude Haiku, answers
 from memory), the one-search baseline (one search, one page, then an answer) and the agent (the program
-in `agent.py` and its loop, which picks its own lookups). *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
-each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say* counts as
-*not supported*. *the number of articles*: how many
-Wikipedia articles a claim needs (2, 3 or 4).
+in `agent.py` and its loop, which picks its own lookups). *The dataset's label* is the label that HoVer,
+the public dataset these claims come from, gives each claim: *supported* or *not supported*. A verdict
+of *refuted* or *doesn't say* counts as *not supported*. *The number of articles* is how many Wikipedia
+articles a claim needs (2, 3 or 4). *Your evaluation claims* are the 100 of your claims from step 0b
+that are in `data/eval.jsonl`, the ones the full run in 1e checked.
 
 **Actions:**
 
@@ -38,12 +39,12 @@ uv run python evaluate.py data/eval.jsonl --out runs/part2
 ```
 
 The first table gives, for each version, how many claims matched the dataset's label out of how many:
-by number of articles, for all 200, and by the dataset's label. The "Accuracy" table in the results
+by number of articles, for all 100, and by the dataset's label. The "Accuracy" table in the results
 viewer shows the same counts with percentages.
 
 **Write-up:** In `WRITEUP.md`, under 2a, fill in the block and answer:
 
-- The report of your full run, from `runs/part2/report.txt`. Ask Claude to paste it into the empty block below.
+- Ask Claude to paste the report of your full run, from `runs/part2/report.txt`, into the empty block below.
 - How do the results compare with your predictions? Where were you furthest off? Use the numbers from your run, by number of articles.
 - Does the gap between the agent and the one-search baseline grow with the number of articles? If it does not, what might explain that?
 - The no-tools baseline read nothing. How did it do, and what does that tell you about these claims?
@@ -56,9 +57,9 @@ report, and the three answers have text after the `>`.
 In this step you find out what the agent costs compared with the one-search baseline. You also decide
 when that extra cost is worth paying.
 
-**Words in this step:** *lookup*: one call to `search`, `read` or `wikidata`; the loop allows at most 12
-for one claim. *token*: the unit the API counts text in and charges by, about three quarters of a word.
-*trace*: the agent's lookups for one claim, in order, with what each returned.
+**Words in this step:** A *lookup* is one call to `search`, `read` or `wikidata`; the loop allows at
+most 12 for one claim. A *token* is the unit the API counts text in and charges by, about three quarters
+of a word. A *trace* is the agent's lookups for one claim, in order, with what each returned.
 
 **Actions:**
 
@@ -91,10 +92,10 @@ The loop already checks that every quoted sentence appears in something the agen
 real and still not support the verdict. For a verdict of *refuted*, the question is whether the quotes
 show that the claim is false.
 
-**Words in this step:** *verdict*: *supported*, *refuted* or *doesn't say*. *evidence*: the sentences
-the agent quoted from Wikipedia. *the dataset's label*: the label that HoVer, the public dataset
-these claims come from, gives each claim, *supported* or *not supported*.
-*entry*: one numbered line of a trace, a lookup or an answer.
+**Words in this step:** A *verdict* is one of *supported*, *refuted* or *doesn't say*. The *evidence* is
+the sentences the agent quoted from Wikipedia. *The dataset's label* is the label that HoVer, the public
+dataset these claims come from, gives each claim, *supported* or *not supported*. An *entry* is one
+numbered line of a trace, a lookup or an answer.
 
 **Actions:**
 
@@ -123,7 +124,7 @@ uv run python lookup.py --no-log read "<page title>" "<section>"
 
 **Write-up:** In `WRITEUP.md`, under 2c, fill in the table and answer:
 
-- The first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
+- Fill in one row for each of the first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 - Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
@@ -156,10 +157,10 @@ labels made from the Wikipedia of 2017.
 HoVer labeled its claims from Wikipedia as it was in 2017; the agent reads it as it is today. So some
 of the agent's "wrong" answers may be right about today's Wikipedia.
 
-**Words in this step:** *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
-each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say* counts as
-*not supported*. *evidence*: the sentences the agent quoted from Wikipedia.
-*the closest case*: the claim that came nearest, and what kept it from being clear.
+**Words in this step:** *The dataset's label* is the label that HoVer, the public dataset these claims
+come from, gives each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say*
+counts as *not supported*. The *evidence* is the sentences the agent quoted from Wikipedia. *The closest
+case* is the claim that came nearest, and what kept it from being clear.
 
 **Actions:**
 

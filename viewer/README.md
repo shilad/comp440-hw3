@@ -26,8 +26,7 @@ files, never changes them, and makes no network calls. Reload a page to see new 
 | **One check** | The same, for one file saved by `check.py`. |
 | **Compare two runs** | Two runs side by side (for example the agent before and after a change): accuracy and cost in each, the difference, and every claim whose verdict changed, with both traces. |
 
-A ✓ means a verdict matched the dataset's label (for your own claims, your verdict). It says
-nothing more than that.
+A ✓ means a verdict matched the dataset's label. It says nothing more than that.
 
 ## Files
 

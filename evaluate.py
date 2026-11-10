@@ -2,11 +2,11 @@
 
     uv run python evaluate.py data/eval.jsonl --out runs/part2
 
-Each line of the claims file is a JSON object with: id, claim, source ("hover"
-for the dataset's claims, "mine" for claims you wrote), label and, for HoVer,
-hops (how many Wikipedia articles the claim needs). For HoVer the label is the
-dataset's own; for your own claims it is your verdict: "supported" if the
-claim is true, "refuted" if it is false.
+Each line of the claims file is a JSON object with: id, claim, source, label and,
+for HoVer, hops (how many Wikipedia articles the claim needs). In this homework
+every claim is HoVer's ("source": "hover"): data/dev.jsonl and data/eval.jsonl
+hold the claims you saved in step 0b, or the sample claims they ship with. The
+label is the dataset's own, SUPPORTED or NOT_SUPPORTED.
 
 Every result is saved as it finishes, so if a run stops partway you can start
 it again and it picks up where it left off. A claim that fails with an error,
@@ -154,7 +154,7 @@ def report(items, results_by_method, out_dir=None):
     say = lines.append
     groups = sorted({group_of(item) for item in items})
     methods = list(results_by_method)
-    say("\nShare of claims where the verdict matched the label (the dataset's, or yours):\n")
+    say("\nShare of claims where the verdict matched the label:\n")
     say(f"{'':22}" + "".join(f"{m:>12}" for m in methods))
     for group in groups + ["All"]:
         row = f"{group:22}"

@@ -56,6 +56,9 @@ CODE = {".py", ".js", ".css", ".html", ".md", ".json"}   # a change to one of th
 NO_VIEWER = ("<!doctype html><meta charset='utf-8'><title>Results</title>"
              "<p style='font: 16px/1.5 system-ui, sans-serif; margin: 40px'>The results viewer is not "
              "installed in this copy of the homework. <a href='/'>Back to the homework page</a></p>")
+NO_FINDER = ("<!doctype html><meta charset='utf-8'><title>Find claims</title>"
+             "<p style='font: 16px/1.5 system-ui, sans-serif; margin: 40px'>The claim finder is not "
+             "installed in this copy of the homework. <a href='/'>Back to the homework page</a></p>")
 
 
 def say(text: str) -> None:
@@ -128,8 +131,8 @@ class App:
         return tuple(f.stat().st_mtime_ns if f.exists() else 0 for f in dict.fromkeys(files))
 
     def code_stamp(self) -> tuple:
-        """The page's own code and the viewer's: when either changes, the page must restart."""
-        files = [f for d in (self.repo / "workbench", self.repo / "viewer") if d.is_dir()
+        """The page's own code, the viewer's and the claim finder's: when one changes, the page must restart."""
+        files = [f for d in (self.repo / "workbench", self.repo / "viewer", self.repo / "finder") if d.is_dir()
                  for f in sorted(d.rglob("*")) if f.suffix in CODE and "__pycache__" not in f.parts]
         return tuple((str(f), f.stat().st_mtime_ns) for f in files)
 
@@ -476,6 +479,18 @@ class App:
             return respond(method, path, query, self.repo)
         return (*viewer.handle(method, path, query, self.repo), {})
 
+    # -- the claim finder, under /claims --------------------------------------------------------
+    def claims(self, method: str, path: str, query: dict, body: bytes) -> tuple[int, str, bytes]:
+        if str(self.repo) not in sys.path:
+            sys.path.insert(0, str(self.repo))
+        try:
+            from finder import web as finder   # noqa: PLC0415  imported when first asked for
+        except ModuleNotFoundError as err:
+            if err.name in ("finder", "finder.web"):
+                return 200, "text/html; charset=utf-8", NO_FINDER.encode()
+            raise
+        return finder.handle(method, path, query, body, self.repo)
+
 
 def web(url: str) -> str:
     """The class repository's address as a student would type it in a browser."""
@@ -524,8 +539,25 @@ def handler(app: App):
             self.send(code, ctype, body, headers)
             return True
 
+        def claims(self, method: str) -> bool:
+            u = urlparse(self.path)
+            if u.path == "/claims":     # so the screen's relative links stay under /claims/
+                self.send(301, "text/plain", b"", {"Location": "/claims/"})
+                return True
+            if not u.path.startswith("/claims/"):
+                return False
+            body = self.rfile.read(int(self.headers.get("Content-Length") or 0)) if method == "POST" else b""
+            try:
+                code, ctype, data = app.claims(method, u.path[len("/claims"):], parse_qs(u.query), body)
+            except Exception as err:  # noqa: BLE001
+                traceback.print_exc()
+                code, ctype, data = (500, "text/plain; charset=utf-8",
+                                     f"The claim finder ran into a problem: {err}".encode())
+            self.send(code, ctype, data)
+            return True
+
         def do_GET(self):
-            if self.results("GET"):
+            if self.results("GET") or self.claims("GET"):
                 return
             path = urlparse(self.path).path
             if path == "/api/ping":
@@ -552,7 +584,7 @@ def handler(app: App):
             origin = self.headers.get("Origin")
             if origin and urlparse(origin).hostname not in ("localhost", "127.0.0.1"):
                 return self.send_json({"error": "Only the homework page itself can do that."}, 403)
-            if self.results("POST"):
+            if self.results("POST") or self.claims("POST"):
                 return
             parts = urlparse(self.path).path.strip("/").split("/")
             body = self.read_json()

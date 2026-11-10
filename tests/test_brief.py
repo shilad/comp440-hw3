@@ -16,11 +16,12 @@ WRITEUP = ROOT / "WRITEUP.md"
 
 # The parts and steps, in order: the "## " headings of each page and of WRITEUP.md.
 PARTS = {
-    0: ("Set up", "instructions/part0.md", [
+    0: ("Set up and find your claims", "instructions/part0.md", [
         "0a. Get your copy running",
-        "0b. Ask the model with no tools",
-        "0c. Give it one search",
-        "0d. Run the agent and read its trace",
+        "0b. Pick your topics and find your claims",
+        "0c. Ask the model with no tools",
+        "0d. Give it one search",
+        "0e. Run the agent and read its trace",
     ]),
     1: ("How the agent works", "instructions/part1.md", [
         "1a. Write the loop",
@@ -34,12 +35,10 @@ PARTS = {
         "2b. Compare cost",
         "2c. Check the evidence yourself",
     ]),
-    3: ("Your own claims", "instructions/part3.md", [
-        "3a. Pick a topic and write your claims",
-        "3b. Run the agent on your claims",
-        "3c. Sort the failures",
-        "3d. Make one change",
-        "3e. Write it up",
+    3: ("Why the agent fails, and one change", "instructions/part3.md", [
+        "3a. Sort the failures",
+        "3b. Make one change",
+        "3c. Write it up",
     ]),
 }
 ALL_STEPS = [step for _, _, steps in PARTS.values() for step in steps]
@@ -65,7 +64,7 @@ OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**"
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
-SLOTS = 44
+SLOTS = 45
 
 # The files whose words students read, which must hold no placeholder when the homework ships.
 OWNED = ["README.md", "WRITEUP.md", ".env.example"] + [page for _, page, _ in PARTS.values()]

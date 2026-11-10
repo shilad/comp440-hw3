@@ -3,7 +3,7 @@
 # One [[step]] table per step, in the order students do them. A step's own text is not copied
 # here: each step names a page of the brief (`page`) and a "## " heading in it (`section`), and
 # the homework page shows that section. The section's heading is the same in the instruction
-# page and in WRITEUP.md, as "0b. Ask the model with no tools".
+# page and in WRITEUP.md, as "0c. Ask the model with no tools".
 #
 # What this file holds is what the pages cannot say:
 #   - summary: one sentence, shown while the step is closed.
@@ -13,8 +13,8 @@
 #     lists under "Tasks". A checkpoint with `files` or `slots` ticks by
 #     itself when those files exist or those answers are typed. One without either is ticked by
 #     the step's Claude session, and also shows as ticked once any later checkpoint is.
-#   - slots: the answers in WRITEUP.md that complete the step. "0b.*" means every answer, table
-#     and pasted block under the heading that starts "0b.". "Name" is the line at the top.
+#   - slots: the answers in WRITEUP.md that complete the step. "0c.*" means every answer, table
+#     and pasted block under the heading that starts "0c.". "Name" is the line at the top.
 #   - files: files that must exist for the step to be complete (* matches as in a glob).
 #   - brief: what the step's Claude session is told about this step, after the tutor rules.
 #   - allow: the commands the step's session may run without asking the student. The global
@@ -26,7 +26,7 @@
 # open in order. When every step of a part is complete, the page commits "Part N done".
 
 title = "COMP 440 HW3: Checking Claims Against Wikipedia"
-# The claim Part 0 checks three ways (0b, 0c, 0d), word for word. A literal string, because the
+# The claim Part 0 checks three ways (0c, 0d, 0e), word for word. A literal string, because the
 # claim has double quotes in it; in a shell command it goes inside single quotes.
 sample_claim = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 overview = "README.md"
@@ -59,8 +59,9 @@ tutor = '''
 The student is taking COMP 440, Collective Intelligence, at Macalester College. They are a
 third-year computer science or data science major. In HW3 they study a small fact-checking agent:
 a loop in which Claude Haiku looks things up on Wikipedia and decides whether a claim is true.
-They compare it with two simpler methods, check its evidence, test it on claims of their own, and
-change it.
+They pick a few topics they know well and select the dataset's claims about them. Every run in
+the homework uses those claims: they compare the agent with two simpler methods on them, check its
+evidence, sort its failures and change it.
 
 You are their tutor and lab assistant. You run programs when they ask, show what the programs
 printed, and explain how things work. They are graded on their own explanations, predictions,
@@ -84,7 +85,7 @@ and that means choosing each next move themselves.
   procedure, its actions or its commands. Name a next action only after they have tried
   something and are stuck, and then name only that one action. Never list the step's moves.
 - Before you say whether a step is finished, or what is still missing, look: read WRITEUP.md and
-  check the step's files (in 3c, not before you have given your own labels). If you have not
+  check the step's files (in 3a, not before you have given your own labels). If you have not
   looked, say that you have not looked.
 - Step 0a is the exception. It is set-up, and you may take the student through its actions in
   order.
@@ -101,7 +102,7 @@ The student types every answer in WRITEUP.md, in their own editor.
   question, repeat it word for word and ask what they think so far.
 - You may write in WRITEUP.md only where WRITEUP.md itself tells the student to ask you, and only
   when they ask: every column but "Why you chose it" in the lookups table in 1b, the report in
-  the empty block in 2a, and your own labels in the last column of the table in 3c. Nowhere else,
+  the empty block in 2a, and your own labels in the last column of the table in 3a. Nowhere else,
   even where a cell holds a plain fact such as a claim's first words or a verdict. The student
   types those; showing them in the chat is fine.
 - If a number in an answer does not match the output, say which number and where the output
@@ -186,7 +187,7 @@ homework.
   their own words, and let them find its pieces.
 - After you paste output, the only question you may ask is an open one ("What do you make of
   it?") or the step's own question, word for word.
-- Do not sum up an earlier step's result in your own words ("in 0c the search missed the
+- Do not sum up an earlier step's result in your own words ("in 0d the search missed the
   birthplace"). That is an interpretation. If an earlier result matters, quote the student's own
   answer from WRITEUP.md, or the saved output.
 
@@ -226,10 +227,11 @@ Never write a script or a one-off program (`python3 -c`, a shell pipeline) to di
 file: the student would be asked to approve code they cannot read. For a lookup's full result,
 point them to the results viewer ("Open these results" under the step, or "Results" at the top
 of the homework page), or read the file with the Read tool and paste the part they asked for.
-The agent's results for the 200 evaluation claims (runs/part2/agent.jsonl) are too large for the
-Read tool to open whole: one long line per claim. For one claim from it, point the student to
-the results viewer, or find the claim's line number with the Grep tool and read only that line
-(the Read tool's offset and limit).
+The agent's results for the student's 100 evaluation claims (runs/part2/agent.jsonl) and for the
+run after their change in Part 3 (runs/part3/after/agent.jsonl) are too large
+for the Read tool to open whole: one long line per claim. For one claim from one of them, point
+the student to the results viewer, or find the claim's line number with the Grep tool and read
+only that line (the Read tool's offset and limit).
 
 Facts about the programs that come up in several steps:
 
@@ -240,18 +242,18 @@ Facts about the programs that come up in several steps:
   loop: yours (my_loop.py)" or "Agent loop: the reference loop (reference_loop.py)". It is the
   student's own loop once check_loop.py has passed it, and the reference loop until then: in all
   of Part 0, and for a student who chose to keep the reference loop. Explain that line when the
-  student first sees it, in 0d, if they ask.
+  student first sees it, in 0e, if they ask.
 - Saved results are never run again, even after the student changes instructions.md, agent.py,
   wiki.py or the loop in use. On a finished folder the same command then runs nothing, and prints
   a note after the tables that the saved results were made by an earlier version of the agent. If
   claims are still to run, it stops instead and says to add `--fresh`. `--fresh` at the end of a
   command forgets that folder's saved results for the versions it names, and runs them again. Only
-  1d's and 3d's briefs give the `--fresh` commands whole, for a student who changes something
-  and asks to run again. When you see the note, say in one sentence what it means and ask whether they want to run
-  again with `--fresh`; the choice is theirs.
+  1d's and 3b's briefs give the `--fresh` commands whole, for a student who changes something
+  and asks to run again. When you see the note, say in one sentence what it means and ask whether
+  they want to run again with `--fresh`; the choice is theirs.
 - Never add `--fresh` to a command for runs/part2, and never rename or delete a run folder,
   unless the student asks for exactly that after you have told them what it costs: runs/part2
-  again is about 20 minutes and about 50 cents of their key.
+  again is about 10 minutes and about 27 cents of their key.
 - The agent reads instructions.md again for every claim, so the student must not change it while
   a run is going. Say so if they mention editing it during a run.
 - The model does not give the same answer every time. Running one claim again with check.py
@@ -270,11 +272,12 @@ Facts about the programs that come up in several steps:
 
 ## Long runs
 
-One run is long: the full run in 1e (about 20 minutes, about 50 cents). The student's own
-instructions can make the agent slower and dearer, so always say "about". The student starts it
-in a terminal tab of their own, because a run started from this session stops if this session is
-closed. If they ask you to start it anyway, do it in the background, and say once that it will
-stop if this session is closed.
+Two runs are long: the full run in 1e, on the student's 100 evaluation claims (about 10 minutes,
+about 27 cents), and the agent's run after their change, in 3b (about 8 minutes, about 25 cents).
+The student's own instructions can make a run slower and dearer, so always say "about". The student
+starts each of them in a terminal tab of their own, because a run started from this session stops if
+this session is closed. If they ask you to start one anyway, do it in the background, and say once
+that it will stop if this session is closed.
 
 ## When Claude Code asks the student
 
@@ -316,17 +319,22 @@ a command, say in one line what it does, so they can decide.
     (MAX_STEPS is the limit of 12 lookups, and the model is told "You have used all 12 steps");
     say "lookups". A tool is one of search, read, wikidata and answer. A trace is the list of the
     agent's lookups for one claim, in order, with what each returned;
-  - the limit of 12 lookups; the number of articles a claim needs (2, 3 or 4, from the dataset;
-    the data files call it `hops`); HoVer, the public dataset the claims come from; the
-    dataset's label, *supported* or *not supported*, where *refuted* and *doesn't say* both
-    count as *not supported*; the development claims (the 12 in data/dev.jsonl); the evaluation
-    claims (the 200 in data/eval.jsonl); a run (one execution of evaluate.py, saved in a folder
-    under runs/); a token (the unit the API counts text in and charges by, about three quarters
-    of a word);
-  - the homework page (the page in the browser that lists the steps) and the results viewer
-    ("Results" at the top of the homework page).
+  - the limit of 12 lookups; the number of articles a claim needs (2, 3 or 4, from the dataset; the
+    data files call it `hops`); HoVer, the public dataset the claims come from; the dataset's label,
+    *supported* or *not supported*, where *refuted* and *doesn't say* both count as *not supported*;
+    your claims (the 112 the student selected in step 0b: 12 development claims in data/dev.jsonl
+    and 100 evaluation claims in data/eval.jsonl); your development claims (the 12, used in 1c and
+    1d); your evaluation claims (the 100, used in 1e, Part 2 and Part 3); a run (one execution of
+    evaluate.py, saved in a folder under runs/); a token (the unit the API counts text in and
+    charges by, about three quarters of a word);
+  - the homework page (the page in the browser that lists the steps), the results viewer
+    ("Results" at the top of the homework page) and the claim finder ("Find claims" at the top of
+    the homework page), which searches the dataset's claims by keyword, by meaning (with word
+    vectors) or both.
 - Do not say: guardrails, hops, harness, pipeline, scaffold, workbench, step budget, or "sample"
-  for the evaluation claims.
+  for the evaluation claims. Nor embedding, hybrid, corpus, pool or retrieval: say "by meaning"
+  and "word vectors". If the student asks, you may say once that a search by meaning is what is
+  called an embedding search.
 
 ## Stay in this step
 
@@ -365,7 +373,7 @@ student's Macalester email, which Wikipedia uses to count their requests.
 
 [[part]]
 number = 0
-title = "Set up"
+title = "Set up and find your claims"
 due = "8:00am Tuesday, November 24"
 
 [[part]]
@@ -380,10 +388,10 @@ due = "8:00am Tuesday, November 24"
 
 [[part]]
 number = 3
-title = "Your own claims"
+title = "Why the agent fails, and one change"
 due = "8:00am Tuesday, November 24"
 
-# ---- Part 0: Set up -----------------------------------------------------------------------
+# ---- Part 0: Set up and find your claims -----------------------------------------------------------------------
 
 [[step]]
 id = "0a"
@@ -448,12 +456,106 @@ one line that 0b is next, in its own session on the homework page.
 [[step]]
 id = "0b"
 part = 0
+title = "Pick your topics and find your claims"
+page = "instructions/part0.md"
+section = "0b. Pick your topics and find your claims"
+minutes = 45
+slots = ["0b.*"]
+files = ["data/my-topic.json"]
+allow = ["Bash(uv run python -m finder:*)"]
+summary = "Pick a few topics you know well, and select 112 of the dataset's claims about them in the claim finder: 12 development claims and 100 evaluation claims."
+goal = "In this step you pick a few topics you know better than most people, and select the dataset's claims about them. Every run in this homework uses those claims."
+checkpoints = [
+  { text = "Your 112 claims are selected and saved", task = "Select 112 claims in the claim finder and save them.", files = ["data/my-topic.json"] },
+  { text = "Your answers are in WRITEUP.md", slots = ["0b.*"] },
+]
+brief = '''
+The topics are the student's, and so is every choice about which claims to select. Never suggest a
+topic, words to search with, a way of searching, or a claim to select or remove, and never say
+whether a claim is on one of their topics: that judgment is theirs. Never check a claim against
+Wikipedia, and never say whether a claim's label is right: in 3a they judge that themselves, from
+what they know.
+
+The claims the student saves here are what every run in the homework uses: the agent's runs in
+1c, 1d and 1e, Part 2 and Part 3. The three checks of Part 0 (0c, 0d and 0e) and the two claims
+of 1b are fixed, and the same for everyone.
+
+The claim finder is the screen that opens from "Find claims" at the top of the homework page. It
+searches about 11,700 HoVer claims. A claim is searched by its own words together with the titles
+of the articles the dataset lists for it and Wikipedia's one-line description of each article.
+There are three ways to search:
+
+- by keyword: the claims that contain at least one of the student's words, ranked by BM25, a
+  standard score for how well a text's words match the query's words, in which a rare word counts
+  for more than a common one;
+- by meaning: every claim, ranked by how close its vector is to the vector of what the student
+  typed. A word vector is a short list of numbers for one word, made from a large amount of text
+  so that words used in similar ways get similar numbers, and a text's vector is the average of
+  its words' vectors. So it can find a claim that shares no word with what they typed;
+- both: the two rankings combined. Each claim scores 1/(60 + its rank by keyword) plus 1/(60 + its
+  rank by meaning), and a ranking it is not in adds nothing.
+
+The claim finder does not pick claims. The student searches one topic at a time, reads down the
+ranked list (50 at a time, with "Show 50 more"), and presses Select on each claim they want; a
+selected claim's button becomes Remove. Then they search another topic and select more. A line at
+the top counts the selection and its labels, and "Show my selection" lists it. The selection is
+kept in the browser, so a new search or a reload does not lose it. Above the results, the screen
+says how many claims contain all of the student's words. You may explain these facts when asked:
+the dataset has hundreds of claims on a broad area such as film or basketball and only a few dozen
+on a narrow one, and the best claims for a search come first, so the list drifts off a narrow
+topic further down. That is why most students need two to four topics to reach 112. If the student
+asks whether a topic is good enough, point to the count the screen shows and to the end of the
+list, and ask what they see there. Do not judge the list for them.
+
+"Save these as my claims" works only with exactly 112 claims, at least 30 labeled supported and at
+least 30 labeled not supported, so that an agent that always gives the same answer cannot score
+well; each refusal is a full sentence on the screen. Saving puts the claims in the order of their
+ids, which mixes the topics, so that later steps' "first eight" and "first five" are not all from
+one topic. The first six supported and the first six not supported in that order become the 12
+development claims, in data/dev.jsonl, and the other 100 the evaluation claims, in data/eval.jsonl.
+Saving replaces the sample claims those two files ship with, and writes a note of the topics to
+data/my-topic.json, which is what ticks this step. Saving again replaces the claims until the agent
+has run on them in 1c, 1d or 1e (anything in runs/part1/before, runs/part1/after or runs/part2);
+after that the claim finder refuses, because the runs would no longer match the claims. Its refusal
+says to rename those three folders and do the runs of 1c, 1d and 1e again; that includes the full
+run of 1e again, about 10 minutes and about 27 cents. Rename them only if the student asks for
+exactly that after you have said what it costs. You may explain these rules and why. The code is in
+finder/search.py, short and meant to be read: explain any of it when asked, and paste the part they
+ask about with its line numbers.
+
+When the student asks, you may read data/dev.jsonl, data/eval.jsonl and data/my-topic.json and
+show what they hold: how many claims, how many of each label and of each number of articles, a
+claim word for word. Do not sum the claims up by subject, and do not say which look off a topic.
+
+If the screen will not run in the student's browser at all, there is an emergency path in the
+terminal. Run it only when the student asks for it after the screen has failed, with their topics
+exactly as they give them:
+
+    uv run python -m finder "<a topic>"
+    uv run python -m finder --save "<a topic>" "<another topic>"
+
+The first prints the ten best claims for a topic by keyword, by meaning and both. The second saves
+the best 112, split evenly among the topics given (half supported and half not), without the
+student selecting them. Paste the output in full. If neither the screen nor the second command
+saves their claims, tell the student in one line to post what they see in #comp440-f26 on Slack
+right away, because the steps after this one stay locked on the homework page until their claims
+are saved.
+
+The three answers are theirs: their topics and why they know each one; what they typed for each
+topic, which way of searching they kept, and why; one claim that only one of the two searches
+found, and what it shows about how the two differ. You may explain how the two kinds of search
+work. What the difference in their own results shows is theirs to say.
+'''
+
+[[step]]
+id = "0c"
+part = 0
 title = "Ask the model with no tools"
 page = "instructions/part0.md"
-section = "0b. Ask the model with no tools"
+section = "0c. Ask the model with no tools"
 minutes = 8
 claim = true
-slots = ["0b.*"]
+slots = ["0c.*"]
 files = ["runs/part0/no-tools-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See how well the model checks the claim from memory alone."
@@ -461,7 +563,7 @@ goal = "In this step you find out how well the model checks a claim from memory 
 checkpoints = [
   { text = "You said what you expect the model to say", task = "Tell Claude what you expect the model to say." },
   { text = "The no-tools baseline's answer is saved in runs/part0/", task = "Ask Claude to run the no-tools baseline on the claim. Its answer is saved in runs/part0/.", files = ["runs/part0/no-tools-*.json"] },
-  { text = "Your answers are in WRITEUP.md", slots = ["0b.*"] },
+  { text = "Your answers are in WRITEUP.md", slots = ["0c.*"] },
 ]
 brief = '''
 The command, with the claim above in it word for word:
@@ -488,14 +590,14 @@ If the run fails because of the key, follow the tutor rules on .env.
 '''
 
 [[step]]
-id = "0c"
+id = "0d"
 part = 0
 title = "Give it one search"
 page = "instructions/part0.md"
-section = "0c. Give it one search"
+section = "0d. Give it one search"
 minutes = 8
 claim = true
-slots = ["0c.*"]
+slots = ["0d.*"]
 files = ["runs/part0/one-search-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See what one Wikipedia search adds, and whether it lands on a page that settles the claim."
@@ -503,7 +605,7 @@ goal = "In this step you find out what one Wikipedia search adds. You also see w
 checkpoints = [
   { text = "You said which page you would want it to read", task = "Tell Claude which page you would want the search to read." },
   { text = "The one-search baseline's answer is saved in runs/part0/", task = "Ask Claude to run the one-search baseline on the claim. Its answer is saved in runs/part0/.", files = ["runs/part0/one-search-*.json"] },
-  { text = "Your answers are in WRITEUP.md", slots = ["0c.*"] },
+  { text = "Your answers are in WRITEUP.md", slots = ["0d.*"] },
 ]
 brief = '''
 The command, with the claim above in it word for word:
@@ -531,14 +633,14 @@ read the right page?", ask one question: what in the output makes them think it 
 '''
 
 [[step]]
-id = "0d"
+id = "0e"
 part = 0
 title = "Run the agent and read its trace"
 page = "instructions/part0.md"
-section = "0d. Run the agent and read its trace"
+section = "0e. Run the agent and read its trace"
 minutes = 12
 claim = true
-slots = ["0d.*"]
+slots = ["0e.*"]
 files = ["runs/part0/agent-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See how the agent gets from the claim to a verdict when it chooses its own lookups."
@@ -546,7 +648,7 @@ goal = "In this step you find out how the agent gets from the claim to a verdict
 checkpoints = [
   { text = "The agent's run is saved in runs/part0/", task = "Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.", files = ["runs/part0/agent-*.json"] },
   { text = "You have read the trace, one entry at a time", task = "Read the trace, one entry at a time." },
-  { text = "Your answers are in WRITEUP.md", slots = ["0d.*"] },
+  { text = "Your answers are in WRITEUP.md", slots = ["0e.*"] },
 ]
 brief = '''
 The command, with the claim above in it word for word:
@@ -573,7 +675,7 @@ at the top of the homework page) shows each lookup's full result.
 The student reads the trace one entry at a time (an entry is a numbered line: a lookup or an
 answer). If they ask you to go through it with them, take one entry per turn: what the agent
 asked for and what came back, in the output's own words. For an entry's full result, point them
-to the results viewer ("Open these results" under 0d), or read the saved file in runs/part0/
+to the results viewer ("Open these results" under 0e), or read the saved file in runs/part0/
 with the Read tool and paste that entry's result. Never write a script for it.
 Explain any tool or term they ask about. When they have been through every entry, or say they
 have read the trace, tick checkpoint 2.
@@ -775,9 +877,9 @@ After a lookup, paste what came back and ask what they want to do next; do not a
 what another tool, a section or a different query would show. Right after a lookup, such a tip
 reads as a suggestion of the next one. Explain a tool when they ask about it.
 
-The second claim is one of the development claims, and data/dev.jsonl lists the articles the
-dataset's authors used for it. Never open data/dev.jsonl in this step, and never tell the
-student which articles the dataset lists. You know nothing about either claim's answer, and
+Both claims are HoVer's, and the dataset lists the articles its authors used for each. Never open
+data/dev.jsonl or data/eval.jsonl in this step, and never tell the student which articles the
+dataset lists for either claim. You know nothing about either claim's answer, and
 anything you say about them comes from what lookup.py printed in this session.
 
 For the second claim the student has the agent's limit of 12 lookups. If they reach 12 lookups
@@ -789,11 +891,11 @@ their verdict on the first claim, tick checkpoint 2. When they have told you the
 second, or have made 12 lookups on it in this session, tick checkpoint 3. When they have both
 verdicts and ask, fill the table under 1b in WRITEUP.md from runs/part1/lookups.jsonl: one row per
 lookup, in order, numbered from 1, with the claim (1 or 2), the tool and what was asked for. Leave
-every "Why you chose it" cell empty: those are theirs. Other tables in WRITEUP.md start with the same
-empty row, so include the 1b table's header line in the text you replace. runs/part1/lookups.jsonl
-does not say which claim a lookup was for; go by the point in this conversation where the student
-moved on to the second claim, and ask if you are not sure. If the file holds lookups that were not
-part of these checks, ask which rows to leave out.
+every "Why you chose it" cell empty: those are theirs. Other tables in WRITEUP.md start with the
+same empty row, so include the 1b table's header line in the text you replace.
+runs/part1/lookups.jsonl does not say which claim a lookup was for; go by the point in this
+conversation where the student moved on to the second claim, and ask if you are not sure. If the
+file holds lookups that were not part of these checks, ask which rows to leave out.
 
 Their verdicts, the sentences they rest on, the count, the hardest choice and whether they had
 to back up are theirs to write. Never say whether a verdict is right.
@@ -809,36 +911,33 @@ minutes = 15
 slots = ["1c.*"]
 files = ["runs/part1/before/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
-summary = "Run the agent on the 12 development claims and read three of its traces closely."
-goal = "In this step you find out whether the agent reaches the dataset's label on the 12 development claims. You also judge whether it gets there for a good reason."
+summary = "Run the agent on your 12 development claims and read three of its traces closely."
+goal = "In this step you find out whether the agent reaches the dataset's label on your 12 development claims. You also judge whether it gets there for a good reason."
 checkpoints = [
-  { text = "The agent's run on the 12 development claims is saved", task = "Ask Claude to run the agent on the 12 development claims.", files = ["runs/part1/before/report.txt"] },
-  { text = "You have read three traces closely in the results viewer: one each for 2, 3 and 4 articles, the one for 3 being claim 2 from 1b", task = "Read three traces closely in the results viewer. Pick one each for 2, 3 and 4 articles, and make the one for 3 articles claim 2 from 1b." },
+  { text = "The agent's run on your 12 development claims is saved", task = "Ask Claude to run the agent on your 12 development claims.", files = ["runs/part1/before/report.txt"] },
+  { text = "You have read three traces closely in the results viewer: one each for 2, 3 and 4 articles, where your development claims have one", task = "Read three traces closely in the results viewer. Pick one each for 2, 3 and 4 articles, where your development claims have one." },
   { text = "Your table and answer are in WRITEUP.md", slots = ["1c.*"] },
 ]
 brief = '''
-The command, for the 12 development claims (about a minute, about 2 cents on the student's key):
+The command, for the student's 12 development claims (about a minute, about 2 cents on their key):
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/before
 
-This run is the "before" that 1d compares with, so it should use the starting instructions.md.
-Its first line says which loop drove the agent ("Agent loop: yours (my_loop.py)" once the
-student's loop passed the check in 1a, or the reference loop); 1d's run must use the same one.
-Before running, check with `git diff --stat -- instructions.md`; if the file has changed, say so
-in one line and ask whether to run anyway. Then ask what they expect, for example on how many of
-the 12 claims the agent's verdict will match the dataset's label. When it finishes, paste the
-output in full, and say the run is in the results viewer as runs/part1/before. Its report is
-saved in runs/part1/before/report.txt. On that run's page, the claims table's filters include
-"The number of articles" and, in "The agent" box, "Result" ("matches the dataset's label" or
-"does not match the dataset's label (any reason)"); "Claim contains" finds a claim by its words.
-Give these labels when they ask how to find claims.
+This run is the "before" that 1d compares with, so it should use the starting instructions.md. Its
+first line says which loop drove the agent ("Agent loop: yours (my_loop.py)" once the student's loop
+passed the check in 1a, or the reference loop); 1d's run must use the same one. Before running,
+check with `git diff --stat -- instructions.md`; if the file has changed, say so in one line and ask
+whether to run anyway. Then ask what they expect, for example on how many of their 12 development
+claims the agent's verdict will match the dataset's label. When it finishes, paste the output in
+full, and say the run is in the results viewer as runs/part1/before. Its report is saved in
+runs/part1/before/report.txt. On that run's page, the claims table's filters include "The number of
+articles" and, in "The agent" box, "Result" ("matches the dataset's label" or "does not match the
+dataset's label (any reason)"); "Claim contains" finds a claim by its words. Give these labels when
+they ask how to find claims.
 
-The student picks three claims to read closely: one each that needs 2, 3 and 4 articles, with at
-least one the agent got wrong, where there is one. The one that needs 3 must be the second claim
-they checked by hand in 1b, "Vic & Anthony's Steakhouse is located at the
-American casino that was combined with the California Club. The casino is owned by Landry's,
-Inc.", so they can set the agent's lookups beside their own. Say that once, after the run, without
-saying how the agent did on that claim. The rest of the picking is theirs. To see the 12 claims
+The student picks three claims to read closely: one each that needs 2, 3 and 4 articles, where
+their development claims have one, with at least one the agent got wrong, where there is one.
+The picking is theirs. To see the 12 claims
 with their number of articles and whether the agent matched the dataset's label, point them to
 the run's page in the results viewer, whose claims table shows exactly that.
 
@@ -874,7 +973,7 @@ summary = "Write the agent's instructions, and see how its traces change."
 goal = "In this step you find out how much the agent's behavior depends on its instructions."
 checkpoints = [
   { text = "Your own instructions are in instructions.md, and say: how to break a claim into pieces; when to use wikidata; when to stop; when to answer \"doesn't say\"", task = "Write your own instructions in instructions.md. They must say how to break a claim into pieces, when to use wikidata, when to stop, and when to answer \"doesn't say\"." },
-  { text = "The second run on the 12 development claims is saved", task = "Ask Claude to run the agent on the 12 development claims again.", files = ["runs/part1/after/report.txt"] },
+  { text = "The second run on your 12 development claims is saved", task = "Ask Claude to run the agent on your 12 development claims again.", files = ["runs/part1/after/report.txt"] },
   { text = "You have compared the two runs in the results viewer", task = "Compare the two runs in the results viewer." },
   { text = "Your answers are in WRITEUP.md", slots = ["1d.*"] },
 ]
@@ -895,7 +994,7 @@ When they say they have written their instructions, check that the file has chan
 `git diff --stat -- instructions.md`, and tick checkpoint 1.
 
 The step has one round: the student writes their instructions once, and you run the agent once
-after that, on the 12 development claims (about a minute, about 2 cents):
+after that, on their 12 development claims (about a minute, about 2 cents):
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after
 
@@ -937,11 +1036,11 @@ minutes = 15
 slots = ["1e.*"]
 files = ["runs/part2/no-tools.jsonl"]
 allow = ["Bash(uv run python evaluate.py:*)"]
-run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --out runs/part2", note = "About 20 minutes and about 50 cents on your key. Leave that tab open and your laptop awake until it ends with two tables. Fill in your predictions while it runs, and don't look at its results before they are saved." }
+run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --out runs/part2", note = "About 10 minutes and about 27 cents on your key. Leave that tab open and your laptop awake until it ends with two tables. Fill in your predictions while it runs, and don't look at its results before they are saved." }
 # Show no link to the results while the run goes: predictions come first.
 hide_results = true
 summary = "Start the full run in your own terminal tab, and write your predictions while it runs."
-goal = "In this step you start the run on the 200 evaluation claims. You write down your predictions before you see any results."
+goal = "In this step you start the run on your 100 evaluation claims. You write down your predictions before you see any results."
 checkpoints = [
   { text = "The full run has started", task = "Start the full run yourself, in your own terminal tab.", files = ["runs/part2/no-tools.jsonl"] },
   { text = "Your predictions and answer are in WRITEUP.md", slots = ["1e.*"] },
@@ -953,8 +1052,8 @@ The full run is the student's to start, in a new terminal tab, in the homework's
 
     uv run python evaluate.py data/eval.jsonl --out runs/part2
 
-It runs the no-tools baseline, the one-search baseline and the agent on the 200 evaluation
-claims, one version after another. It takes about 20 minutes and costs about 50 cents on their
+It runs the no-tools baseline, the one-search baseline and the agent on their 100 evaluation
+claims, one version after another. It takes about 10 minutes and costs about 27 cents on their
 key; their own instructions can make it slower and dearer, so say "about". It prints a progress
 line every ten claims and saves each result as it finishes. If it stops, the same command picks
 up where it left off. When it is done it prints two tables and saves them in
@@ -989,7 +1088,7 @@ slots = ["2a.*"]
 files = ["runs/part2/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)"]
 summary = "See how often each version matched the dataset's label, and compare that with your predictions."
-goal = "In this step you find out how often each of the three versions matched the dataset's label on the 200 evaluation claims. You compare those numbers with your predictions from 1e."
+goal = "In this step you find out how often each of the three versions matched the dataset's label on your 100 evaluation claims. You compare those numbers with your predictions from 1e."
 checkpoints = [
   { text = "The full run is finished", task = "Check that the full run has finished.", files = ["runs/part2/report.txt"] },
   { text = "You have opened the run in the results viewer", task = "Open the run in the results viewer." },
@@ -1010,7 +1109,7 @@ message that saved results come from an earlier version of the agent, instructio
 wiki.py or the loop in use has changed since the run began. Say that in one line, and let the
 student decide what to do. Never add `--fresh` for runs/part2, and never rename or delete the
 folder, unless the student asks for exactly that after you have told them it means the full run
-again: about 20 minutes and about 50 cents.
+again: about 10 minutes and about 27 cents.
 
 When they ask, read runs/part2/report.txt, show it in the chat in a code block, and paste it
 word for word into the empty ``` block under 2a in WRITEUP.md. The run is in the results viewer
@@ -1106,108 +1205,24 @@ you may show the facts the table asks for in the chat. Tick checkpoint 1 when th
 have checked all five.
 '''
 
-# ---- Part 3: Your own claims --------------------------------------------------------------
+# ---- Part 3: Why the agent fails, and one change -------------------------------------------------------------
 
 [[step]]
 id = "3a"
 part = 3
-title = "Pick a topic and write your claims"
-page = "instructions/part3.md"
-section = "3a. Pick a topic and write your claims"
-minutes = 30
-slots = ["3a.*"]
-files = ["data/my-claims.jsonl"]
-allow = ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"]
-summary = "Write at least eight claims of your own, on a topic you know well."
-goal = "In this step you build your own set of test claims, on a topic you know better than most people."
-checkpoints = [
-  { text = "Your topic and at least eight claims are in WRITEUP.md", slots = ["3a.*"] },
-  { text = "Your claims are copied into data/my-claims.jsonl", task = "Ask Claude to copy your claims into data/my-claims.jsonl.", files = ["data/my-claims.jsonl"] },
-]
-brief = '''
-The topic, the claims, their verdicts and their sources are the student's. Never suggest a topic,
-a claim, a fact to change or a source. Never check their claims against Wikipedia, or say whether
-a verdict is right: the run in 3b does that, and the point is to compare it with what they know.
-
-The step asks for at least eight claims, typed in the table under 3a in WRITEUP.md: some true and
-some false; at least two that need two or more Wikipedia articles; at least two where they think
-Wikipedia doesn't say, or says something wrong. Each has the source they would trust and their own
-verdict, which is what is true according to that source: `supported` if the claim is true,
-`refuted` if it is false. *doesn't say* is not a choice for the student's own verdicts; it stays
-one of the agent's three. If they ask what to put for a claim where they think Wikipedia has
-nothing or is wrong, say only that the verdict is what is true according to their source, and
-that seeing what the agent does with such a claim is part of the step. When asked, say which part
-of the mix is missing, going by what the table shows; you may ask which claims they think need
-two or more articles. Never propose a claim to fill a gap.
-
-When they ask, copy the table into data/my-claims.jsonl, one JSON object per line, with each
-claim's words exactly as typed:
-
-    {"id": "mine-1", "claim": "...", "source": "mine", "label": "supported"}
-
-The id is "mine-" and the claim's number in the table. The label is their verdict, spelled exactly
-supported or refuted. If a row has anything else ("true", "Supported", "doesn't say"), do not
-guess: say which row, and that the verdict must be one of those two words, and let them fix the
-table. Then paste the file in full.
-
-Results are saved by claim id. Once 3b has run, a claim whose words change needs a new id (the
-next unused number), and new claims go at the end with new ids. Otherwise 3b's command gives back
-the old claim's results. Say so if they change claims after 3b.
-'''
-
-[[step]]
-id = "3b"
-part = 3
-title = "Run the agent on your claims"
-page = "instructions/part3.md"
-section = "3b. Run the agent on your claims"
-minutes = 12
-slots = ["3b.*"]
-files = ["runs/part3/before/report.txt"]
-allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
-summary = "Run the agent and the one-search baseline on your claims, and see where they agree with you."
-goal = "In this step you find out where the agent and the one-search baseline agree with your own verdicts on your claims."
-checkpoints = [
-  { text = "Both versions have run on your claims", task = "Ask Claude to run the one-search baseline and the agent on your claims.", files = ["runs/part3/before/report.txt"] },
-  { text = "Your answers are in WRITEUP.md", slots = ["3b.*"] },
-]
-brief = '''
-The command (about 3 minutes, a few cents on the student's key):
-
-    uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
-
-For the student's own claims the label is their verdict, `supported` or `refuted`, and a version
-agrees only when its verdict is the same word. So a version's *doesn't say* never matches one of
-their claims; explain that when asked how the count works. Before running, ask what they expect,
-for example on how many of their claims each version will agree with them. When it finishes,
-paste the output in full, and say the run is in the results viewer as runs/part3/before, whose
-accuracy table counts how many verdicts matched their verdict.
-
-If they ask, you may show, claim by claim, their verdict beside each version's, from
-data/my-claims.jsonl and the two files in runs/part3/before. Do not say who is right, and do not
-say why a version disagreed. What surprised them is theirs to say.
-
-If they add claims later, the same command runs only the new ones. check.py is there if they want
-to check one claim on its own: `uv run python check.py --method agent "<claim>"`. Its trace will
-not match the one in the run.
-'''
-
-[[step]]
-id = "3c"
-part = 3
 title = "Sort the failures"
 page = "instructions/part3.md"
-section = "3c. Sort the failures"
-minutes = 25
-slots = ["3c.*"]
-allow = ["Bash(uv run python evaluate.py:*)", "Edit(data/my-claims.jsonl)"]
-summary = "Label why the agent failed on your claims, then compare your labels with Claude's."
-goal = "In this step you find out why the agent fails on your claims. You also see whether Claude reads the same failures the same way you do."
+section = "3a. Sort the failures"
+minutes = 32
+slots = ["3a.*"]
+allow = []
+summary = "Label the first eight failures in your run, then compare your labels with Claude's."
+goal = "In this step you find out why the agent fails on your evaluation claims. You also see whether Claude reads the same failures the same way you do."
 checkpoints = [
-  { text = "You have labeled each failure in your table, with the line of the trace that shows it", task = "Label each failure in your table, with the line of the trace that shows it." },
+  { text = "You have labeled each of the eight failures in your table, with the entry of the trace that shows it and whether the dataset's label is right", task = "Label each of the eight failures in your table, with the entry of the trace that shows it, and say whether the dataset's label is right." },
   { text = "Claude has given its own labels, without seeing yours", task = "Ask Claude to label the same claims. It gives its labels without seeing yours." },
   { text = "Claude's labels are in the last column of your table", task = "Put Claude's labels in the last column of your table." },
-  { text = "Your answers are in WRITEUP.md", slots = ["3c.*"] },
+  { text = "Your answers are in WRITEUP.md", slots = ["3a.*"] },
 ]
 brief = '''
 In this step, do not open WRITEUP.md until you have given your own labels in the chat. This
@@ -1216,86 +1231,86 @@ student's reading of the agent's failures with yours, and that comparison only m
 if your labels are made without seeing theirs. Their labels are in WRITEUP.md, so you must not
 read it first.
 
-A failure is a claim where the agent's verdict differs from the student's own. Everything you
-need is in two files: data/my-claims.jsonl (the student's claims; their verdict is the "label")
-and runs/part3/before/agent.jsonl (the agent's results, with "correct": false on each failure,
-and each claim's trace). The claim's number is the number in its id: mine-3 is claim 3.
+A failure is one of the student's evaluation claims where the agent's verdict, in the full run
+from 1e (runs/part2), does not match the dataset's label, as in Part 2:
+*supported* or *not supported*, where *refuted* and *doesn't say* both count as *not supported*.
+Which failures the student sorts is fixed by a rule, so that nobody chooses them: in the results
+viewer, on the page for runs/part2, "Clear the filters", then "Result" in "The agent" box
+set to "does not match the dataset's label (any reason)", with "Order" left at "Order of the
+claims file". Rows 1 to 8 of the claims table are the eight; with fewer than eight, they take
+them all. Do not pick claims yourself, and do not suggest others. If they ask which eight, give
+them that rule.
+
+To find the same eight in the files: the table is in the order of data/eval.jsonl, and a
+claim is a failure when its line in runs/part2/agent.jsonl has "correct": false. That file
+is too large for the Read tool to open whole. Find its failing lines with the Grep tool (the
+pattern "correct": false, with line numbers), and read each of the first eight with the Read
+tool's offset and limit. Each line starts with the claim, word for word. The lines are in the
+order of data/eval.jsonl, except that a claim that stopped with an error and ran on a later
+try comes at the end. So if the run was started more than once, find each failure's place in
+data/eval.jsonl with the Grep tool, by its id. Name each claim as the student's table does: its
+row number and its first few words.
 
 The order, which the step's instructions also give the student:
 
-1. The student reads the trace of every failure in the results viewer (on the page for
-   runs/part3/before, "Result" in "The agent" box set to "does not match your verdict (any
-   reason)"), gives each one label, and types the label and the line of the trace that shows it
-   into the table under 3c, without telling you their labels. In your first reply, say that this
-   step starts with them labeling in their table and then asking for your labels, and ask whether
-   their labels are typed. If they start to tell you their labels before you have given yours, ask
-   them to hold on until you have given your own. While they work you may paste a trace or explain a
-   lookup, when asked. Never say which label a trace deserves.
-2. When they ask for your labels, read the failures' traces in the two files above and give one
-   label per failing claim in the chat, each with the entry of the trace it rests on (its number
-   and a few words of what it shows). Then tick
-   checkpoint 2. Do not tick checkpoint 1 yet: you have not seen their table.
-3. When they ask, read the table under 3c in WRITEUP.md. If every failure has their label, tick
-   checkpoint 1. Write each of your labels into the "Claude's label" column of its row (that
-   column is meant for your labels), then tick checkpoint 3. They may type your labels in
-   themselves instead; when they say they have, read the table, and tick checkpoints 1 and 3 if
-   both columns are filled. If a row names a claim that is not a failure, or a failure has no
-   row, say which, in one line.
+1. The student reads the trace of each of the eight in the results viewer, gives each one label,
+   decides whether the dataset's label is right, and types their row into the table under 3a,
+   without telling you their labels. In your first reply, say that this step starts with them
+   labeling in their table and then asking for your labels, and ask whether their labels are
+   typed. If they start to tell you their labels before you have given yours, ask them to hold on
+   until you have given your own. While they work you may paste a trace or explain a lookup,
+   when asked. Never say which label a trace deserves, and never say whether the dataset's label
+   is right.
+2. When they ask for your labels, read the eight traces as above and give one label per claim in
+   the chat, each with its row number, its first few words and the entry of the trace it rests on
+   (its number and a few words of what it shows). Your labels rest on the traces alone, never on
+   what you remember about their topics. The column "Is the dataset's label right?" is the
+   student's alone: give no view on it. Then tick checkpoint 2. Do not tick checkpoint 1 yet: you
+   have not seen their table.
+3. When they ask, read the table under 3a in WRITEUP.md. If every row has their label, their
+   entry and their yes, no or can't tell, tick checkpoint 1. Write each of your labels into the
+   "Claude's label" column of its row (that column is meant for your labels), then tick
+   checkpoint 3. They may type your labels in themselves instead; when they say they have, read
+   the table, and tick checkpoints 1 and 3 if every column is filled. If a row names a claim that
+   is not one of the eight, or one of the eight has no row, say which, in one line.
 4. Then they answer the questions: where the two of you disagreed and who they think is right,
    and which kind of failure was most common. Never say who is right, and do not argue for your
    labels. If asked why you chose one, quote the entry of the trace it rests on.
 
 The labels, word for word as the step's page gives them:
 
-- *wrong page*: it never found the page that settles the claim;
-- *stopped too early*: it answered before checking every piece of the claim;
-- *misread*: it read the right page and drew the wrong conclusion;
-- *forced a verdict*: it answered *supported* or *refuted* when Wikipedia does not settle the claim;
-- *Wikipedia is missing or wrong*: the agent did what it should, and Wikipedia lacks the fact or
-  has it wrong;
-- a label of your own, if none of these fits. (That holds for your labels too.)
-
-If the agent disagreed with the student on fewer than two claims, the step asks them to add two
-or three harder claims, and it happens in this session. They type the new claims as new rows of
-their 3a table in WRITEUP.md themselves, then paste the same claims, each with their verdict,
-into this chat and ask you to add them. Work only from what they pasted: do not open WRITEUP.md
-for this, since you must not see their labels before you have given your own. Add each claim as
-a new line at the end of data/my-claims.jsonl, with its words exactly as typed:
-
-    {"id": "mine-9", "claim": "...", "source": "mine", "label": "supported"}
-
-The id is "mine-" and the next unused number, which must be the claim's row number in their 3a
-table: ask if you cannot tell. The label is their verdict, spelled exactly supported or refuted;
-if they gave anything else, say which claim and let them fix it. Never suggest a claim, and never
-say what would make one harder. A reworded claim keeps its old saved result, so new claims go at
-the end with new numbers. Then run:
-
-    uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
-
-It runs only the new claims. Paste the output in full. The same order holds for the new
-failures: they label first, then you.
+- *wrong page*: The agent never found the page that settles the claim.
+- *stopped too early*: The agent answered before checking every piece of the claim.
+- *misread*: The agent read the right page and drew the wrong conclusion.
+- *forced a verdict*: The agent answered *supported* or *refuted* when Wikipedia does not settle the
+  claim.
+- *Wikipedia is missing or wrong*: The agent did what it should, and Wikipedia lacks the fact or has
+  it wrong.
+- *the dataset's label is wrong*: The agent's verdict is right, and the dataset's label is not.
+- If none of these fits, give a label of your own. (That holds for your labels too.)
 '''
 
 [[step]]
-id = "3d"
+id = "3b"
 part = 3
 title = "Make one change"
 page = "instructions/part3.md"
-section = "3d. Make one change"
-minutes = 20
-slots = ["3d.*"]
+section = "3b. Make one change"
+minutes = 18
+slots = ["3b.*"]
 files = ["runs/part3/after/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Edit(instructions.md)"]
-summary = "Make one change aimed at the most common failure, and measure what it does."
-goal = "In this step you make one change aimed at your most common failure. You find out whether it fixes that failure on your own claims."
+run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after", note = "About 8 minutes and about 25 cents on your key. Start it only after you have made your change and told Claude what you expect. Leave that tab open, your laptop awake and your change alone until it ends with two tables." }
+summary = "Make one change aimed at the most common failure, run the agent on your evaluation claims again, and measure what it did."
+goal = "In this step you make one change aimed at your most common failure. You find out whether it fixes that failure on your evaluation claims."
 checkpoints = [
   { text = "You have made one change", task = "Make one change." },
-  { text = "The agent has run again on your claims", task = "Ask Claude to run the agent on your claims again, with the change.", files = ["runs/part3/after/report.txt"] },
+  { text = "The agent's run on your evaluation claims, with your change, is finished", task = "Start the agent's run on your evaluation claims yourself, in your own terminal tab, and let it finish.", files = ["runs/part3/after/report.txt"] },
   { text = "You have compared the two runs in the results viewer", task = "Compare the two runs in the results viewer." },
-  { text = "Your answers are in WRITEUP.md", slots = ["3d.*"] },
+  { text = "Your answers are in WRITEUP.md", slots = ["3b.*"] },
 ]
 brief = '''
-The student decides on one change aimed at the failure they found most common in 3c. It can be
+The student decides on one change aimed at the failure they found most common in 3a. It can be
 to instructions.md, to a tool (for example what search returns, in wiki.py), or to the limit of
 12 lookups (MAX_STEPS in agent.py). Never propose a change, say
 which change would work best, or say whether theirs is a good idea. You may explain what a piece
@@ -1314,54 +1329,65 @@ change and nothing else, then show the diff with `git diff`. If what they descri
 than instructions.md and WRITEUP.md makes Claude Code ask the student first. Tick checkpoint 1
 once the change is made.
 
-The first run after the change, on their own claims, when they ask and after asking what they
-expect (a few minutes at most, a few cents):
+Before the run, ask what they expect the change to do, and note it with `expected`. The run is
+the student's to start, in a terminal tab of their own, in the homework's folder:
 
-    uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after
+    uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after
 
-If they then revise their change and want to run their claims again, it is the same command with
-`--fresh` at the end, which forgets the saved results in runs/part3/after:
+On their 100 evaluation claims it takes about 8 minutes and costs about 25 cents on their key;
+their change can make it slower and dearer, so say "about".
+If they ask how to start it, give them the command above. If they ask you to start it instead, do
+it in the background, and say once that it will stop if this session is closed. If they then
+revise their change and want to run their claims again, it is the same command with `--fresh` at
+the end, which forgets the saved results in runs/part3/after and runs every claim again, for the
+same time and cost again:
 
-    uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
+    uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after --fresh
 
-Paste the output in full, and say they can compare runs/part3/before with runs/part3/after in the
-results viewer: "Compare two runs", then the link "Step 3d: runs/part3/before with
-runs/part3/after". If the output ends with a note that the saved results were made by an earlier
-version of the agent, nothing was run: say in one sentence that the results shown come from the
-agent as it was before their latest change, and ask whether they want to run again with
-`--fresh`. The choice is theirs. Never run runs/part3/before again: it is what they compare with.
-They must not change instructions.md or my_loop.py while a run is going: the agent reads
-instructions.md again for every claim, and a changed loop makes the rest of the run a different
-version of the agent. Tick checkpoint 3 when they say they have compared the two runs.
+When it has ended and they ask, paste runs/part3/after/report.txt in full, and say they can
+compare runs/part2 with runs/part3/after in the results viewer: "Compare two runs", then the
+link "Step 3b: runs/part2 with runs/part3/after". The comparison is of the agent alone, since
+the run after the change has no baselines. Under "Claims that changed", the
+"Change" filter has "does not match in A, matches in B" and "matches in A, does not match in B",
+and "Open A and B" puts a claim's two traces side by side. If the output ends with a note that
+the saved results were made by an earlier version of the agent, nothing was run: say in one
+sentence that the results shown come from the agent as it was before their latest change, and
+ask whether they want to run again with `--fresh`. The choice is theirs. Never run runs/part2
+again: it is what they compare with. They must not change instructions.md or
+my_loop.py while a run is going: the agent reads instructions.md again for every claim, and a
+changed loop makes the rest of the run a different version of the agent. Tick checkpoint 3 when
+they say they have compared the two runs.
 
-Whether it fixed the failure, and the numbers before and after, are theirs to say. You may show
-either report when asked.
+Whether it fixed the failure, the numbers before and after, which of their eight failures now
+match, and which claim went from matching to not matching, are theirs to say. You may show either
+report when asked. If they ask whether a difference is real: the model does not give the same
+answer every time, so a difference of a few claims can be chance.
 '''
 
 [[step]]
-id = "3e"
+id = "3c"
 part = 3
 title = "Write it up"
 page = "instructions/part3.md"
-section = "3e. Write it up"
-minutes = 23
-slots = ["3e.*"]
-summary = "Say what the agent's loop adds, what it costs, and what your topic showed you about Wikipedia."
+section = "3c. Write it up"
+minutes = 20
+slots = ["3c.*"]
+summary = "Say what the agent's loop adds, what it costs, and what your topics showed you about Wikipedia."
 goal = "In this step you say what you learned, in your own words."
 checkpoints = [
-  { text = "Your write-up and how you used AI are in WRITEUP.md", slots = ["3e.*"] },
+  { text = "Your write-up and how you used AI are in WRITEUP.md", slots = ["3c.*"] },
 ]
 brief = '''
 Nothing runs in this step. The write-up is the student's. Its questions ask what the agent's loop
-adds over one search, what it costs, and when they would not use an agent for a job like this,
-using their numbers from Part 2 and their claims from Part 3; what their topic showed
-them about Wikipedia as a source, and why it was thin or wrong where it was; and how they used AI
-in this homework, what they checked themselves, and one decision they made on their own.
+adds over one search, what it costs, and when they would not use an agent for a job like this, using
+their numbers from Part 2 and Part 3; what their topics showed them about Wikipedia as a source, and
+why it was thin or wrong where it was; which of their conclusions they would trust on another 100
+claims, which might be chance, and what they would measure to find out; and how they used AI in this
+homework, what they checked themselves, and one decision they made on their own.
 
-When they ask, show their own numbers and words: runs/part2/report.txt,
-runs/part3/before/report.txt, runs/part3/after/report.txt, and their earlier answers in
-WRITEUP.md. Never write, suggest, outline or improve a sentence of the
-write-up, and never suggest what to say about how they used AI. If they ask you to read a draft
-and comment on it, say that the write-up is theirs. You may point out a number that does not
-match a report.
+When they ask, show their own numbers and words: runs/part2/report.txt, runs/part3/after/report.txt,
+and their earlier answers in WRITEUP.md. Never write, suggest, outline or improve a sentence of the
+write-up, and never suggest what to say about how they used AI. If they ask you to read a draft and
+comment on it, say that the write-up is theirs. You may point out a number that does not match a
+report.
 '''

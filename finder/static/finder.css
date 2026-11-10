@@ -1,0 +1,56 @@
+/* The claim finder. It loads the homework page's own style.css first (colours, type, the header,
+   the plain buttons), so this file only lays out the line at the top, the search box and the cards. */
+.bar { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; font-size: 14px; }
+.top .lede { max-width: 72ch; }
+.top .notice { max-width: 72ch; border-left-color: var(--link); }
+.top .notice.locked { border-left-color: var(--warn); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* The line that stays in view: the count, Show my selection, Save these as my claims */
+.tally { position: sticky; top: 0; z-index: 5; background: var(--bg); border-block: 1px solid var(--line); }
+.tally .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; padding-block: 10px; }
+.tally #count { margin: 0; color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+.tally .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.tally #said { grid-column: 1 / -1; margin: 0; color: var(--ink); max-width: 90ch; }
+.tally #said:empty { display: none; }
+.tally #said.failed { color: var(--warn); }
+
+.search { display: grid; gap: 8px; padding-block: 22px 8px; }
+.search .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; max-width: 760px; }
+.search input[type="text"] { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+.search input[type="text"]:focus { outline: 2px solid var(--link); outline-offset: 0; }
+.ways { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; }
+.ways label { cursor: pointer; }
+.go { border: 0; border-radius: 6px; padding: 8px 16px; cursor: pointer; background: var(--link); color: var(--surface); font-weight: 500; }
+.go:hover { filter: brightness(1.08); }
+
+.status, .matches { margin: 8px 0; max-width: 76ch; }
+.matches { color: var(--ink); }
+.status:empty, .matches:empty { display: none; }
+
+/* A claim. Select is a large target; a selected claim has a blue edge and says so. */
+.claims { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.claim { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 10px; padding: 12px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: start; }
+.claim .body { display: grid; gap: 4px; min-width: 0; }
+.claim p { margin: 0; font-size: 14.5px; }
+.claim .text { color: var(--ink); font-size: 15.5px; }
+.claim .articles { margin: 0; padding-left: 18px; font-size: 14px; }
+.claim .found { color: var(--faint); font-size: 13.5px; }
+.claim .mark { color: var(--you); font-size: 13.5px; font-weight: 500; }
+.claim:not(.chosen) .mark, #groups .mark { display: none; }
+.claim.chosen { border-left-color: var(--you); }
+.pick { min-width: 96px; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; border: 1px solid var(--link); background: var(--surface); color: var(--link); }
+.pick:hover { background: var(--you-bg); }
+.chosen .pick { background: var(--you-bg); }
+
+.more { display: grid; gap: 8px; justify-items: start; padding-block: 16px 30px; }
+.more p { margin: 0; }
+#mine { padding-block: 18px 30px; }
+#mine h2 { font: 500 22px/1.25 var(--display); color: var(--ink); margin: 0 0 6px; }
+#mine h3 { font-size: 15px; color: var(--ink); margin: 18px 0 4px; }
+
+@media (max-width: 760px) {
+  .tally .wrap { grid-template-columns: minmax(0, 1fr); }
+  .claim { grid-template-columns: minmax(0, 1fr); }
+  .claim .pick { justify-self: start; }
+}

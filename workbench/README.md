@@ -96,8 +96,8 @@ the page lists their subjects with an **Update** button. The button:
    automatically, nothing in your files was changed, post in #comp440-f26 on Slack.
 
 After an update the page reads `steps.toml` and the brief's pages again without a restart (it
-does this whenever they change). If anything under `workbench/` or `viewer/` changed, it asks the
-student to restart the page: Ctrl-C in its terminal, then start it again.
+does this whenever they change). If anything under `workbench/`, `viewer/` or `finder/` changed, it
+asks the student to restart the page: Ctrl-C in its terminal, then start it again.
 
 ## The results viewer
 
@@ -112,6 +112,15 @@ viewer isn't installed. A step whose `files` exist under `runs/` links to
 link for files elsewhere (`.env`, `data/my-claims.jsonl`). A step with `hide_results = true` (1e,
 which asks the student not to look at the full run's results yet) gets no such link, and its
 record lists no files under `runs/`; the "Results" link in the header stays.
+
+## The claim finder
+
+Addresses under `/claims` belong to the claim finder in `finder/`, mounted the same way and
+reached from "Find claims" in the header: `finder.web.handle(method, path, query, body, repo)`
+returns `(status, content type, body)`, with `body` the bytes of a POST. `/claims` redirects to
+`/claims/`. `finder/web.py` lists its addresses; it imports `finder.search` only when a search or
+a save arrives, so the page starts without it. Without `finder/`, `/claims` says in one sentence
+that the claim finder isn't installed.
 
 ## A step's Claude session
 

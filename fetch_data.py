@@ -3,7 +3,10 @@
     python fetch_data.py
 
 The instructor runs this once; students get the files it writes. It draws a
-fixed, seeded sample, so running it again gives the same claims.
+fixed, seeded sample, so running it again gives the same claims. These are only
+the sample claims the homework ships with: in step 0b the claim finder replaces
+both files with the 112 claims a student selects on topics they know, 12 in
+data/dev.jsonl and 100 in data/eval.jsonl.
 
 HoVer's labelled dev set (4,000 claims) comes from the HoVer GitHub repository.
 Its test set's labels are withheld, so the dev set is the one we can score

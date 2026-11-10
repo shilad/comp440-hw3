@@ -149,6 +149,7 @@ ol.quotes { margin: 4px 0 0; padding-left: 22px; display: grid; gap: 8px; }
 ol.quotes blockquote { margin: 0; padding: 2px 0 2px 10px; border-left: 3px solid var(--mark-line); }
 ol.quotes .small { margin: 2px 0 0; }
 .hint { color: var(--muted); }
+.numbers-line { font-size: 14px; color: var(--muted); margin: 12px 0 4px; }
 dl.numbers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; margin: 12px 0 4px; font-size: 14px; }
 dl.numbers div { display: grid; }
 dl.numbers dt { color: var(--muted); font-size: 12.5px; }

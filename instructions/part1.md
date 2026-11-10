@@ -3,9 +3,9 @@
 Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you build and study the agent. You write its loop, check two claims yourself with its
-four tools, watch it work on 12 claims, write its instructions, and then start the full run on 200
-claims while you predict how it will do. It should take about 3 hours and 5 minutes, plus about 20
-minutes for the full run, which goes on by itself while you do other things.
+four tools, watch it work on your 12 development claims, write its instructions, and then start the full
+run on your 100 evaluation claims while you predict how it will do. It should take about 3 hours and 5
+minutes, plus about 10 minutes for the full run, which goes on by itself while you do other things.
 
 ## 1a. Write the loop
 
@@ -26,13 +26,13 @@ yours. Four files are part of this step:
   Wikipedia. Run it as often as you like: it needs no key and no network, takes a few seconds, and costs
   nothing.
 
-**Words in this step:** *the agent*: the program in `agent.py` and its loop, in which the model (Claude
-Haiku, the small Claude model that the agent and both baselines call) picks the next lookup, reads what
-comes back, and decides when to answer. *lookup*: one call to `search`, `read` or `wikidata`. *tool*: one
-of the four things the agent can call: `search`, `read`, `wikidata` and `answer`. *tool_use block*: the
-part of the model's reply that asks for a tool. *tool_result*: what your loop sends back to the model for
-one tool call. *the reference loop*: the loop in `reference_loop.py`, which your copy uses until yours
-passes.
+**Words in this step:** *The agent* is the program in `agent.py` and its loop, in which the model
+(Claude Haiku, the small Claude model that the agent and both baselines call) picks the next lookup,
+reads what comes back, and decides when to answer. A *lookup* is one call to `search`, `read` or
+`wikidata`. A *tool* is one of the four things the agent can call: `search`, `read`, `wikidata` and
+`answer`. A *tool_use block* is the part of the model's reply that asks for a tool. A *tool_result* is
+what your loop sends back to the model for one tool call. *The reference loop* is the loop in
+`reference_loop.py`, which your copy uses until yours passes.
 
 **Actions:**
 
@@ -140,16 +140,16 @@ text after the `>`.
 
 **Troubleshooting:**
 
-- The check reports an error in your code: its line names the error and the line of `my_loop.py`. Ask
+- The check reports an error in your code. Its line names the error and the line of `my_loop.py`. Ask
   Claude what the error means.
-- The check says your loop did not stop: it stops a loop that runs for more than a few seconds. Read
+- The check says your loop did not stop. It stops a loop that runs for more than a few seconds. Read
   that rule again, and ask Claude what the line means.
 - You can't finish your loop and want to move on. That is a real option. Ask Claude to run
   `uv run python check_loop.py --use-reference`, or run it yourself. Your copy keeps using the reference
   loop, and the rest of the homework works exactly as before. You lose the points for the loop itself
   (the first line of "What I look for" below), not the rest of the homework. You can come back to your
   loop at any time: once it passes the check, your copy switches to it.
-- You changed `my_loop.py` after it passed: run the check again. If it no longer passes, your copy goes
+- You changed `my_loop.py` after it passed. Run the check again. If it no longer passes, your copy goes
   back to the reference loop until it does.
 
 **Hint:** Write rules 1 to 3 first, then run the check. Claude explains the API, Python and what a
@@ -178,8 +178,9 @@ lookups without settling it, stop and answer *doesn't say*, as the agent would h
 > Vic & Anthony's Steakhouse is located at the American casino that was combined with the
 > California Club. The casino is owned by Landry's, Inc.
 
-**Words in this step:** *lookup*: one call to `search`, `read` or `wikidata`. *verdict*: *supported*,
-*refuted* or *doesn't say*. *evidence*: the sentences quoted from Wikipedia that a verdict rests on.
+**Words in this step:** A *lookup* is one call to `search`, `read` or `wikidata`. A *verdict* is one of
+*supported*, *refuted* or *doesn't say*. The *evidence* is the sentences quoted from Wikipedia that a
+verdict rests on.
 
 **Actions:**
 
@@ -215,9 +216,9 @@ verdicts go in `WRITEUP.md`, so there is no `answer` call.
 
 **Write-up:** In `WRITEUP.md`, under 1b, fill in the table and answer:
 
-- Your lookups for both claims, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type every "Why you chose it" yourself.
-- Your verdict on the first claim, and the sentence it rests on.
-- Your verdict on the second claim, and the sentence or sentences it rests on. If you stopped at 12 lookups without settling it, your verdict is *doesn't say*: say where you got stuck.
+- List your lookups for both claims, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type every "Why you chose it" yourself.
+- What is your verdict on the first claim, and which sentence does it rest on?
+- What is your verdict on the second claim, and which sentence or sentences does it rest on? If you stopped at 12 lookups without settling it, your verdict is *doesn't say*: say where you got stuck.
 - How many lookups did the second claim take? Which one was hardest to choose, and why?
 - Did you have to back up and try something else? What happened?
 
@@ -226,7 +227,7 @@ of the table has every cell filled, and the four answers have text after the `>`
 
 **Troubleshooting:**
 
-- A lookup finds no page, or no such section: that is a result like any other, and the agent would have
+- A lookup finds no page, or no such section. That is a result like any other, and the agent would have
   seen the same. Count it, and choose your next lookup from what it told you.
 - A title with `&` or an apostrophe must be inside double quotes, as in
   `uv run python lookup.py read "<page title>"`, or the shell misreads it. Check Claude's command.
@@ -236,29 +237,28 @@ how to read its output.
 
 ## 1c. Watch the agent work
 
-In this step you find out whether the agent reaches the dataset's label on the 12 development claims. You
-also judge whether it gets there for a good reason.
+In this step you find out whether the agent reaches the dataset's label on your 12 development claims.
+You also judge whether it gets there for a good reason.
 
-**Words in this step:** *the development claims*: the 12 claims in `data/dev.jsonl`. *the number of
-articles*: how many Wikipedia articles a claim needs (2, 3 or 4). *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
-each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say* counts as
-*not supported*. *trace*: the
-agent's lookups for one claim, in order, with what each returned. *entry*: one numbered line of a
-trace, a lookup or an answer.
+**Words in this step:** *Your development claims* are the 12 of your claims from step 0b that are in
+`data/dev.jsonl`. *The number of articles* is how many Wikipedia articles a claim needs (2, 3 or 4).
+*The dataset's label* is the label that HoVer, the public dataset these claims come from, gives each
+claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say* counts as *not
+supported*. A *trace* is the agent's lookups for one claim, in order, with what each returned. An
+*entry* is one numbered line of a trace, a lookup or an answer.
 
 **Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 1c, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Ask Claude to run the agent on the 12 development claims.
+2. Ask Claude to run the agent on your 12 development claims.
 3. Tell Claude what you expect, when it asks.
 4. Read the two tables the run prints at the end.
 5. Open **Results** at the top of the homework page, then "runs/part1/before".
-6. Choose three claims: one each that needs 2, 3 and 4 articles (see the Hint).
-7. Make the one that needs 3 claim 2 from 1b, the claim about Vic & Anthony's Steakhouse.
-8. Click each of the three and read "The agent's trace", one entry at a time.
-9. Decide for each whether it got there for a good reason: does its quoted evidence really settle the claim?
-10. Fill in one row of the table for each, and answer the question under it.
+6. Choose three claims: one each that needs 2, 3 and 4 articles, where your development claims have one (see the Hint).
+7. Click each of the three and read "The agent's trace", one entry at a time.
+8. Decide for each whether it got there for a good reason: does its quoted evidence really settle the claim?
+9. Fill in one row of the table for each, and answer the question under it.
 
 **Output:** Claude runs this command. It takes about a minute and costs about 2 cents:
 
@@ -274,7 +274,7 @@ it.
 
 **Write-up:** In `WRITEUP.md`, under 1c, fill in the table and answer:
 
-- The three traces you read closely: one claim each that needs 2, 3 and 4 articles, with claim 2 from 1b as the one that needs 3. At least one is a claim the agent got wrong, where there is one.
+- List the three traces you read closely, one claim each that needs 2, 3 and 4 articles, where your development claims have one. At least one is a claim the agent got wrong, where there is one.
 - Which trace did you find most interesting, and what did the agent do well or badly in it?
 
 **Completion:** The homework page ticks 1c: `runs/part1/before/report.txt` exists (the run saves
@@ -283,21 +283,22 @@ it when it finishes), all three rows are filled, and the answer has text after t
 **Troubleshooting:** If the run stops partway, ask Claude to run the same command again. It
 keeps every claim it already finished.
 
-**Hint:** Choose the claims that need 2 and 4 articles so that at least one of your three is a claim the
-agent got wrong, where there is one. In "Claims", set "The number of articles" to "2" (then "3", then "4"), and set "Result" in
-"The agent" box to "matches the dataset's label" or "does not match the dataset's label (any reason)".
-"Next →" goes to the next claim in the filtered list. To find claim 2 from 1b, type a few of its words
-in "Claim contains" and press Enter. The dataset's labels were made by people, from the Wikipedia of
-2017, so one may look wrong to you. If it does, say so in that row: it is not a mistake in your run.
+**Hint:** Choose so that at least one of your three is a claim the agent got wrong, where there is one.
+Your claims were selected for your topics, not for their number of articles, so a number may be missing
+from your 12. Then choose another claim instead. In "Claims", set "The number of articles" to "2" (then
+"3", then "4"), and set "Result" in "The agent" box to "matches the dataset's label" or "does not match
+the dataset's label (any reason)". "Next →" goes to the next claim in the filtered list. The dataset's
+labels were made by people, from the Wikipedia of 2017, so one may look wrong to you. If it does, say so
+in that row: it is not a mistake in your run.
 
 ## 1d. Write the agent's instructions
 
 In this step you find out how much the agent's behavior depends on its instructions.
 
-**Words in this step:** *`instructions.md`*: the agent's instructions, which the program sends to the
-model (Claude Haiku) on every turn of the loop. It starts with three sentences that name the job, the
-four tools and how to finish, and say nothing about how to look things up. *trace*: the agent's lookups for one claim, in order,
-with what each returned.
+**Words in this step:** *`instructions.md`* holds the agent's instructions, which the program sends to
+the model (Claude Haiku) on every turn of the loop. It starts with three sentences that name the job,
+the four tools and how to finish, and say nothing about how to look things up. A *trace* is the agent's
+lookups for one claim, in order, with what each returned.
 
 **Actions:**
 
@@ -305,7 +306,7 @@ with what each returned.
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Write your own instructions in `instructions.md`, in your editor, covering at least the four points
    below, and save.
-3. Ask Claude to run the agent on the 12 development claims again.
+3. Ask Claude to run the agent on your 12 development claims again.
 4. Open **Results** at the top of the homework page and click "Compare two runs".
 5. Click "Step 1d: runs/part1/before with runs/part1/after" and read "Accuracy".
 6. Under "Claims that changed", click "Open A and B" to read a claim's two traces side by side.
@@ -339,9 +340,9 @@ answers have text after the `>`.
 
 **Troubleshooting:**
 
-- The comparison says "A and B used the same version of the agent": your change to `instructions.md`
+- The comparison says "A and B used the same version of the agent". Your change to `instructions.md`
   was not in the second run. Save the file, then ask Claude to run the command with `--fresh`.
-- You changed `instructions.md` after the run: a run never checks a claim again once its result is
+- You changed `instructions.md` after the run. A run never checks a claim again once its result is
   saved, so ask Claude to run the same command with `--fresh` at the end, which replaces this folder's
   saved results with a new run:
 
@@ -356,14 +357,15 @@ the agent is told is your decision.
 
 ## 1e. Start the full run, and predict
 
-In this step you start the run on the 200 evaluation claims. You write down your predictions before you
+In this step you start the run on your 100 evaluation claims. You write down your predictions before you
 see any results.
 
-**Words in this step:** *the three versions*: the no-tools baseline (the model answers from memory), the
-one-search baseline (one search, one page, then an answer) and the agent. A version gets a claim right
-when its verdict matches *the dataset's label*: the label that HoVer, the public dataset these claims
-come from, gives each claim, *supported* or *not supported*. A verdict of *refuted* or *doesn't say*
-counts as *not supported*.
+**Words in this step:** *The three versions* are the no-tools baseline (the model answers from memory),
+the one-search baseline (one search, one page, then an answer) and the agent. A version gets a claim
+right when its verdict matches *the dataset's label*: the label that HoVer, the public dataset these
+claims come from, gives each claim, *supported* or *not supported*. A verdict of *refuted* or *doesn't
+say* counts as *not supported*. *Your evaluation claims* are the 100 of your claims from step 0b that
+are in `data/eval.jsonl`.
 
 **Actions:**
 
@@ -383,14 +385,14 @@ counts as *not supported*.
 uv run python evaluate.py data/eval.jsonl --out runs/part2
 ```
 
-It takes about 20 minutes and costs about 50 cents on your key, which is charged to my account for the
-course, not to you. It runs the no-tools baseline on all 200
-claims, then the one-search baseline, then the agent with your `instructions.md` from 1d. It prints a
+It takes about 10 minutes and costs about 27 cents on your key, which is charged to my account for the
+course, not to you. It runs the no-tools baseline on all 100 of your evaluation claims, then the
+one-search baseline, then the agent with your `instructions.md` from 1d. It prints a
 progress line every ten claims, ends with two tables, and is saved in `runs/part2`.
 
 **Write-up:** In `WRITEUP.md`, under 1e, fill in the table and answer:
 
-- Your predictions: the share of claims each version will get right (its verdict matches the dataset's label), as a percentage. A guess is fine; the reasons are what I grade.
+- Predict the share of claims each version will get right (its verdict matches the dataset's label), as a percentage. A guess is fine; the reasons are what I grade.
 - How many lookups will the agent make per claim, on average? Will that grow with the number of articles? Why?
 
 **Completion:** The homework page ticks 1e: the run has started (`runs/part2/no-tools.jsonl`
@@ -400,10 +402,10 @@ it to your fork. Once the run has ended, this is a good place to stop for the da
 
 **Troubleshooting:**
 
-- The run stops (you closed the tab, your laptop slept, or Wikipedia refused requests for too long): run
+- The run stops (you closed the tab, your laptop slept, or Wikipedia refused requests for too long). Run
   the same command again in a terminal tab in the homework's folder. It keeps every claim it already
   finished.
-- It stops and says the saved results came from an earlier version of your agent: you changed
+- It stops and says the saved results came from an earlier version of your agent. You changed
   `instructions.md` after the run started. Put it back as it was and run the command again.
 
 **Hint:** Start the run in your own tab, because a run started by Claude stops if you close that Claude

@@ -168,6 +168,11 @@ def when(t: float) -> str:
     return f"{MONTHS[lt.tm_mon - 1]} {lt.tm_mday}, {hour}:{lt.tm_min:02d} {'am' if lt.tm_hour < 12 else 'pm'}"
 
 
+def and_list(bits: list) -> str:
+    """"a", "a and b", "a, b and c"."""
+    return bits[0] if len(bits) == 1 else ", ".join(bits[:-1]) + " and " + bits[-1]
+
+
 def plural(n: int, one: str, many: str | None = None) -> str:
     return f"{n:,} {one if n == 1 else (many or one + 's')}"
 
@@ -191,15 +196,22 @@ def verdict_cell(row: dict | None, nn: str = "the dataset's label", long: bool =
     if o == "notrun":
         return '<span class="o notrun">not run yet</span>'
     ok = o == "correct"
-    if o == "error":
-        text = "stopped with an error"
-    else:
-        text = row["verdict"] if row["verdict"] is not None else "no verdict"
-    words = ("matches" if ok else "does not match") + (f" {nn}" if long else "")
     cls, mk = ("correct", "✓") if ok else ("wrong", "✗")
-    sep = " · " if long else ""
-    return (f'<span class="o {cls}{" long" if long else ""}"><span class="mk" aria-hidden="true">{mk}</span>'
-            f'{e(text)}{sep}<span class="says">{words}</span></span>')
+    if long:  # one sentence that reads by itself
+        if o == "error":
+            said = f"It stopped with an error, which does not match {nn}."
+        elif row["verdict"] is None:
+            said = f"It gave no verdict, which does not match {nn}."
+        else:
+            said = (f"The verdict is <em>{e(row['verdict'])}</em>, which "
+                    f"{'matches' if ok else 'does not match'} {nn}.")
+        return (f'<span class="o {cls} long"><span class="mk" aria-hidden="true">{mk}</span>'
+                f'<span class="says">{said}</span></span>')
+    text = "stopped with an error" if o == "error" else (row["verdict"] if row["verdict"] is not None
+                                                            else "no verdict")
+    words = "matches" if ok else "does not match"
+    return (f'<span class="o {cls}"><span class="mk" aria-hidden="true">{mk}</span>'
+            f'{e(text)}<span class="says">{words}</span></span>')
 
 
 def sources_of(items) -> set:
@@ -229,9 +241,9 @@ def matched_means(items, lead: str = "A ✓ means") -> str:
 
 def legend(items) -> str:
     nn = noun(items)
-    return (f'<p class="legend small"><span class="o correct"><span class="mk">✓</span> matches {nn}</span>'
-            f'<span class="o wrong"><span class="mk">✗</span> does not match {nn}</span> A missing verdict, or a '
-            'claim that stopped with an error, does not match, as in evaluate.py.</p>')
+    return (f'<p class="legend small">In each version\'s column, a ✓ means the verdict matches {nn} and a ✗ '
+            'means it does not. A missing verdict, or a claim that stopped with an error, does not match, as in '
+            'evaluate.py.</p>')
 
 
 def wiki_url(title: str, section: str | None = None) -> str:
@@ -277,14 +289,14 @@ def json_str(v) -> str:
 # ------------------------------------------------------------------ home
 
 EMPTY_PART = {
-    0: "Nothing yet. Steps 0b, 0c and 0d each save a check in <code>runs/part0/</code>.",
+    0: "Nothing yet. Steps 0c, 0d and 0e each save a check in <code>runs/part0/</code>.",
     1: ("Nothing yet. Step 1b saves your lookups in <code>runs/part1/lookups.jsonl</code>, and steps 1c "
         "and 1d save runs in <code>runs/part1/before/</code> and <code>runs/part1/after/</code>."),
     2: "Nothing yet. Step 1e starts the run that fills <code>runs/part2/</code>.",
-    3: "Nothing yet. Steps 3b and 3d save runs in <code>runs/part3/</code>.",
+    3: "Nothing yet. Step 3b saves a run in <code>runs/part3/after/</code>.",
 }
-PART_TITLES = {0: "Part 0: Set up", 1: "Part 1: How the agent works",
-               2: "Part 2: The agent against the baselines", 3: "Part 3: Your own claims"}
+PART_TITLES = {0: "Part 0: Set up and find your claims", 1: "Part 1: How the agent works",
+               2: "Part 2: The agent against the baselines", 3: "Part 3: Why the agent fails, and one change"}
 
 
 def home(repo: Path, q: dict) -> str:
@@ -292,7 +304,7 @@ def home(repo: Path, q: dict) -> str:
     out = ['<h1>Your runs</h1><p class="lede">Everything saved in <code>runs/</code>, part by part, in '
            'the order the homework makes it. Open a run or a check to read it.</p>']
     if not evals and not checks and not lookups:
-        out.append('<p class="empty">No runs yet. Your first one appears here after step 0b.</p>')
+        out.append('<p class="empty">No runs yet. Your first one appears here after step 0c.</p>')
         return shell("Your runs", "".join(out))
     runs = {}
     for rel in evals:
@@ -314,7 +326,10 @@ def home(repo: Path, q: dict) -> str:
         hid = f"part-{part}" if part is not None else "part-other"
         out.append(f'<section aria-labelledby="{hid}"><h2 id="{hid}">{e(title)}</h2>')
         if not (ev or ch or lk):
-            out.append(f'<p class="empty">{EMPTY_PART[part]}</p></section>')
+            hint = EMPTY_PART[part]
+            if part == 3 and not R.in_homework(repo, "runs/part3/after"):
+                hint = "Nothing yet."  # this homework's step list has no run in Part 3
+            out.append(f'<p class="empty">{hint}</p></section>')
             continue
         out.append(checks_html(repo, ch))
         out.append(lookups_html(repo, lk))
@@ -380,7 +395,7 @@ def lookups_html(repo: Path, lookups: list) -> str:
     for rel in lookups:
         path, rel = R.safe_path(repo, rel)
         rows, bad = R.CACHE.get(path, R.load_lookups) or ([], 0)
-        out.append(f'<h3 id="{e(anchor(rel))}">Your lookups by hand, in <code>{e(rel)}</code>: '
+        out.append(f'<h3 id="{e(anchor(rel))}">Your lookups by hand, in <code>{e(rel)}</code>, '
                    f'{plural(len(rows), "lookup")}</h3>')
         if rows:
             out.append('<ol class="lookups">')
@@ -524,9 +539,10 @@ def run_page(repo: Path, q: dict) -> str:
 def run_facts(run: R.Run) -> str:
     out = ['<div class="facts">']
     total = run.total()
-    made = f"Made {when(run.started)}, last saved {when(run.mtime)}."
+    made = f"The run was made on {when(run.started)} and last saved on {when(run.mtime)}."
     if run.file:
-        out.append(f'<p>Claims from <code>{e(run.file[0])}</code> ({plural(run.file[1], "claim")}). {made}</p>')
+        out.append(f'<p>The claims come from <code>{e(run.file[0])}</code>, which holds '
+                   f'{plural(run.file[1], "claim")}. {made}</p>')
     else:
         out.append(f'<p>{plural(len(run.ids), "claim")}. {made}</p>')
     missing = sum(1 for i in run.ids if "source" not in run.items[i])
@@ -535,8 +551,8 @@ def run_facts(run: R.Run) -> str:
                    'claims file, so the label and the number of articles are not known.</p>')
     if run.methods:
         parts = [f"the {e(R.method_name(m))} has {len(run.rows[m]):,}" + (f" of {total:,}" if total else "")
-                 for m in run.methods]
-        out.append(f'<p>Results saved: {"; ".join(parts)}.</p>')
+                 + " results" for m in run.methods]
+        out.append(f'<p>So far {and_list(parts)}.</p>')
     if not run.finished():
         line = ("<strong>This run has not finished.</strong> Its folder has no <code>report.txt</code> yet, "
                 "and evaluate.py saves that only when every claim has a result. ")
@@ -596,7 +612,7 @@ def accuracy_section(run: R.Run) -> str:
             if st["failed"]:
                 bits.append(a(link("/run", dir=run.rel, **{"r_" + m: "error"}) + "#claims",
                               plural(st["failed"], "claim") + " that stopped with an error"))
-            bad.append(f'<li>The {e(R.method_name(m))}: {"; ".join(bits)}.</li>')
+            bad.append(f'<li>The {e(R.method_name(m))} has {" and ".join(bits)}.</li>')
     out.append('<h3>Claims with no verdict, or that stopped with an error</h3>')
     if bad:
         out.append('<p class="small">They count as not matching above. A verdict is missing when the program '
@@ -823,12 +839,11 @@ def claim_head(item: dict, known: bool, reads: list | None = None) -> str:
     out = [f'<h1 class="claim">{e(item["claim"])}</h1><div class="facts">']
     if known:
         if item.get("source") == "mine":
-            bits = [f'Your verdict: <strong>{e(R.label_text(item))}</strong> (one of your own claims)']
+            said = f'Your verdict is <strong>{e(R.label_text(item))}</strong>. This is one of your own claims.'
         else:
-            bits = [f"The dataset's label: <strong>{e(R.label_text(item))}</strong>"]
-            if R.hops_text(item):
-                bits.append(f"the number of articles: {e(R.hops_text(item))}")
-        out.append("<p>" + " · ".join(bits) + "</p>")
+            said = f"The dataset's label is <strong>{e(R.label_text(item))}</strong>"
+            said += (f", and the claim needs {e(R.hops_text(item))} articles." if R.hops_text(item) else ".")
+        out.append(f"<p>{said}</p>")
         if isinstance(item.get("articles"), list) and item["articles"]:
             out.append(articles_html(item, reads or []))
     else:
@@ -847,11 +862,11 @@ def articles_html(item: dict, reads: list) -> str:
             who = f"the agent in {name}" if name else "the agent"
             if n:
                 anchor_id = f"#call-{(name.lower() + '-') if name else ''}agent-{n}"
-                bits.append(f'<span class="o">read by {who} ({a(anchor_id, f"entry {n}")})</span>')
+                bits.append(f'<span class="o">{who} read it in {a(anchor_id, f"entry {n}")}</span>')
             else:
-                bits.append(f'<span class="o notread">not read by {who}</span>')
-        out.append(f'<li>{a(wiki_url(str(title)), e(title), new_tab=True)}'
-                   + (" · " + " · ".join(bits) if bits else "") + '</li>')
+                bits.append(f'<span class="o notread">{who} did not read it</span>')
+        said = (": " + "; ".join(bits) + ".") if bits else ""
+        out.append(f'<li>{a(wiki_url(str(title)), e(title), new_tab=True)}{said}</li>')
     out.append('</ul>')
     return "".join(out)
 
@@ -862,7 +877,10 @@ def result_card(method: str, row: dict | None, note: str = "", anchor_for: str =
     if row is None:
         return f'<article class="card">{title}<p class="empty">No result for this claim yet.</p></article>'
     shown = verdict_cell(row, nn, long=True) if mark else f'<span class="o">{e(row["verdict"] or "no verdict")}</span>'
-    out = [f'<article class="card">{title}<p class="verdict-line">Verdict: {shown}</p>', note]
+    if not mark:
+        shown = (f'<span class="o">The verdict is <em>{e(row["verdict"])}</em>.</span>' if row["verdict"] is not None
+                 else '<span class="o">It gave no verdict.</span>')
+    out = [f'<article class="card">{title}<p class="verdict-line">{shown}</p>', note]
     if row["explanation"]:
         out.append(f'<h3 class="label">Explanation</h3><p class="expl">{e(row["explanation"])}</p>')
     places = R.quote_places(row)
@@ -879,11 +897,9 @@ def result_card(method: str, row: dict | None, note: str = "", anchor_for: str =
                        f'<p class="small">{quote_where(row, place, n, anchor_for)}</p></li>')
         out.append('</ol>')
     t = row["tokens"]
-    out.append('<dl class="numbers">'
-               f'<div><dt>Lookups</dt><dd>{row["steps"]}</dd></div>'
-               f'<div><dt>Tokens</dt><dd>{t["input"]:,} in, {t["output"]:,} out</dd></div>'
-               f'<div><dt>Cost</dt><dd>{dollars(row["cost_usd"])}</dd></div>'
-               f'<div><dt>Time</dt><dd>{row["seconds"]:.1f} seconds</dd></div></dl>')
+    out.append(f'<p class="numbers-line">It made {plural(row["steps"], "lookup")}, used {t["input"]:,} tokens in '
+               f'and {t["output"]:,} tokens out, cost {dollars(row["cost_usd"])} and took '
+               f'{row["seconds"]:.1f} seconds.</p>')
     if row["trace"]:
         out.append(f'<p class="small">{a("#trace-" + anchor_for, "Its trace, one entry at a time")}</p>')
     out.append('</article>')
@@ -936,7 +952,7 @@ def trace_section(method: str, row: dict, full: bool, toggle: str, heading: str 
            f'<{heading} id="trace-{e(method)}" tabindex="-1">{title}</{heading}>',
            f'<p>{trace_counts(trace)}</p>']
     if pages:
-        out.append('<p class="small">Pages it read, live on Wikipedia today: '
+        out.append('<p class="small">It read these pages, and each link opens the page as it is on Wikipedia today: '
                    + ", ".join(page_link(p) for _, p in pages) + '</p>')
     out.append(f'<p class="small tools-row"><button type="button" class="linkbtn" data-open-all>Open every '
                f'result</button> <button type="button" class="linkbtn" data-close-all>Fold every result</button> '
@@ -963,7 +979,7 @@ def trace_counts(trace: list) -> str:
         bits.append(plural(answers, "answer"))
     if reminders:
         bits.append(plural(reminders, "reminder") + " from the loop to call answer()")
-    return f'{plural(len(trace), "entry", "entries")}: ' + ", ".join(bits) + "."
+    return f'This trace has {plural(len(trace), "entry", "entries")}: ' + and_list(bits) + "."
 
 
 def call_html(call: dict, n: int, who: str, marks: list, full: bool) -> str:
@@ -1037,7 +1053,7 @@ def check_page(repo: Path, q: dict) -> str:
     claims = R.Claims(repo)
     found = claims.by_text.get(R.norm_claim(row.get("claim", "")))
     full = q.get("full") == "1"
-    out = [f'<p class="small">Saved {when(R.check_time(path))} in <code>{e(rel)}</code>, by check.py.</p>']
+    out = [f'<p class="small">check.py saved this check in <code>{e(rel)}</code> on {when(R.check_time(path))}.</p>']
     if found:
         item, name, _ = found
         item = dict(item)
@@ -1113,7 +1129,7 @@ def compare_page(repo: Path, q: dict) -> str:
                    f'of {B.limit}.</p>')
     for side, ms in (("A", only_a), ("B", only_b)):
         if ms:
-            out.append(f'<p class="small">Only in {side}, so not compared: '
+            out.append(f'<p class="small">Only run {side} has these versions, so this page does not compare them: '
                        + ", ".join(f"the {e(R.method_name(m))}" for m in ms) + '.</p>')
     if not shared:
         out.append('<p class="empty">These two runs have no version in common, so there is nothing to compare.</p>')

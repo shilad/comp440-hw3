@@ -2,7 +2,7 @@
 
 Offline: no network, no key. Run with `uv run pytest -q`.
 
-The step list is fixed: the steps from 0a to 3e, each with the sections, answers, files and commands
+The step list is fixed: the steps from 0a to 3c, each with the sections, answers, files and commands
 below. These tests catch a step that drifts from that list, a heading that the pages or
 WRITEUP.md do not have, a command a step's Claude session is told to run but may not run without
 asking, a word students should not see, and a placeholder that was never filled in.
@@ -23,16 +23,17 @@ from workbench import steps as stepmod  # noqa: E402
 STEPS = REPO / "steps.toml"
 
 PARTS = {
-    0: "Set up",
+    0: "Set up and find your claims",
     1: "How the agent works",
     2: "The agent against the baselines",
-    3: "Your own claims",
+    3: "Why the agent fails, and one change",
 }
 DUE = "8:00am Tuesday, November 24"
 
 CHECK = ["Bash(uv run python check.py:*)"]
 EVALUATE = ["Bash(uv run python evaluate.py:*)"]
 LOOKUP = ["Bash(uv run python lookup.py:*)"]
+FINDER = ["Bash(uv run python -m finder:*)"]
 LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loop.py --use-reference)",
               "Bash(uv run pytest:*)"]
 
@@ -40,9 +41,10 @@ LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loo
 EXPECTED = {
     "0a": (0, "0a. Get your copy running", [".env", "runs/part0/setup-check.txt"],
            ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"], 20),
-    "0b": (0, "0b. Ask the model with no tools", ["runs/part0/no-tools-*.json"], CHECK, 8),
-    "0c": (0, "0c. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 8),
-    "0d": (0, "0d. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 12),
+    "0b": (0, "0b. Pick your topics and find your claims", ["data/my-topic.json"], FINDER, 45),
+    "0c": (0, "0c. Ask the model with no tools", ["runs/part0/no-tools-*.json"], CHECK, 8),
+    "0d": (0, "0d. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 8),
+    "0e": (0, "0e. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 12),
     "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 100),
     "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 25),
     "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 15),
@@ -51,13 +53,10 @@ EXPECTED = {
     "2a": (2, "2a. Compare accuracy", ["runs/part2/report.txt"], EVALUATE, 18),
     "2b": (2, "2b. Compare cost", [], EVALUATE, 12),
     "2c": (2, "2c. Check the evidence yourself", [], LOOKUP, 20),
-    "3a": (3, "3a. Pick a topic and write your claims", ["data/my-claims.jsonl"],
-           ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"], 30),
-    "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),
-    "3c": (3, "3c. Sort the failures", [], EVALUATE + ["Edit(data/my-claims.jsonl)"], 25),
-    "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt"],
-           EVALUATE + CHECK + ["Edit(instructions.md)"], 20),
-    "3e": (3, "3e. Write it up", [], [], 23),
+    "3a": (3, "3a. Sort the failures", [], [], 32),
+    "3b": (3, "3b. Make one change", ["runs/part3/after/report.txt"],
+           EVALUATE + CHECK + ["Edit(instructions.md)"], 18),
+    "3c": (3, "3c. Write it up", [], [], 20),
 }
 
 SAMPLE_CLAIM = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
@@ -163,7 +162,7 @@ def test_step_mechanics(a, step_id):
     assert s.minutes == minutes
     assert s.slots == (["Name"] if step_id == "0a" else [f"{step_id}.*"])
     assert s.setup == (step_id == "0a")
-    assert s.claim == (step_id in ("0b", "0c", "0d"))
+    assert s.claim == (step_id in ("0c", "0d", "0e"))
     assert s.summary and s.goal and s.brief.strip() and s.checkpoints
 
 
@@ -230,7 +229,7 @@ def flat(text: str) -> str:
 
 def test_part0_briefs_give_the_commands_whole():
     a = stepmod.load(STEPS)
-    for step_id, method in (("0b", "no-tools"), ("0c", "one-search"), ("0d", "agent")):
+    for step_id, method in (("0c", "no-tools"), ("0d", "one-search"), ("0e", "agent")):
         brief = a.step(step_id).brief
         assert PART0_COMMANDS[method] in brief, f"{step_id}: the brief lacks {PART0_COMMANDS[method]}"
         assert "single quotes" in brief, f"{step_id}: the brief doesn't say to keep the single quotes"
@@ -244,7 +243,7 @@ def test_1b_gives_both_claims_in_order(a):
 
 
 def test_no_brief_reruns_the_long_runs_with_fresh(a):
-    """--fresh is for 1d and 3d's short runs. A line that runs runs/part2 or the 3d rerun on the
+    """--fresh is for 1d's and 3b's runs. A line that runs runs/part2 or an old rerun on the
     200 claims with --fresh would cost the full run again."""
     for s in a.steps:
         for c in commands(s.brief):
@@ -253,11 +252,13 @@ def test_no_brief_reruns_the_long_runs_with_fresh(a):
 
 
 def test_long_runs_are_shown_as_run_yourself():
-    """1e's long run is the student's own, shown on the page as a second command box.
-    Read from the file itself, since a page version without the key ignores it."""
+    """The long runs, 1e's on the student's 100 evaluation claims and 3b's after their change,
+    are the student's own, shown on the page as a second command box. Read from the file itself,
+    since a page version without the key ignores it."""
     import tomllib
     steps = {s["id"]: s for s in tomllib.loads(STEPS.read_text(encoding="utf-8"))["step"]}
-    want = {"1e": "uv run python evaluate.py data/eval.jsonl --out runs/part2"}
+    want = {"1e": "uv run python evaluate.py data/eval.jsonl --out runs/part2",
+            "3b": "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after"}
     for step_id, s in steps.items():
         if step_id in want:
             run = s.get("run_yourself") or {}

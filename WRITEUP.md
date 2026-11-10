@@ -7,13 +7,27 @@ with no blank line inside it (to start a new paragraph, put a line with just `>`
 table, fill every cell of every numbered row. Claude may paste a program's output where a question asks
 for it, never an answer, and the homework page ticks a step when every answer in its section is filled in.
 
-# Part 0: Set up
+# Part 0: Set up and find your claims
 
 ## 0a. Get your copy running
 
 There is nothing to write for this step except your name, after `Name:` at the top of this file.
 
-## 0b. Ask the model with no tools
+## 0b. Pick your topics and find your claims
+
+What are your topics, and why do you know each of them better than most people?
+
+>
+
+What did you type in the claim finder for each topic, and which way of searching did you keep (by keyword, by meaning or both)? Why that one?
+
+>
+
+Quote one claim that only the search by meaning found, or only the search by keyword found, with its rank in the search that found it. What does it show about how the two searches differ?
+
+>
+
+## 0c. Ask the model with no tools
 
 What verdict did the model give, and what reason did it give? Quote the lines of the output that show them.
 
@@ -23,7 +37,7 @@ How much would you trust this answer, and why?
 
 >
 
-## 0c. Give it one search
+## 0d. Give it one search
 
 Which Wikipedia page did it read? Quote the line of the output that shows it.
 
@@ -33,7 +47,7 @@ Did that page settle the claim? If not, why do you think the search led there?
 
 >
 
-## 0d. Run the agent and read its trace
+## 0e. Run the agent and read its trace
 
 In one or two sentences, how did the agent get from the claim to its verdict? Point to the entries by their numbers in the trace.
 
@@ -69,17 +83,17 @@ Claim 1, to learn the tools: "Mel Duncan holds a history degree from the private
 
 Claim 2: "Vic & Anthony's Steakhouse is located at the American casino that was combined with the California Club. The casino is owned by Landry's, Inc."
 
-Your lookups for both claims, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type every "Why you chose it" yourself.
+List your lookups for both claims, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type every "Why you chose it" yourself.
 
 | # | Claim (1 or 2) | Tool | What you asked for | Why you chose it |
 |---|---|---|---|---|
 | 1 | | | | |
 
-Your verdict on the first claim, and the sentence it rests on.
+What is your verdict on the first claim, and which sentence does it rest on?
 
 >
 
-Your verdict on the second claim, and the sentence or sentences it rests on. If you stopped at 12 lookups without settling it, your verdict is *doesn't say*: say where you got stuck.
+What is your verdict on the second claim, and which sentence or sentences does it rest on? If you stopped at 12 lookups without settling it, your verdict is *doesn't say*: say where you got stuck.
 
 >
 
@@ -93,7 +107,7 @@ Did you have to back up and try something else? What happened?
 
 ## 1c. Watch the agent work
 
-The three traces you read closely: one claim each that needs 2, 3 and 4 articles, with claim 2 from 1b as the one that needs 3. At least one is a claim the agent got wrong, where there is one.
+List the three traces you read closely, one claim each that needs 2, 3 and 4 articles, where your development claims have one. At least one is a claim the agent got wrong, where there is one.
 
 | # | Claim (first few words) | Articles | Did it match the dataset's label? | Did it get there for a good reason? Why or why not |
 |---|---|---|---|---|
@@ -117,7 +131,7 @@ Was that the change you expected? If not, what do you think happened?
 
 ## 1e. Start the full run, and predict
 
-Your predictions: the share of claims each version will get right (its verdict matches the dataset's label), as a percentage. A guess is fine; the reasons are what I grade.
+Predict the share of claims each version will get right (its verdict matches the dataset's label), as a percentage. A guess is fine; the reasons are what I grade.
 
 | Version | 2 articles | 3 articles | 4 articles | Why you think so |
 |---|---|---|---|---|
@@ -133,7 +147,7 @@ How many lookups will the agent make per claim, on average? Will that grow with 
 
 ## 2a. Compare accuracy
 
-The report of your full run, from `runs/part2/report.txt`. Ask Claude to paste it into the empty block below.
+Ask Claude to paste the report of your full run, from `runs/part2/report.txt`, into the empty block below.
 
 ```
 ```
@@ -166,7 +180,7 @@ Did the agent ever use all 12 lookups? If so, pick one such claim and say what i
 
 ## 2c. Check the evidence yourself
 
-The first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
+Fill in one row for each of the first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 
 | # | Claim (first few words) | Agent's verdict | Matched the dataset's label? | Does the quoted evidence support that verdict? | Why or why not |
 |---|---|---|---|---|---|
@@ -184,72 +198,58 @@ Is accuracy alone a good measure of this agent? Why or why not?
 
 >
 
-# Part 3: Your own claims
+# Part 3: Why the agent fails, and one change
 
-## 3a. Pick a topic and write your claims
+## 3a. Sort the failures
 
-Your topic, and why you know it well.
+Fill in one row for each of the first eight failures in your full run from 1e, rows 1 to 8 of the claims table for runs/part2 with "Result" in "The agent" box set to "does not match the dataset's label (any reason)". If you have fewer than eight, fill a row for each and delete the rest. Type your labels before you ask Claude for its own. Then ask Claude to add its labels to the last column, or type them in yourself.
 
->
-
-Your claims, at least eight: some true and some false, at least two that need two or more Wikipedia articles, and at least two where you think Wikipedia doesn't say or says something wrong. Write each verdict as `supported` if the claim is true or `refuted` if it is false, according to the source you trust. For more claims, add rows numbered 9, 10 and so on.
-
-| # | Claim | Your verdict | The source you would trust (a link, a book, or how you know it first-hand) |
-|---|---|---|---|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
-| 7 | | | |
-| 8 | | | |
-
-## 3b. Run the agent on your claims
-
-On how many of your claims did each version agree with you?
-
->
-
-What surprised you?
-
->
-
-## 3c. Sort the failures
-
-One row for each claim where the agent's verdict differs from yours: the claim's number from your 3a table, your label, and the line of the trace that shows it. Type your labels before you ask Claude for its own. Then ask Claude to add its labels to the last column, or type them in yourself.
-
-| Claim # | Your label | The line of the trace that shows it | Claude's label |
-|---|---|---|---|
-| | | | |
+| Row | Claim (first few words) | Your label | The entry of the trace that shows it | Is the dataset's label right? (yes, no or can't tell) | Claude's label |
+|---|---|---|---|---|---|
+| 1 | | | | | |
+| 2 | | | | | |
+| 3 | | | | | |
+| 4 | | | | | |
+| 5 | | | | | |
+| 6 | | | | | |
+| 7 | | | | | |
+| 8 | | | | | |
 
 Where did you and Claude disagree, and who do you think is right?
 
 >
 
-Which kind of failure was most common? If no kind repeats, say which failure you will aim at in 3d, and why.
+Which kind of failure was most common? If no kind repeats, say which failure you will aim at in 3b, and why.
 
 >
 
-## 3d. Make one change
+## 3b. Make one change
 
 What did you change, and why did you expect it to help?
 
 >
 
-Did it fix the failure you aimed at? Give how many of your claims the agent matched before and after, and say whether the claims you gave that label now match.
+How many of your evaluation claims did the agent match before the change and after it? Which of your eight failures from 3a now match?
 
 >
 
-## 3e. Write it up
+Quote one claim the agent matched before the change and not after it, if there is one, and say what you think happened. If there is none, say so.
+
+>
+
+## 3c. Write it up
 
 ### Write-up
 
-What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and your claims from Part 3.
+What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and Part 3.
 
 >
 
-What did your topic show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
+What did your topics show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
+
+>
+
+Your numbers rest on 100 claims about the topics you chose. Which of your conclusions would you trust on another 100 claims, which might be chance, and what would you measure to find out?
 
 >
 

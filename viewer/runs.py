@@ -823,42 +823,38 @@ def articles_read(item: dict, row: dict | None) -> list[tuple[str, int | None]]:
 
 ORDER = ["runs/part0", "runs/part1/lookups.jsonl", "runs/part1", "runs/part1/before", "runs/part1/after",
          "runs/part2", "runs/part3/before", "runs/part3/after", "runs/part3/after-eval"]
+# The comparisons the homework asks for: (run A, run B, the step that makes run B).
 COMPARISONS = [("runs/part1/before", "runs/part1/after", "1d"),
-               ("runs/part3/before", "runs/part3/after", "3d"),
-               ("runs/part2", "runs/part3/after-eval", "3d")]
-WHERE_FROM = {"runs/part0": "Steps 0b, 0c and 0d each save a check in runs/part0/.",
+               ("runs/part2", "runs/part3/after", "3b")]
+WHERE_FROM = {"runs/part0": "Steps 0c, 0d and 0e each save a check in runs/part0/.",
               "runs/part1/lookups.jsonl": "Step 1b saves the lookups you make by hand in runs/part1/lookups.jsonl.",
               "runs/part1/before": "Step 1c saves the run in runs/part1/before/.",
               "runs/part1/after": "Step 1d saves the run in runs/part1/after/.",
               "runs/part2": "Step 1e starts the run that fills runs/part2/.",
-              "runs/part3/before": "Step 3b saves the run in runs/part3/before/.",
-              "runs/part3/after": "Step 3d saves the run in runs/part3/after/.",
-              "runs/part3/after-eval": "Step 3d saves the run in runs/part3/after-eval/."}
+              "runs/part3/after": "Step 3b saves the run in runs/part3/after/."}
 
 
-AFTER_EVAL = "runs/part3/after-eval"
-
-
-def has_after_eval(repo: Path) -> bool:
-    """Whether the homework still has step 3d's second run on the evaluation claims: its step list
-    names runs/part3/after-eval, or the folder exists (a run made before an update). If steps.toml
-    is missing or unreadable, assume it does."""
-    if (repo / "runs" / "part3" / "after-eval").is_dir():
+def in_homework(repo: Path, rel: str) -> bool:
+    """Whether the homework has the run or file at `rel`: the folder exists (a run made before
+    an update), or the step list names it. "runs/part3/after" does not count as named by
+    "runs/part3/after-eval". If steps.toml is missing or unreadable, assume it does. This asks
+    what exists, not which step id makes it, so a renamed step changes nothing here."""
+    if (repo / rel).exists():
         return True
     try:
-        return AFTER_EVAL in (repo / "steps.toml").read_text(errors="replace")
+        text = (repo / "steps.toml").read_text(errors="replace")
     except OSError:
         return True
+    return re.search(re.escape(rel) + r"(?![\w-])", text) is not None
 
 
 def comparisons(repo: Path) -> list:
-    """The comparisons the homework asks for, leaving out runs/part3/after-eval if it has no such run."""
-    keep = has_after_eval(repo)
-    return [c for c in COMPARISONS if keep or AFTER_EVAL not in c[:2]]
+    """The comparisons the homework asks for, each only when the homework has both runs."""
+    return [c for c in COMPARISONS if in_homework(repo, c[0]) and in_homework(repo, c[1])]
 
 
 def where_from(repo: Path, rel: str) -> str | None:
-    if rel == AFTER_EVAL and not has_after_eval(repo):
+    if not in_homework(repo, rel):
         return None
     return WHERE_FROM.get(rel)
 
