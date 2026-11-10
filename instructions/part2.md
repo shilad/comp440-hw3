@@ -97,8 +97,7 @@ or *doesn't say* counts as *not supported*.
 1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
    homework page shows for 2c. Claude is your Claude Code session, your tutor and lab assistant.
 2. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-3. Leave the claims table's filters and order as they are, so the claims are in the order of the claims
-   file.
+3. Clear the claims table's filters, so that it shows every claim, in the order of the claims file.
 4. Going down the table, take the first ten claims where the agent's verdict is *supported* or
    *refuted*. Skip any where it said *doesn't say* or gave no verdict. I ask for the first ten so that
    nobody, you or Claude, chooses which claims get checked.
