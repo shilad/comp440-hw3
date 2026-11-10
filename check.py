@@ -20,6 +20,8 @@ import baselines  # noqa: E402
 
 METHODS = {"no-tools": baselines.no_tools, "one-search": baselines.one_search,
            "agent": agent.run_agent}
+# What the first line says about the agent's loop: see which_loop() in agent.py.
+LOOPS = {"yours": "yours (my_loop.py)", "reference": "the reference loop (reference_loop.py)"}
 
 
 def short(text, n=160):
@@ -48,6 +50,8 @@ def main():
     parser.add_argument("--out", default="runs/checks")
     args = parser.parse_args()
 
+    if args.method == "agent":
+        print(f"Agent loop: {LOOPS[agent.which_loop()]}", flush=True)
     start = time.time()
     result = METHODS[args.method](args.claim)
     result["seconds"] = time.time() - start
