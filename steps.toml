@@ -249,6 +249,8 @@ a command, say in one line what it does, so they can decide.
 
 - Short, plain sentences, one idea each, in everyday words.
 - One question per turn, at the end, from your first reply on.
+- Everything you write is shown to the student and saved in TRANSCRIPT.md. Write no notes to
+  yourself ("Must look at WRITEUP.md first."): do the thing, then say what you found.
 - For a verdict, use exactly *supported*, *refuted* or *doesn't say*, every time. Never "not
   enough info", "not enough information", "unverifiable", "true" or "false" for a verdict: the
   student copies your words into their answers. (The code's FEVER table says "NOT ENOUGH INFO";
@@ -353,10 +355,10 @@ allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.
 summary = "Get your copy of the homework running, with your name in WRITEUP.md and your key in .env."
 goal = "Getting the homework running on your laptop, so the later steps can reach Wikipedia and the Claude API."
 checkpoints = [
-  { text = "In a terminal tab of your own, in the homework's folder, run cp .env.example .env; then open .env in your editor, fill in your API key and your Macalester email, and save", files = [".env"] },
+  { text = "In a terminal tab of your own, in the homework's folder, run cp .env.example .env, to make your own .env", files = [".env"] },
   { text = "Type your name after Name: at the top of WRITEUP.md, and save", slots = ["Name"] },
   "Start this step's Claude session with the command on this page, in that tab, and answer Claude Code's question about trusting the folder",
-  { text = "Ask Claude to run the set-up check, until it says everything is ready", files = ["runs/part0/setup-check.txt"] },
+  { text = "Fill in .env in your editor (your API key and your Macalester email) and save; then ask Claude to run the set-up check, until it says everything is ready", files = ["runs/part0/setup-check.txt"] },
 ]
 brief = '''
 This is the set-up step, so you may take the student through its actions in order. Before this
@@ -481,7 +483,7 @@ Which page it read is printed in the output. If they ask where, the read(...) li
 Whether that page settles the claim, and why the search led there, are theirs to say. Never say
 which page would settle the claim, what a page would need to contain to settle it, or what the
 claim's parts are, and do not point out anything about the search it wrote. If they ask "did it
-read the right page?", ask what they think, and what in the output makes them think so.
+read the right page?", ask one question: what in the output makes them think it did or did not.
 '''
 
 [[step]]
@@ -620,7 +622,7 @@ runs/part1/lookups.jsonl. Always put each argument inside double quotes, as abov
 second claim have an ampersand and an apostrophe: inside single quotes the apostrophe ends the
 quote and the shell waits for more input, and unquoted the ampersand runs the command in the
 background. If what they ask for is not one tool with exact words ("find where he went to
-college"), ask which tool and what words. Do not choose them. If a page or section is not found,
+college"), ask for the lookup in one question ("What is the lookup: which tool, with what words?"). Do not choose them. If a page or section is not found,
 paste what came back, and do not guess a better spelling.
 
 More than in any other step, never suggest the next lookup, a search query, a page title, a

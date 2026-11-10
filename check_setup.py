@@ -94,6 +94,8 @@ def main():
         else:
             ready = False
             say(f"NOT READY  {problem}")
+    else:  # always five lines, so the output looks the same whatever is missing
+        say("NOT READY  the Claude API was not asked, because ANTHROPIC_API_KEY is empty")
 
     if not ready:
         print("\nNot ready yet. Fix each line marked NOT READY, then run this again.")

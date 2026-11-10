@@ -176,6 +176,13 @@ def test_check_setup_says_what_is_missing_and_never_prints_the_key(monkeypatch, 
     assert "NOT READY  the Claude API did not accept the key." in capsys.readouterr().out
     assert not saved.exists()  # an earlier "ready" does not outlive a failed check
 
+    env.write_text("ANTHROPIC_API_KEY=\nWIKIPEDIA_CONTACT=\n")
+    assert check_setup.main() == 1  # both lines empty: still five lines, one for each thing checked
+    printed = capsys.readouterr().out
+    status = [line for line in printed.splitlines() if line.startswith(("ok ", "NOT READY "))]
+    assert len(status) == 5
+    assert "NOT READY  the Claude API was not asked, because ANTHROPIC_API_KEY is empty" in printed
+
 
 class Reply:
     """What requests.get() returns, for a scripted Wikipedia."""
