@@ -97,15 +97,13 @@ It prints one line for each rule, `ok` or `NOT YET`. A `NOT YET` line says what 
 and what your loop did or failed to do; it does not say how to fix it. Until you start, all six lines say
 "the loop is not written yet". A run partway through looks like this:
 
-[[CHECK_SAMPLE: the orchestrator replaces the block below with check_loop.py's real output]]
-
 ```
 ok         1. Ask the model
 ok         2. Run its lookups
-NOT YET    3. Send the results back: the model asked for a search, and the next turn sent to it held no result with that call's id
-NOT YET    4. Check the answer: (what the stand-in model did, and what your loop did)
-NOT YET    5. Enforce the limit: (what the stand-in model did, and what your loop did)
-NOT YET    6. Stop when the model stops: (what the stand-in model did, and what your loop did)
+ok         3. Send the results back
+NOT YET    4. Check the answer: the model's second reply gave an answer that quotes the page it had read, and your loop called lookup() for it.
+NOT YET    5. Enforce the limit: the model's third reply asked for a third search with the limit of 2 lookups reached, and your loop ran it.
+NOT YET    6. Stop when the model stops: the model's first reply had text and no tool call, and the next request your loop sent did not end with one user turn holding REMINDER ('Please finish by calling answer().').
 
 Not yet. Fix the first NOT YET line, then run this again.
 ```
