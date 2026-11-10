@@ -40,7 +40,7 @@ uv run python evaluate.py data/eval.jsonl --out runs/part2
 
 The first table gives, for each version, how many claims matched the dataset's label out of how many:
 by number of articles, for all 100, and by the dataset's label. The "Accuracy" table in the results
-viewer shows the same counts with percentages.
+viewer shows the same counts with percentages. In your answers, counts and percentages are both fine.
 
 **Write-up:** In `WRITEUP.md`, under 2a, fill in the block and answer:
 

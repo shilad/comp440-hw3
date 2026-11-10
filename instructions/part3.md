@@ -79,7 +79,7 @@ failure on your evaluation claims.
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Decide on **one** change aimed at your most common failure from 3a (see the Hint).
 3. Make the change in your editor, or tell Claude exactly what to change.
-4. Tell Claude what you expect the change to do, when it asks.
+4. Before you start the run, tell Claude what you changed and what you expect it to do.
 5. Start the run yourself in another terminal tab in the homework's folder, with the first command under
    "Output".
 6. Leave that tab open, your laptop awake and your change alone until the run ends.

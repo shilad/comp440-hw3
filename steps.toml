@@ -1309,7 +1309,7 @@ minutes = 18
 slots = ["3b.*"]
 files = ["runs/part3/after/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Edit(instructions.md)"]
-run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after", note = "About 6 minutes and about 21 cents on your key. Start it only after you have made your change and told Claude what you expect. Leave that tab open, your laptop awake and your change alone until it ends with two tables." }
+run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after", note = "About 6 minutes and about 21 cents on your key. Start it only after you have made your change. Before you start the run, tell Claude what you changed and what you expect it to do. Leave that tab open, your laptop awake and your change alone until it ends with two tables." }
 summary = "Make one change aimed at the most common failure, run the agent on your evaluation claims again, and measure what it did."
 goal = "In this step you make one change aimed at your most common failure. You find out whether it fixes that failure on your evaluation claims."
 checkpoints = [
@@ -1338,8 +1338,11 @@ change and nothing else, then show the diff with `git diff`. If what they descri
 than instructions.md and WRITEUP.md makes Claude Code ask the student first. Tick checkpoint 1
 once the change is made.
 
-Before the run, ask what they expect the change to do, and note it with `expected`. The run is
-the student's to start, in a terminal tab of their own, in the homework's folder:
+Before the run starts, ask what they expect the change to do, and when they answer, note it with
+`expected`. If they say the run is already going or has finished, still ask first, before you
+read or paste any result: "What did you expect the change to do?" Note their answer with
+`expected`, and only then go on. The run is the student's to start, in a terminal tab of their
+own, in the homework's folder:
 
     uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after
 
@@ -1353,10 +1356,10 @@ same time and cost again:
 
     uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after --fresh
 
-When it has ended and they ask, paste runs/part3/after/report.txt in full, and say they can
-compare runs/part2 with runs/part3/after in the results viewer: "Compare two runs", then the
-link "Step 3b: runs/part2 with runs/part3/after". The comparison is of the agent alone, since
-the run after the change has no baselines. Under "Claims that changed", the
+When it has ended, their expectation is noted and they ask, paste runs/part3/after/report.txt in
+full, and say they can compare runs/part2 with runs/part3/after in the results viewer: "Compare
+two runs", then the link "Step 3b: runs/part2 with runs/part3/after". The comparison is of the
+agent alone, since the run after the change has no baselines. Under "Claims that changed", the
 "Change" filter has "does not match in A, matches in B" and "matches in A, does not match in B",
 and "Open A and B" puts a claim's two traces side by side. If the output ends with a note that
 the saved results were made by an earlier version of the agent, nothing was run: say in one
