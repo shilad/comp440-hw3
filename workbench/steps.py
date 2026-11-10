@@ -43,6 +43,7 @@ class Step:
     # A command the student runs in a terminal tab of their own (a long run), shown in a second
     # box under the Claude command: a table with `command` and `note`.
     run_yourself: dict | None = None
+    hide_results: bool = False   # no link to this step's results (a step that says not to look yet)
     # What counts: the step's checkpoints, in order, worded as outcomes, not moves. Each is a
     # string, or a table with `text` and the `files` or `slots` that tick it by themselves; one with
     # neither is ticked by Claude, through the page skill, or by any later checkpoint being ticked.
@@ -192,7 +193,7 @@ def body(s: Step, a: Assignment, repo: Path) -> str:
 # XXXX.
 #
 # Quote layout (HW3): "# Part N: Title", then one "## " section per step, whose heading starts
-# with the step's name ("## 0b. Ask the model on its own"; older copies say "## Step 2: ...").
+# with the step's name ("## 0b. Ask the model with no tools"; older copies say "## Step 2: ...").
 # Each question is a paragraph followed by a line that starts with ">"; the answer is what follows
 # the ">". A Markdown table is a slot too, filled when every row that isn't empty has every cell
 # filled, and so is a fenced block that a paragraph asks Claude to paste into. A slot's key is

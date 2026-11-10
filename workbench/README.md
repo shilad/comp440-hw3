@@ -54,7 +54,7 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
 ## The conversations: TRANSCRIPT.md
 
 Before each commit the page writes every Claude conversation of the homework into `TRANSCRIPT.md`:
-each step's session under a heading naming the step (`# 0b. Ask the model on its own`), in step
+each step's session under a heading naming the step (`# 0b. Ask the model with no tools`), in step
 order, then any session started in this folder some other way. A step's session id is kept in
 `.workbench/state.json`; resuming the session adds to the same conversation. A conversation that
 is in the file but no longer on the laptop is kept as it was. `uv run python -m workbench.transcript`
@@ -109,7 +109,9 @@ When the viewer also has `respond(...)`, which adds a headers dict, the page use
 `/results/open` is a real redirect. Without `viewer/`, `/results` says in one sentence that the
 viewer isn't installed. A step whose `files` exist under `runs/` links to
 `/results/open?path=<the newest such file of its first files entry that has one>`; there is no
-link for files elsewhere (`.env`, `data/my-claims.jsonl`).
+link for files elsewhere (`.env`, `data/my-claims.jsonl`). A step with `hide_results = true` (1e,
+which asks the student not to look at the full run's results yet) gets no such link, and its
+record lists no files under `runs/`; the "Results" link in the header stays.
 
 ## A step's Claude session
 
@@ -117,7 +119,7 @@ The page writes two files per step into the git-ignored `.workbench/` folder, an
 command uses them:
 
 ```bash
-claude -n "0b Ask the model on its own" --session-id <id> --model claude-opus-5-5 --effort medium \
+claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus-5-5 --effort medium \
     --setting-sources user --settings .workbench/0b.json \
     --append-system-prompt-file .workbench/0b.md --plugin-dir .workbench/plugin "Start step 0b."
 ```
@@ -143,7 +145,7 @@ claude -n "0b Ask the model on its own" --session-id <id> --model claude-opus-5-
 shows in its header as "about 25 minutes". A `files` entry is only ever checked for existence, so
 `files = [".env"]` is safe; the page never opens, shows or links to a `never_read` file. Then `[[part]]` tables (`number`, `title`,
 `due`) and `[[step]]` tables. A step's id is its name on the page (`"0b"`); its section in
-`WRITEUP.md` starts with that name (`## 0b. Ask the model on its own`), and `slots = ["0b.*"]`
+`WRITEUP.md` starts with that name (`## 0b. Ask the model with no tools`), and `slots = ["0b.*"]`
 takes every question, table and pasted block in that section. A key the page doesn't know is
 ignored, with a note in the terminal.
 
