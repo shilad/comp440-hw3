@@ -141,7 +141,9 @@ little over 2 hours each for Parts 1 and 3, and about an hour and a half for Par
 - **the evaluation claims**: the 200 claims in `data/eval.jsonl`.
 - **a run**: one use of `evaluate.py`, saved in a folder under `runs/`.
 - **the limit of 12 lookups**: the most lookups the loop allows for one claim.
-- **token**: the unit the API counts text in and charges by, about three quarters of a word.
+- **API**: the way one program asks another for something over the network. The agent's program uses
+  the Claude API to call the model, and Wikipedia's API to search and read pages.
+- **token**: the unit the Claude API counts text in and charges by, about three quarters of a word.
 
 ## Submitting
 

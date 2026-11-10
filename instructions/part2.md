@@ -19,7 +19,8 @@ Wikipedia articles a claim needs (2, 3 or 4).
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 2a.
+1. Start this step's Claude session with the command the homework page shows for 2a, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Check that the full run has finished (see "What you'll see").
 3. Open **Results** at the top of the homework page, then "runs/part2", and read "Accuracy".
 4. Ask Claude to paste the report into the empty block under 2a in `WRITEUP.md`.
@@ -60,7 +61,8 @@ for one claim. *token*: the unit the API counts text in and charges by, about th
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 2b.
+1. Start this step's Claude session with the command the homework page shows for 2b, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Read the report's second table, in the block under 2a in `WRITEUP.md`.
 3. Open **Results** at the top of the homework page, then "runs/part2", and read "Cost".
 4. Tick "Only claims where the agent used all 12 lookups" in the claims filters.
@@ -92,7 +94,8 @@ the agent quoted from Wikipedia. *the dataset's label*: HoVer's *supported* or *
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 2c.
+1. Start this step's Claude session with the command the homework page shows for 2c, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open **Results** at the top of the homework page, then "runs/part2".
 3. Click "Clear the filters" under the claims filters.
 4. Set "Verdict" in "The agent" box to "supported or refuted"; leave "Order" at "Order of the claims file".
@@ -139,7 +142,8 @@ of the agent's "wrong" answers may be right about today's Wikipedia.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 2d.
+1. Start this step's Claude session with the command the homework page shows for 2d, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open **Results** at the top of the homework page, then "runs/part2".
 3. Set "Result" in "The agent" box to "does not match the dataset's label (any reason)".
 4. Click these claims one at a time; "Next →" goes to the next one.
