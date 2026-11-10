@@ -434,6 +434,25 @@ def outcome(row: dict | None) -> str:
     return "correct" if row.get("correct") else "wrong"
 
 
+def run_limit(agent_rows: list) -> tuple[int, list]:
+    """The limit of lookups the agent's results were made under, and every limit they show.
+    The loop's "You have used all 12 steps" entry carries the number, so a run made before a
+    student changed MAX_STEPS keeps its own limit. When no result shows one, the limit is
+    agent.py's as it is now, unless a result used more lookups than that (then the limit was
+    at least as many as the most any result used)."""
+    shown: dict[int, int] = {}
+    for r in agent_rows:
+        for c in r["trace"]:
+            m = OUT_OF_STEPS.search(c["result"])
+            if m:
+                shown[int(m.group(1))] = shown.get(int(m.group(1)), 0) + 1
+    if shown:
+        return max(shown, key=lambda n: (shown[n], n)), sorted(shown)
+    now = RULES.max_steps()
+    most = max((r["steps"] for r in agent_rows), default=0)
+    return max(now, most), []
+
+
 def used_all_steps(row: dict, max_steps: int) -> bool:
     if row is None:
         return False
@@ -513,6 +532,7 @@ class Run:
         agent_rows = list(self.rows.get("agent", {}).values())
         self.versions = sorted({str(r["agent_version"]) for r in agent_rows if r.get("agent_version")})
         self.versions_complete = bool(agent_rows) and all(r.get("agent_version") for r in agent_rows)
+        self.limit, self.limits = run_limit(agent_rows)
 
     def group(self, i: str) -> str:
         item = self.items[i]
@@ -633,7 +653,7 @@ def stats(run: Run, method: str, ids=None) -> dict:
             labels[name] = [sum(bool(rows_by_id[i]["correct"]) for i in pick), len(pick)]
     d = n or 1
     failed = sum(r["failed"] for r in rows)
-    max_steps = RULES.max_steps()
+    max_steps = run.limit
     return {
         "n": n,
         "correct": sum(bool(r["correct"]) for r in rows),
