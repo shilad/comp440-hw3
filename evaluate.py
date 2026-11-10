@@ -2,16 +2,18 @@
 
     uv run python evaluate.py data/eval.jsonl --out runs/part2
 
-Each line of the claims file is a JSON object with: id, claim, source
-("hover", "fever", or "mine" for claims you wrote), label and, for HoVer, hops
-(how many Wikipedia articles the claim needs). For HoVer and FEVER the label is
-the dataset's own; for your own claims it is your verdict, written as one of
+Each line of the claims file is a JSON object with: id, claim, source ("hover"
+for the dataset's claims, "mine" for claims you wrote), label and, for HoVer,
+hops (how many Wikipedia articles the claim needs). For HoVer the label is the
+dataset's own; for your own claims it is your verdict, written as one of
 "supported", "refuted" or "doesn't say".
 
 Every result is saved as it finishes, so if a run stops partway you can start
 it again and it picks up where it left off. A claim that fails with an error,
 such as Wikipedia refusing requests, is not saved, so the next run tries it
-again.
+again. While it runs, it prints how far it has got. When every claim has a
+result, it prints two tables and saves them as report.txt in the run's folder.
+Running the same command again prints them again and costs nothing.
 """
 
 import argparse
@@ -71,10 +73,14 @@ def run_method(method, items, out_dir, workers):
             row = json.loads(line)
             done[row["id"]] = row
     todo = [item for item in items if item["id"] not in done]
-    print(f"{method}: {len(done)} already done, running {len(todo)}")
+    print(f"{method}: {len(done)} already done, running {len(todo)}", flush=True)
+    start = time.time()
     with path.open("a") as f, ThreadPoolExecutor(workers) as pool:
-        for result in pool.map(lambda item: run_one(method, item), todo):
+        for n, result in enumerate(pool.map(lambda item: run_one(method, item), todo), 1):
             done[result["id"]] = result
+            if n % 10 == 0 or n == len(todo):  # so a long run shows that it is still going
+                print(f"{method}: {n} of {len(todo)} done, "
+                      f"{(time.time() - start) / 60:.0f} min so far", flush=True)
             if "error" in result:
                 continue  # not saved, so the next run tries this claim again
             f.write(json.dumps(result) + "\n")
@@ -90,39 +96,51 @@ def group_of(item):
     return "Your claims"
 
 
-def report(items, results_by_method):
+def report(items, results_by_method, out_dir=None):
+    """Print the two tables. With out_dir, also save them there as report.txt
+    once every claim has a saved result: that file marks a finished run."""
+    lines = []
+    say = lines.append
     groups = sorted({group_of(item) for item in items})
     methods = list(results_by_method)
-    print("\nShare of claims where the verdict matched the label (the dataset's, or yours):\n")
-    print(f"{'':22}" + "".join(f"{m:>12}" for m in methods))
+    say("\nShare of claims where the verdict matched the label (the dataset's, or yours):\n")
+    say(f"{'':22}" + "".join(f"{m:>12}" for m in methods))
     for group in groups + ["All"]:
         row = f"{group:22}"
         for method in methods:
             rows = [r for item, r in zip(items, results_by_method[method])
                     if group == "All" or group_of(item) == group]
             row += f"{sum(r['correct'] for r in rows):>6}/{len(rows):<5}"
-        print(row)
+        say(row)
 
-    print("\nAverage per claim:\n")
-    print(f"{'':22}{'lookups':>10}{'tokens':>10}{'seconds':>10}{'cost':>10}")
+    say("\nAverage per claim:\n")
+    say(f"{'':22}{'lookups':>10}{'tokens':>10}{'seconds':>10}{'cost':>10}")
     for method in methods:
         rows = results_by_method[method]
         n = len(rows) or 1
         tokens = sum(r["tokens"]["input"] + r["tokens"]["output"] for r in rows) / n
-        print(f"{method:22}{sum(r['steps'] for r in rows) / n:>10.1f}{tokens:>10.0f}"
-              f"{sum(r['seconds'] for r in rows) / n:>10.1f}"
-              f"{sum(r['cost_usd'] for r in rows) / n:>10.4f}")
+        say(f"{method:22}{sum(r['steps'] for r in rows) / n:>10.1f}{tokens:>10.0f}"
+            f"{sum(r['seconds'] for r in rows) / n:>10.1f}"
+            f"{sum(r['cost_usd'] for r in rows) / n:>10.4f}")
     every_run = [r for rows in results_by_method.values() for r in rows]
     failed = sum("error" in r for r in every_run)
     no_verdict = sum(r["verdict"] is None for r in every_run) - failed
     if no_verdict:
-        print(f"\n{no_verdict} runs gave no verdict (for example a refusal, out of steps or "
-              "its answer rejected three times). "
-              "They count as wrong. Look for them in the saved files.")
+        say(f"\n{no_verdict} runs gave no verdict (for example a refusal, out of steps or "
+            "its answer rejected three times). "
+            "They count as wrong. Look for them in the saved files.")
     if failed:
-        print(f"\n{failed} runs stopped with an error, such as Wikipedia refusing requests. "
-              "They count as wrong above, but they were not saved: run the same command "
-              "again to retry them.")
+        say(f"\n{failed} runs stopped with an error, such as Wikipedia refusing requests. "
+            "They count as wrong above, but they were not saved: run the same command "
+            "again to retry them.")
+    text = "\n".join(lines)
+    print(text, flush=True)
+    if out_dir is not None:
+        saved = Path(out_dir) / "report.txt"
+        if failed:
+            saved.unlink(missing_ok=True)  # not finished: some claims have no saved result
+        else:
+            saved.write_text(text.lstrip("\n") + "\n")
 
 
 def main():
@@ -141,8 +159,10 @@ def main():
     items = items[: args.limit] if args.limit else items
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Which claims file this run used, so the results viewer can find the claims.
+    (out_dir / "run.json").write_text(json.dumps({"claims": args.claims}) + "\n")
     results = {m: run_method(m, items, out_dir, args.workers) for m in args.methods.split(",")}
-    report(items, results)
+    report(items, results, out_dir)
 
 
 if __name__ == "__main__":

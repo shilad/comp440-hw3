@@ -1,8 +1,9 @@
 """Check one claim and print the result.
 
-    uv run python check.py --method agent "The director of ... was born in Illinois."
+    uv run python check.py --method agent --out runs/part0 "<the claim>"
 
-Methods: no-tools, one-search, agent. The result is also saved as JSON in runs/.
+Methods: no-tools, one-search, agent. The result is also saved as a JSON file in
+the --out folder.
 """
 
 import argparse
