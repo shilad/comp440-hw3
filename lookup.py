@@ -3,7 +3,7 @@
     uv run python lookup.py search "<words to search for>"
     uv run python lookup.py read "<page title>"
     uv run python lookup.py read "<page title>" "<section>"
-    uv run python lookup.py wikidata "<page title>" "<property, such as place of birth>"
+    uv run python lookup.py wikidata "<entity, such as a person's name>" "<property, such as place of birth>"
 
 It prints exactly what the agent would see, and adds the call to
 runs/part1/lookups.jsonl, so your calls are counted the same way the agent's

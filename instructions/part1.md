@@ -180,8 +180,8 @@ in "Claim contains" and press Enter.
 **What you're finding out:** How much the agent's behavior depends on its instructions.
 
 **Words in this step:** *`instructions.md`*: the agent's instructions, which the program sends to the
-model (Claude Haiku) on every turn of the loop. It starts with three sentences that name the job and the
-four tools and say nothing about how to use them. *trace*: the agent's lookups for one claim, in order,
+model (Claude Haiku) on every turn of the loop. It starts with three sentences that name the job, the
+four tools and how to finish, and say nothing about how to look things up. *trace*: the agent's lookups for one claim, in order,
 with what each returned.
 
 **What to do:**

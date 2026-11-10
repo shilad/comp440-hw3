@@ -5,8 +5,8 @@
 Each line of the claims file is a JSON object with: id, claim, source ("hover"
 for the dataset's claims, "mine" for claims you wrote), label and, for HoVer,
 hops (how many Wikipedia articles the claim needs). For HoVer the label is the
-dataset's own; for your own claims it is your verdict, written as one of
-"supported", "refuted" or "doesn't say".
+dataset's own; for your own claims it is your verdict: "supported" if the
+claim is true, "refuted" if it is false.
 
 Every result is saved as it finishes, so if a run stops partway you can start
 it again and it picks up where it left off. A claim that fails with an error,
@@ -74,7 +74,7 @@ def check_saved_agent(out_dir, items):
     why = "instructions.md, agent.py or wiki.py has changed since"
     if todo:
         sys.exit(f"Stopped: {out_dir} has {len(old)} saved results from an earlier version of "
-                 f"your agent ({why}), and {len(todo)} claims still to run. Mixing the two would "
+                 f"your agent ({why}), and {len(todo)} still to run. Mixing the two would "
                  "give results you could not interpret. To start this run over with the agent "
                  "as it is now, add --fresh to the command.")
     NOTES.append(f"Note: the agent's saved results in {out_dir} were made by an earlier version "
