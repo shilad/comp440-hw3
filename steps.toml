@@ -665,15 +665,15 @@ part = 1
 title = "Watch the agent work"
 page = "instructions/part1.md"
 section = "1c. Watch the agent work"
-minutes = 25
+minutes = 15
 slots = ["1c.*"]
 files = ["runs/part1/before/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
-summary = "Run the agent on the 12 development claims and read six of its traces closely."
+summary = "Run the agent on the 12 development claims and read three of its traces closely."
 goal = "Whether the agent reaches the dataset's label on the 12 development claims, and whether it gets there for a good reason."
 checkpoints = [
   { text = "The agent's run on the 12 development claims is saved", files = ["runs/part1/before/report.txt"] },
-  "You have read six traces closely in the results viewer: two each for 2, 3 and 4 articles, one of them claim 2 from 1b",
+  "You have read three traces closely in the results viewer: one each for 2, 3 and 4 articles, the one for 3 being claim 2 from 1b",
   { text = "Your table and answer are in WRITEUP.md", slots = ["1c.*"] },
 ]
 brief = '''
@@ -691,9 +691,9 @@ saved in runs/part1/before/report.txt. On that run's page, the claims table's fi
 "does not match the dataset's label (any reason)"); "Claim contains" finds a claim by its words.
 Give these labels when they ask how to find claims.
 
-The student picks six claims to read closely: two each that need 2, 3 and 4 articles, and for
-each number one the agent got right and one it got wrong, where there is one. One of the six must
-be the second claim they checked by hand in 1b, "Vic & Anthony's Steakhouse is located at the
+The student picks three claims to read closely: one each that needs 2, 3 and 4 articles, with at
+least one the agent got wrong, where there is one. The one that needs 3 must be the second claim
+they checked by hand in 1b, "Vic & Anthony's Steakhouse is located at the
 American casino that was combined with the California Club. The casino is owned by Landry's,
 Inc.", so they can set the agent's lookups beside their own. Say that once, after the run, without
 saying how the agent did on that claim. The rest of the picking is theirs. To see the 12 claims
@@ -715,7 +715,7 @@ data/dev.jsonl also lists, for each claim, the articles the dataset's authors us
 them up: they bear on the judgment the student is making. If the student asks what the file
 holds, show them.
 
-Tick checkpoint 2 when they say they have read their six traces.
+Tick checkpoint 2 when they say they have read their three traces.
 '''
 
 [[step]]

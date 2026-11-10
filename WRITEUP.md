@@ -93,16 +93,13 @@ Did you have to back up and try something else? What happened?
 
 ## 1c. Watch the agent work
 
-The six traces you read closely: two claims each that need 2, 3 and 4 articles. For each number of articles, one the agent got right and one it got wrong, where there is one. One of the six must be claim 2 from 1b.
+The three traces you read closely: one claim each that needs 2, 3 and 4 articles, with claim 2 from 1b as the one that needs 3. At least one is a claim the agent got wrong, where there is one.
 
 | # | Claim (first few words) | Articles | Did it match the dataset's label? | Did it get there for a good reason? Why or why not |
 |---|---|---|---|---|
 | 1 | | | | |
 | 2 | | | | |
 | 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
-| 6 | | | | |
 
 Which trace did you find most interesting, and what did the agent do well or badly in it?
 

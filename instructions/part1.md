@@ -241,9 +241,9 @@ trace, a lookup or an answer.
 3. Tell Claude what you expect, when it asks.
 4. Read the two tables the run prints at the end.
 5. Open **Results** at the top of the homework page, then "runs/part1/before".
-6. Choose six claims: two each that need 2, 3 and 4 articles (see the Hint).
-7. Make one of the six claim 2 from 1b, the claim about Vic & Anthony's Steakhouse.
-8. Click each of the six and read "The agent's trace", one entry at a time.
+6. Choose three claims: one each that needs 2, 3 and 4 articles (see the Hint).
+7. Make the one that needs 3 claim 2 from 1b, the claim about Vic & Anthony's Steakhouse.
+8. Click each of the three and read "The agent's trace", one entry at a time.
 9. Decide for each whether it got there for a good reason: does its quoted evidence really settle the claim?
 10. Fill in one row of the table for each, and answer the question under it.
 
@@ -261,17 +261,17 @@ it.
 
 **What to write:** In `WRITEUP.md`, under 1c, fill in the table and answer:
 
-- The six traces you read closely: two claims each that need 2, 3 and 4 articles. For each number of articles, one the agent got right and one it got wrong, where there is one. One of the six must be claim 2 from 1b.
+- The three traces you read closely: one claim each that needs 2, 3 and 4 articles, with claim 2 from 1b as the one that needs 3. At least one is a claim the agent got wrong, where there is one.
 - Which trace did you find most interesting, and what did the agent do well or badly in it?
 
 **You're done when:** The homework page ticks 1c: `runs/part1/before/report.txt` exists (the run saves
-it when it finishes), all six rows are filled, and the answer has text after the `>`.
+it when it finishes), all three rows are filled, and the answer has text after the `>`.
 
 **If something goes wrong:** If the run stops partway, ask Claude to run the same command again. It
 keeps every claim it already finished.
 
-**Hint:** For each number of articles, choose one claim the agent got right and one it got wrong. If
-the agent got both right, or both wrong, for a number of articles, use both. In "Claims", set "The number of articles" to "2" (then "3", then "4"), and set "Result" in
+**Hint:** Choose the claims that need 2 and 4 articles so that at least one of your three is a claim the
+agent got wrong, where there is one. In "Claims", set "The number of articles" to "2" (then "3", then "4"), and set "Result" in
 "The agent" box to "matches the dataset's label" or "does not match the dataset's label (any reason)".
 "Next →" goes to the next claim in the filtered list. To find claim 2 from 1b, type a few of its words
 in "Claim contains" and press Enter.
