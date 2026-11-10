@@ -37,7 +37,7 @@ LOOKUP = ["Bash(uv run python lookup.py:*)"]
 # id: (part, section heading without "## ", files, allow, minutes)
 EXPECTED = {
     "0a": (0, "0a. Get your copy running", [".env"],
-           ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run pytest:*)", "Bash(test -f .env)"], 20),
+           ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"], 20),
     "0b": (0, "0b. Ask the model with no tools", ["runs/part0/no-tools-*.json"], CHECK, 8),
     "0c": (0, "0c. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 8),
     "0d": (0, "0d. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 12),
@@ -53,12 +53,23 @@ EXPECTED = {
     "3a": (3, "3a. Pick a topic and write your claims", ["data/my-claims.jsonl"],
            ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"], 30),
     "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),
-    "3c": (3, "3c. Sort the failures", [],
-           ["Write(runs/part3/claude-labels.md)", "Edit(runs/part3/claude-labels.md)"] + EVALUATE, 25),
+    "3c": (3, "3c. Sort the failures", [], EVALUATE, 25),
     "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt", "runs/part3/after-eval/report.txt"],
            EVALUATE + CHECK + ["Edit(instructions.md)"], 20),
     "3e": (3, "3e. Write it up", [], [], 30),
 }
+
+SAMPLE_CLAIM = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
+PART0_COMMANDS = {
+    method: f"uv run python check.py --method {method} --out runs/part0 '{SAMPLE_CLAIM}'"
+    for method in ("no-tools", "one-search", "agent")
+}
+CLAIMS_1B = [
+    "Mel Duncan holds a history degree from the private, coeducational liberal arts Macalester "
+    "College located in Saint Paul, Minnesota, US.",
+    "Vic & Anthony's Steakhouse is located at the American casino that was combined with the "
+    "California Club. The casino is owned by Landry's, Inc.",
+]
 
 GLOBAL_ALLOW = ["Bash(git log:*)", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git show:*)",
                 "Bash(ls:*)", "Edit(WRITEUP.md)"]
@@ -185,9 +196,43 @@ def test_brief_commands_run_without_asking(a, step_id):
 
 
 def test_claim_steps_give_the_claim_word_for_word(a):
+    assert a.sample_claim == SAMPLE_CLAIM
     for s in a.steps:
         if s.claim:
-            assert a.sample_claim and a.sample_claim in s.brief, f"{s.id}: the brief doesn't give the claim"
+            assert a.sample_claim in s.brief, f"{s.id}: the brief doesn't give the claim"
+
+
+def flat(text: str) -> str:
+    """Text with its line breaks and runs of spaces as single spaces, for word-for-word checks."""
+    return " ".join(text.split())
+
+
+def test_part0_briefs_give_the_commands_whole():
+    a = stepmod.load(STEPS)
+    for step_id, method in (("0b", "no-tools"), ("0c", "one-search"), ("0d", "agent")):
+        brief = a.step(step_id).brief
+        assert PART0_COMMANDS[method] in brief, f"{step_id}: the brief lacks {PART0_COMMANDS[method]}"
+        assert "single quotes" in brief, f"{step_id}: the brief doesn't say to keep the single quotes"
+
+
+def test_1b_gives_both_claims_in_order(a):
+    brief = flat(a.step("1b").brief)
+    at = [brief.find(c) for c in CLAIMS_1B]
+    assert all(i >= 0 for i in at), "1b: the brief doesn't give both claims word for word"
+    assert at[0] < at[1], "1b: the claims are out of order"
+
+
+def test_no_brief_reruns_the_long_runs_with_fresh(a):
+    """--fresh is for 1d and 3d's short runs. A line that runs runs/part2 or the 3d rerun on the
+    200 claims with --fresh would cost the full run again."""
+    for s in a.steps:
+        for c in commands(s.brief):
+            if "--fresh" in c:
+                assert "runs/part2" not in c and "after-eval" not in c, f"{s.id}: {c}"
+
+
+def test_the_loop_has_more_than_two_ways_to_end():
+    assert "two ways" not in STEPS.read_text(encoding="utf-8")
 
 
 def test_command_finder_sees_commands():
@@ -216,7 +261,7 @@ def test_no_tbd():
 
 
 def test_no_placeholders_left():
-    """Fails until the orchestrator fills in [[SAMPLE_CLAIM]] and the run's numbers. Intended."""
+    """No token in double square brackets, such as one left to fill in, reaches students."""
     left = sorted(set(re.findall(r"\[\[[A-Z][A-Z0-9_]*\]\]", STEPS.read_text(encoding="utf-8"))))
     assert not left, f"steps.toml still has placeholders to fill in: {left}"
 

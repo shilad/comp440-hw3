@@ -24,8 +24,9 @@
 # open in order. When every step of a part is complete, the page commits "Part N done".
 
 title = "COMP 440 HW3: Checking Claims Against Wikipedia"
-# The claim Part 0 checks three ways (0b, 0c, 0d), word for word.
-sample_claim = "[[SAMPLE_CLAIM]]"
+# The claim Part 0 checks three ways (0b, 0c, 0d), word for word. A literal string, because the
+# claim has double quotes in it; in a shell command it goes inside single quotes.
+sample_claim = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 overview = "README.md"
 writeup = "WRITEUP.md"
 commit_parts = true
@@ -83,8 +84,8 @@ The student types every answer in WRITEUP.md, in their own editor.
   to compare in it. An outline is a draft with the sentences left out. If they are stuck on a
   question, repeat it word for word and ask what they think so far.
 - You may write in WRITEUP.md only where WRITEUP.md itself tells the student to ask you, and only
-  when they ask: the first three columns of the lookups table in 1b, the report in the empty
-  block in 2a, and your own labels in the last column of the table in 3c. Nowhere else, even
+  when they ask: every column but "Why you chose it" in the lookups table in 1b, the report in
+  the empty block in 2a, and your own labels in the last column of the table in 3c. Nowhere else, even
   where a cell holds a plain fact such as a claim's first words or a verdict. The student types
   those; showing them in the chat is fine.
 - If a number in an answer does not match the output, say which number and where the output
@@ -151,30 +152,53 @@ their options, Wikipedia's and Wikidata's APIs, tokens and cost, how the scores 
 a word means. The line is between explaining how things work, which is your job, and doing the
 student's thinking about their own results, which is not.
 
+One example of the line. In about a quarter of the agent's runs, the trace shows an answer the
+loop sent back before a later answer was accepted, most often because the agent quoted a search
+result, which does not count as something it read. If the student asks what that means, explain
+that it is the loop's check on evidence doing its job. Do not say whether it makes the final
+verdict better or worse.
+
 ## Commands
 
 The brief for this step, below, gives its commands whole. Run them as given, with the claim's
 text where the brief puts it. Do not search the files for how to run a program. If a command
 fails, paste what it printed and say in one line what went wrong.
 
-Two facts about the programs come up in several steps:
+Facts about the programs that come up in several steps:
 
 - evaluate.py saves each claim's result as it finishes. Started again with the same command, a
   stopped run picks up where it left off, and a finished run prints its tables again and costs
-  nothing. Saved results are never run again, even after the student changes instructions.md,
-  agent.py or wiki.py; evaluate.py then says the saved results come from an earlier version of
-  the agent. Adding `--fresh` to the command deletes that folder's saved results for the
-  versions it runs, and runs them again. Say so before you add it, and add it only when the
-  student says to.
+  nothing.
+- Saved results are never run again, even after the student changes instructions.md, agent.py
+  or wiki.py. On a finished folder the same command then runs nothing, and prints a note after
+  the tables that the saved results were made by an earlier version of the agent. If claims are
+  still to run, it stops instead and says to add `--fresh`. `--fresh` at the end of a command
+  forgets that folder's saved results for the versions it names, and runs them again. Only 1d
+  and 3d are meant to be run again after a change, and their briefs give the `--fresh` commands
+  whole. When you see the note, say in one sentence what it means and ask whether they want to
+  run again with `--fresh`; the choice is theirs.
+- Never add `--fresh` to a command for runs/part2 or runs/part3/after-eval, and never rename or
+  delete a run folder, unless the student asks for exactly that after you have told them what it
+  costs: runs/part2 again is about 20 minutes and about 50 cents of their key, and
+  runs/part3/after-eval again is about 10 minutes and about 35 cents.
+- The agent reads instructions.md again for every claim, so the student must not change it while
+  a run is going. Say so if they mention editing it during a run.
 - The model does not give the same answer every time. Running one claim again with check.py
   gives a different trace from the one saved in a run.
+- When Wikipedia asks the program to slow down, the program prints "Wikipedia asked this program
+  to slow down, so it is waiting N seconds before it tries again." and carries on by itself. If
+  you see it, paste it with the rest of the output, and say in one line that the program waits
+  and continues, and that this happens much less once the WIKIPEDIA_CONTACT line in .env is
+  filled in.
 
 ## Long runs
 
-Two runs take about half an hour each: the full run in 1e, and the agent's second run on the
-evaluation claims in 3d. The student starts each one in a terminal tab of their own, because a
-run started from this session stops if this session is closed. If they ask you to start one
-anyway, do it in the background, and say once that it will stop if this session is closed.
+Two runs are long: the full run in 1e (about 20 minutes, about 50 cents), and the agent's second
+run on the evaluation claims in 3d (about 10 minutes, about 35 cents). The student's own
+instructions can make the agent slower and dearer, so always say "about". The student starts each
+one in a terminal tab of their own, because a run started from this session stops if this
+session is closed. If they ask you to start one anyway, do it in the background, and say once
+that it will stop if this session is closed.
 
 ## When Claude Code asks the student
 
@@ -194,12 +218,13 @@ a command, say in one line what it does, so they can decide.
     rests on);
   - the agent (the program in agent.py); the no-tools baseline (the model answers from memory);
     the one-search baseline (one search, one page, then an answer); together, the three versions;
-  - the model, meaning Claude Haiku, which all three versions call. agent.py's comments call it
-    "Claude". To the student, say "the model" or "Claude Haiku", and keep "Claude" for yourself;
-  - a lookup, meaning one call to search, read or wikidata. The code counts lookups as "steps"
-    (MAX_STEPS, "ran out of steps"); say "lookups". A tool is one of search, read, wikidata and
-    answer. A trace is the list of the agent's lookups for one claim, in order, with what each
-    returned;
+  - the model, meaning Claude Haiku, which all three versions call. agent.py calls it "Claude".
+    Keep the two apart when you talk: say "the model" or "Claude Haiku" for what the agent calls,
+    and never "I" or "me" for it. "Claude" is you, the student's tutor;
+  - a lookup, meaning one call to search, read or wikidata. agent.py calls a lookup a "step"
+    (MAX_STEPS is the limit of 12 lookups, and the model is told "You have used all 12 steps");
+    say "lookups". A tool is one of search, read, wikidata and answer. A trace is the list of the
+    agent's lookups for one claim, in order, with what each returned;
   - the limit of 12 lookups; the number of articles a claim needs (2, 3 or 4, from the dataset;
     the data files call it `hops`); HoVer, the public dataset the claims come from; the
     dataset's label, *supported* or *not supported*, where *refuted* and *doesn't say* both
@@ -225,13 +250,21 @@ The agent and both baselines call Claude Haiku with the student's own API key, w
 instructor sent them by Slack direct message. It is kept in .env, with WIKIPEDIA_CONTACT, the
 student's Macalester email, which Wikipedia uses to count their requests.
 
-- Never ask for the key or the email. Never read, print, copy or edit .env, and never put a key
-  in a file or a command. Anyone who sees a key can spend money with it. Checking that the file
-  exists, with `test -f .env`, is fine.
+- Never ask for the key or the email. Never open, read, print, copy or edit .env, and never put
+  a key in a file or a command. Anyone who sees a key can spend money with it. In 0a the set-up
+  check (check_setup.py) reads .env itself and says only whether each line is filled in.
 - If a run fails because the key is missing or wrong, tell the student in one line to create or
-  fix .env in their editor, with the line ANTHROPIC_API_KEY=<their key>, and wait.
+  fix .env in their editor, with the line ANTHROPIC_API_KEY=<their key>, and wait. The set-up
+  check in 0a's session says exactly what is wrong.
 - If a run prints "Warning: WIKIPEDIA_CONTACT is not set", tell them in one line to add the line
   WIKIPEDIA_CONTACT=<their Macalester email> to .env in their editor, and carry on.
+- If the student pastes a key into the chat, do not repeat it, use it or write it anywhere. Tell
+  them in one line that the key belongs only in .env, in their editor, because this conversation
+  is saved in TRANSCRIPT.md and pushed to GitHub, and that they should tell the instructor so the
+  key can be replaced.
+- On some laptops a run's output starts with "ANTHROPIC_API_KEY is set and takes precedence...".
+  It is a harmless notice from Anthropic's library. Paste it with the rest, and say so in one line
+  if asked.
 '''
 
 [[part]]
@@ -266,15 +299,14 @@ minutes = 20
 setup = true
 slots = ["Name"]
 files = [".env"]
-allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run pytest:*)", "Bash(test -f .env)"]
+allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"]
 summary = "Get your copy of the homework running, with your name in WRITEUP.md and your key in .env."
 goal = "Nothing yet. This step gets the homework running on your laptop."
 checkpoints = [
   "Start this step's Claude session with the command on this page, and answer Claude Code's question about trusting the folder",
   { text = "Type your name after Name: at the top of WRITEUP.md", slots = ["Name"] },
   { text = "In your editor, copy .env.example to .env and fill in your API key and your Macalester email", files = [".env"] },
-  "Ask Claude to run the tests",
-  "Ask Claude to check that .env is there",
+  "Ask Claude to run the set-up check, until it says everything is ready",
 ]
 brief = '''
 This is the set-up step, so you may take the student through its actions in order. Before this
@@ -289,19 +321,25 @@ page. The actions, in order:
 3. In their editor, they copy .env.example to a new file named .env. After ANTHROPIC_API_KEY=
    they paste the API key the instructor sent them by Slack direct message, and after
    WIKIPEDIA_CONTACT= they type their Macalester email. Never create, open, read or edit .env,
-   even to help. Tell them how, and wait.
-4. They ask you to run the tests: `uv run pytest -q`. The tests need no key and no network. Paste
-   the output in full. If `uv` is not found, `uv --version` shows whether it is installed. If
-   packages are missing, `uv sync` installs them.
-5. They ask you to check that .env is there: `test -f .env`. It prints nothing. Exit code 0 means
-   the file is there; exit code 1 means it is not. Report it in one line. This check is all you
-   ever do with .env.
+   even to help, and never ask for the key. Tell them how, and wait.
+4. They ask you to run the set-up check:
 
-Tick checkpoints 4 and 5 once each is done and .env exists. (The page shows every checkpoint
-above a ticked one as reached, so ticking 4 before .env exists would show checkpoint 3 as done.)
+       uv run python check_setup.py
 
-The key itself is tested by the first real run, in 0b. When everything is done, say in one line
-what works, and that 0b is next, in its own session on the homework page.
+   Paste its output in full. It prints one line for each of five things, marked ok or NOT READY:
+   the .env file is there; the key is filled in; the email is filled in; Wikipedia answered a
+   search; the Claude API accepted the key. It reads .env itself and reports only whether each
+   line is filled in, so it never shows the key or the email. It costs a small fraction of a
+   cent. Each NOT READY line says what to fix; the student fixes it in their editor, and you run
+   the check again when they ask. Tick checkpoint 4 when the output ends "Everything is ready."
+
+If `uv` is not found, `uv --version` shows whether it is installed. If packages are missing,
+`uv sync` installs them. If the student asks whether the code itself works, you may run the
+offline tests, `uv run pytest -q`, which need no key and no network; do not bring them up
+otherwise.
+
+The step is done when the check says "Everything is ready." and their name is typed. Then say in
+one line that 0b is next, in its own session on the homework page.
 '''
 
 [[step]]
@@ -325,7 +363,12 @@ checkpoints = [
 brief = '''
 The command, with the claim above in it word for word:
 
-    uv run python check.py --method no-tools --out runs/part0 "[[SAMPLE_CLAIM]]"
+    uv run python check.py --method no-tools --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
+
+Keep the single quotes: the claim has double quotes in it. You have no knowledge of this claim's
+answer to share. Anything you say about it comes from the program's output in this session. Do
+not say or hint who the composer is, whether the date is right, or which pages would settle it,
+beyond quoting the output.
 
 The no-tools baseline asks the model for a verdict from memory alone: no search, no page, no
 lookups. It is the first of the three versions the student will compare.
@@ -362,7 +405,12 @@ checkpoints = [
 brief = '''
 The command, with the claim above in it word for word:
 
-    uv run python check.py --method one-search --out runs/part0 "[[SAMPLE_CLAIM]]"
+    uv run python check.py --method one-search --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
+
+Keep the single quotes: the claim has double quotes in it. You have no knowledge of this claim's
+answer to share. Anything you say about it comes from the program's output in this session. Do
+not say or hint who the composer is, whether the date is right, or which pages would settle it,
+beyond quoting the output.
 
 The one-search baseline has the model write one Wikipedia search. The program then reads the
 opening paragraphs of the top page that search returns, and the model answers from that page
@@ -400,11 +448,16 @@ checkpoints = [
 brief = '''
 The command, with the claim above in it word for word:
 
-    uv run python check.py --method agent --out runs/part0 "[[SAMPLE_CLAIM]]"
+    uv run python check.py --method agent --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 
-The agent chooses its own lookups, one at a time. It stops when it calls answer with evidence
-the loop accepts, or when it reaches the limit of 12 lookups. The output lists each lookup with
-the start of what came back (cut to 160 characters), then the verdict, the evidence, the
+Keep the single quotes: the claim has double quotes in it. You have no knowledge of this claim's
+answer to share. Anything you say about it comes from the program's output in this session. Do
+not say or hint who the composer is, whether the date is right, or which pages would settle it,
+beyond quoting the output.
+
+The agent chooses its own lookups, one at a time, up to the limit of 12 lookups. (How and when
+its loop ends is a question for step 1a; do not list the ways here.) The output lists each lookup
+with the start of what came back (cut to 160 characters), then the verdict, the evidence, the
 explanation, and one line of lookups, tokens, cost and time.
 
 Before running, ask what they expect the agent to do. Run the command when they ask. Paste the
@@ -476,17 +529,24 @@ minutes = 25
 slots = ["1b.*"]
 files = ["runs/part1/lookups.jsonl"]
 allow = ["Bash(uv run python lookup.py:*)"]
-summary = "Check a claim yourself, using only the agent's four tools."
+summary = "Check two claims yourself, using only the agent's four tools."
 goal = "What the agent's job is like, by doing it yourself with only its four tools, before you watch the agent do it."
 checkpoints = [
   { text = "Your first lookup is saved in runs/part1/lookups.jsonl", files = ["runs/part1/lookups.jsonl"] },
-  "You have reached a verdict",
+  "You have a verdict on the first claim",
+  "You have a verdict on the second claim, or have used 12 lookups on it",
   { text = "Your table and answers are in WRITEUP.md", slots = ["1b.*"] },
 ]
 brief = '''
-The student checks this claim by hand, word for word:
+The student checks two claims by hand, in this order, word for word.
+
+The first, short claim, to learn the tools:
 
 "Mel Duncan holds a history degree from the private, coeducational liberal arts Macalester College located in Saint Paul, Minnesota, US."
+
+The second claim, which the questions are about:
+
+"Vic & Anthony's Steakhouse is located at the American casino that was combined with the California Club. The casino is owned by Landry's, Inc."
 
 They play the agent. Each turn they name one tool and exactly what to ask it. You run exactly
 that, with their words, spelling and all, and paste what it printed in full:
@@ -497,27 +557,44 @@ that, with their words, spelling and all, and paste what it printed in full:
     uv run python lookup.py wikidata "<entity>" "<property>"
 
 lookup.py prints exactly what the agent would see, and adds each call to
-runs/part1/lookups.jsonl. If what they ask for is not one tool with exact words ("find where he
-went to college"), ask which tool and what words. Do not choose them. If a page or section is
-not found, paste what came back, and do not guess a better spelling.
+runs/part1/lookups.jsonl. Always put each argument inside double quotes, as above. Words from the
+second claim have an ampersand and an apostrophe: inside single quotes the apostrophe ends the
+quote and the shell waits for more input, and unquoted the ampersand runs the command in the
+background. If what they ask for is not one tool with exact words ("find where he went to
+college"), ask which tool and what words. Do not choose them. If a page or section is not found,
+paste what came back, and do not guess a better spelling.
 
-More than in any other step, never suggest the next lookup, a query, a page title, a section, an
-entity or a property. Never say whether they have found enough, what is left to check, or which
-words of the claim matter. Feeling what it is like to choose each lookup is the point of this
-step, and a suggestion takes that away. If they ask what to try, ask what they want to find out
-next. If they ask whether they are done, ask what their verdict would be and which sentence it
-rests on. After a lookup, paste what came back and ask what they want to do next; do not add a
-tip about what another tool, a section or a different query would show. Right after a lookup,
-such a tip reads as a suggestion of the next one. Explain a tool when they ask about it.
+More than in any other step, never suggest the next lookup, a search query, a page title, a
+section, an entity or a property, for either claim. Never say how many lookups a claim should
+take, whether they have found enough, what is left to check, or which words of the claim
+matter. Feeling what it is like to choose each lookup is the point of this step, and a
+suggestion takes that away. If they ask what to try, ask what they want to find out next. If
+they ask whether they are done, ask what their verdict would be and which sentence it rests on.
+After a lookup, paste what came back and ask what they want to do next; do not add a tip about
+what another tool, a section or a different query would show. Right after a lookup, such a tip
+reads as a suggestion of the next one. Explain a tool when they ask about it.
 
-The fourth tool, answer, is their verdict, which they type in WRITEUP.md. When they say they
-have a verdict, tick checkpoint 2. When they ask, fill the table under 1b in WRITEUP.md from
-runs/part1/lookups.jsonl: one row per lookup, in order, numbered from 1, with the tool and what
-was asked for. Leave every "Why you chose it" cell empty: those are theirs. If the file holds
-lookups that were not part of this check, ask which rows to leave out.
+The second claim is one of the development claims, and data/dev.jsonl lists the articles the
+dataset's authors used for it. Never open data/dev.jsonl in this step, and never tell the
+student which articles the dataset lists. You know nothing about either claim's answer, and
+anything you say about them comes from what lookup.py printed in this session.
 
-Their verdict, the sentence it rests on, the count, the hardest choice and whether they had to
-back up are theirs to write. Never say whether their verdict is right.
+For the second claim the student has the agent's limit of 12 lookups. If they reach 12 lookups
+on it without settling it, remind them once that 12 is the agent's limit, and that they now
+answer *doesn't say*, as the agent would have to, and say where they got stuck.
+
+The fourth tool, answer, is their verdict, which they type in WRITEUP.md. When they say they have
+a verdict on the first claim, tick checkpoint 2. When they have a verdict on the second, or have
+used 12 lookups on it, tick checkpoint 3. When they have both verdicts and ask, fill the table
+under 1b in WRITEUP.md from runs/part1/lookups.jsonl: one row per lookup, in order, numbered from
+1, with the claim (1 or 2), the tool and what was asked for. Leave every "Why you chose it" cell
+empty: those are theirs. runs/part1/lookups.jsonl does not say which claim a lookup was for; go by
+the point in this conversation where the student moved on to the second claim, and ask if you are
+not sure. If the file holds lookups that were not part of these checks, ask which rows to leave
+out.
+
+Their verdicts, the sentences they rest on, the count, the hardest choice and whether they had
+to back up are theirs to write. Never say whether a verdict is right.
 '''
 
 [[step]]
@@ -538,7 +615,7 @@ checkpoints = [
   { text = "Your table and answer are in WRITEUP.md", slots = ["1c.*"] },
 ]
 brief = '''
-The command, for the 12 development claims (about 2 minutes, a few cents on the student's key):
+The command, for the 12 development claims (about a minute, about 2 cents on the student's key):
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/before
 
@@ -550,8 +627,11 @@ output in full, and say the run is in the results viewer as runs/part1/before. I
 saved in runs/part1/before/report.txt.
 
 The student picks six claims to read closely: two each that need 2, 3 and 4 articles, and for
-each number one the agent got right and one it got wrong, where there is one. The picking is
-theirs. If they ask, you may list the 12 claims with their number of articles and whether the
+each number one the agent got right and one it got wrong, where there is one. One of the six must
+be the second claim they checked by hand in 1b, "Vic & Anthony's Steakhouse is located at the
+American casino that was combined with the California Club. The casino is owned by Landry's,
+Inc.", so they can set the agent's lookups beside their own. Say that once, after the run, without
+saying how the agent did on that claim. The rest of the picking is theirs. If they ask, you may list the 12 claims with their number of articles and whether the
 agent's verdict matched the dataset's label, from runs/part1/before/agent.jsonl. That is the
 run's output.
 
@@ -605,20 +685,27 @@ file reaches the model.
 When they say they have written their instructions, check that the file has changed with
 `git diff --stat -- instructions.md`, and tick checkpoint 1.
 
-The command, for the 12 development claims again (about 2 minutes, a few cents):
+The first run after they write their instructions, on the 12 development claims (about a
+minute, about 2 cents):
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after
 
-Before running, ask what they expect to change in the traces. When it finishes, paste the output
-in full, and say the two runs can be compared in the results viewer: "Compare two runs", with
-runs/part1/before and runs/part1/after.
-
-If they change instructions.md again after runs/part1/after exists, the same command gives back
-the saved results and runs nothing, and says they come from an earlier version of the agent.
-Tell them so when it applies. To run the 12 claims again with the instructions as they are now,
-add `--fresh`, which replaces the saved results in runs/part1/after; ask before you add it:
+Each later run, after another change to instructions.md, is the same command with `--fresh` at
+the end. It forgets the saved results in runs/part1/after and runs the 12 claims again with the
+instructions as they are now:
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after --fresh
+
+Before each run, ask what they expect to change in the traces. When it finishes, paste the output
+in full, and say the two runs can be compared in the results viewer: "Compare two runs", with
+runs/part1/before and runs/part1/after. They must not change instructions.md while a run is
+going, because the agent reads it again for every claim.
+
+If the output ends with a note that the saved results were made by an earlier version of the
+agent, nothing was run. Say in one sentence that the results shown come from their instructions
+as they were before their latest change, and ask whether they want to run again with `--fresh`.
+The choice is theirs. Never run the "before" folder again: it is the starting point they compare
+with.
 
 What changed in the traces, and whether it was the change they expected, are theirs to say. Do
 not compare the two runs for them. If they ask whether a change in the score is real: the model
@@ -652,12 +739,14 @@ The full run is the student's to start, in a new terminal tab, in the homework's
     uv run python evaluate.py data/eval.jsonl --out runs/part2
 
 It runs the no-tools baseline, the one-search baseline and the agent on the 200 evaluation
-claims, one version after another. It takes about [[EVAL_MINUTES]] minutes and costs about
-[[EVAL_COST]] on their key. It prints a progress line every ten claims and saves each result as
-it finishes. If it stops, the same command picks up where it left off. When it is done it prints
-two tables and saves them in runs/part2/report.txt. If they ask how to start it, give them the
-command above. If they ask you to start it instead, do it in the background, and say once that
-it will stop if this session is closed.
+claims, one version after another. It takes about 20 minutes and costs about 50 cents on their
+key; their own instructions can make it slower and dearer, so say "about". It prints a progress
+line every ten claims and saves each result as it finishes. If it stops, the same command picks
+up where it left off. When it is done it prints two tables and saves them in
+runs/part2/report.txt. If they ask how to start it, give them the command above. If they ask you
+to start it instead, do it in the background, and say once that it will stop if this session is
+closed. Never add `--fresh` to it. They must not change instructions.md while it runs, because
+the agent reads it again for every claim.
 
 While it runs, the student fills in the predictions table under 1e in WRITEUP.md. For each
 version they guess the share of claims it will get right, as a percentage, for claims that need
@@ -704,17 +793,21 @@ this session is closed. Do not run it just to print the report: on a run that is
 that command carries on running, which takes a long time and costs money. If it stops with a
 message that saved results come from an earlier version of the agent, instructions.md, agent.py
 or wiki.py has changed since the run began. Say that in one line, and let the student decide
-what to do; adding `--fresh` would start every version's 200 claims over.
+what to do. Never add `--fresh` for runs/part2, and never rename or delete the folder, unless the
+student asks for exactly that after you have told them it means the full run again: about 20
+minutes and about 50 cents.
 
 When they ask, read runs/part2/report.txt, show it in the chat in a code block, and paste it
 word for word into the empty ``` block under 2a in WRITEUP.md. The run is in the results viewer
 as runs/part2. Tick checkpoint 2 when they say they have opened it.
 
 The report's first table gives, for each version and each number of articles, how many claims
-matched the dataset's label, as counts such as 41/67. If asked, you may turn counts into
-percentages. HoVer labels each claim *supported* or *not supported*, so *refuted* and *doesn't
-say* both count as *not supported*; explain it if asked. The second table gives the average
-lookups, tokens, seconds and cost per claim.
+matched the dataset's label, as counts such as 41/67. Under "All" it has two more rows, the same
+count for each of the dataset's two labels: "HoVer, supported" and "HoVer, not supported". If
+asked, explain how to read any row, and you may turn counts into percentages. Do not say what a
+row shows about a version before the student has said it. HoVer labels each claim *supported* or
+*not supported*, so *refuted* and *doesn't say* both count as *not supported*; explain it if
+asked. The second table gives the average lookups, tokens, seconds and cost per claim.
 
 You may show their predictions from 1e when they ask. Comparing the predictions with the
 results, saying where they were furthest off, whether the gap between the agent and the
@@ -919,49 +1012,47 @@ page = "instructions/part3.md"
 section = "3c. Sort the failures"
 minutes = 25
 slots = ["3c.*"]
-allow = ["Write(runs/part3/claude-labels.md)", "Edit(runs/part3/claude-labels.md)", "Bash(uv run python evaluate.py:*)"]
-summary = "Label why the agent failed on your claims, and compare your labels with Claude's."
+allow = ["Bash(uv run python evaluate.py:*)"]
+summary = "Label why the agent failed on your claims, then compare your labels with Claude's."
 goal = "Why the agent fails on your claims, and whether Claude reads the same failures the same way you do."
 checkpoints = [
-  "Claude has labeled the failures and saved its labels, without showing you",
-  "You have labeled each failure, with the line of the trace that shows it",
+  "You have labeled each failure in your table, with the line of the trace that shows it",
+  "Claude has given its own labels, without seeing yours",
   "Claude's labels are in the last column of your table",
   { text = "Your answers are in WRITEUP.md", slots = ["3c.*"] },
 ]
 brief = '''
-This step compares the student's reading of the agent's failures with yours. The comparison only
-means something if your labels are made without seeing theirs, so the order below is the whole
-point of the step. It overrides the general instruction to read WRITEUP.md at the start: in this
-step, do not open WRITEUP.md until your labels are saved, because their labels may already be in
-it.
+In this step, do not open WRITEUP.md until you have given your own labels in the chat. This
+overrides any general instruction to read WRITEUP.md at the start. The step compares the
+student's reading of the agent's failures with yours, and that comparison only means something
+if your labels are made without seeing theirs. Their labels are in WRITEUP.md, so you must not
+read it first.
 
-In your first reply, say that this step starts with you labeling the failures before the student
-does, so that your labels are made without seeing theirs, and ask whether to start. If the student
-tells you a label of theirs before yours are saved, say the same, and do not use it.
+A failure is a claim where the agent's verdict differs from the student's own. Everything you
+need is in two files: data/my-claims.jsonl (the student's claims; their verdict is the "label")
+and runs/part3/before/agent.jsonl (the agent's results, with "correct": false on each failure,
+and each claim's trace). The claim's number is the number in its id: mine-3 is claim 3.
 
-1. When the student asks, label the failures yourself, first. Work only from the files. A failure
-   is a claim where the agent's verdict differs from the student's: the lines with
-   "correct": false in runs/part3/before/agent.jsonl, whose ids match the claims in
-   data/my-claims.jsonl (the student's verdict is the "label" there). Read each failure's trace
-   and give it one label from the list below, with the line of the trace that shows it. Before
-   saving, tell the student in one line that Claude Code may show the start of the file as it is
-   written, and that they can skip past it. Save your labels in runs/part3/claude-labels.md, one
-   line per claim: the claim's number (mine-3 is claim 3), your label, and the line of the trace.
-   Then say only how many labels you saved, and tick checkpoint 1. Do not show the labels, and do
-   not hint at them.
-2. The student reads each of those traces in the results viewer, and types their own label, and
-   the line of the trace that shows it, into the table under 3c. While they work you may paste a
-   trace, explain what a label means, or explain a lookup, when asked. Never say which label a
-   trace deserves, and do not show your labels yet. If they ask to see yours now, say that the
-   comparison only works once theirs are typed, and ask which claim they are on.
-3. When they ask to see yours, first read the table under 3c in WRITEUP.md. If every failure has
-   their label, tick checkpoint 2, show your labels, and write each into the "Claude's label"
-   column of its row (that column is meant for your labels), then tick checkpoint 3. If some
-   rows are still empty, say which, and wait. If a row names a claim you did not label, write
-   "not labeled" in its cell, and do not label it now, since you have seen theirs.
+The order, which the step's instructions also give the student:
+
+1. The student reads the trace of every failure in the results viewer, gives each one label, and
+   types the label and the line of the trace that shows it into the table under 3c, without
+   telling you their labels. In your first reply, say that this step starts with them labeling
+   in their table and then asking for your labels, and ask whether their labels are typed. If
+   they start to tell you their labels before you have given yours, ask them to hold on until
+   you have given your own. While they work you may paste a trace or explain a lookup, when
+   asked. Never say which label a trace deserves.
+2. When the student says their labels are typed, tick checkpoint 1. When they ask for your
+   labels, read the failures' traces in the two files above and give one label per failing
+   claim in the chat, each with the line of the trace it rests on. Then tick checkpoint 2.
+3. When they ask, read the table under 3c in WRITEUP.md and write each of your labels into the
+   "Claude's label" column of its row (that column is meant for your labels), then tick
+   checkpoint 3. They may type your labels in themselves instead; tick checkpoint 3 when they say
+   so. If a row names a claim that is not a failure, or a failure has no row, say which, in one
+   line.
 4. Then they answer the questions: where the two of you disagreed and who they think is right,
    and which kind of failure was most common. Never say who is right, and do not argue for your
-   labels. If asked why you chose one, quote the trace line you saved with it.
+   labels. If asked why you chose one, quote the trace line it rests on.
 
 The labels:
 
@@ -973,13 +1064,16 @@ The labels:
 - or a label of their own, and of yours if none of these fits.
 
 If the agent disagreed with the student on fewer than three claims, the step asks them to go back
-to 3a, add harder claims, and run 3b's command again. Adding claims is 3a's work, in its own
-session. The command can be run here:
+to 3a, add harder claims, and run 3b's command again. Copying new claims into
+data/my-claims.jsonl is 3a's work, in 3a's session: if they ask you to do it here, say so, and why
+(copying them means reading WRITEUP.md, which you must not open before you have given your
+labels). New claims go at the end with new numbers; a reworded claim keeps its old saved result.
+The command can be run here:
 
     uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
 
-It runs only the new claims. Then label the new failures first, the same way, adding them to
-runs/part3/claude-labels.md, before the student labels them.
+It runs only the new claims. The same order holds for the new failures: they label first, then
+you.
 '''
 
 [[step]]
@@ -1014,31 +1108,34 @@ change and nothing else, then show the diff with `git diff`. If what they descri
 than instructions.md makes Claude Code ask the student first. Tick checkpoint 1 once the change
 is made.
 
-Then, when they ask, and after asking what they expect (about 3 minutes, a few cents):
+The first run after the change, on their own claims, when they ask and after asking what they
+expect (a few minutes at most, a few cents):
 
     uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after
 
-Paste the output in full, and say they can compare runs/part3/before with runs/part3/after in
-the results viewer.
+If they then revise their change and want to run their claims again, it is the same command with
+`--fresh` at the end, which forgets the saved results in runs/part3/after:
+
+    uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
+
+Paste the output in full, and say they can compare runs/part3/before with runs/part3/after in the
+results viewer. If the output ends with a note that the saved results were made by an earlier
+version of the agent, nothing was run: say in one sentence that the results shown come from the
+agent as it was before their latest change, and ask whether they want to run again with
+`--fresh`. The choice is theirs. Never run runs/part3/before again: it is what they compare with.
 
 Then the student starts the agent on the 200 evaluation claims again, in their own terminal tab:
 
     uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval
 
-It takes about [[RERUN_MINUTES]] minutes and costs about [[RERUN_COST]]. If they ask how to start
-it, give them that command. If they ask you to start it instead, do it in the background, and
-say once that it will stop if this session is closed. When it finishes it saves
+It takes about 10 minutes and costs about 35 cents; their change can make it slower and dearer,
+so say "about". If they ask how to start it, give them that command. If they ask you to start it
+instead, do it in the background, and say once that it will stop if this session is closed. They
+must not change instructions.md, agent.py or wiki.py while it runs. When it finishes it saves
 runs/part3/after-eval/report.txt. They compare runs/part2 with runs/part3/after-eval in the
-results viewer. Tick checkpoint 4 when they say they have compared both pairs.
-
-If they revise their change after runs/part3/after exists, the same command gives back the saved
-results and runs nothing, and says they come from an earlier version of the agent. Tell them so
-when it applies. To run their claims again with the agent as it is now, add `--fresh`, which
-replaces the saved results in runs/part3/after; ask before you add it:
-
-    uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
-
-The same holds for runs/part3/after-eval, which the student would start again in their own tab.
+results viewer. Tick checkpoint 4 when they say they have compared both pairs. Never add
+`--fresh` to the after-eval command, and never rename or delete a run folder, unless the student
+asks for exactly that after you have said what it costs.
 
 Whether it fixed the failure, the numbers before and after, and whether it was worth it, are
 theirs to say. You may show any of the reports when asked.
