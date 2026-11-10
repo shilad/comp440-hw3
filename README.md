@@ -19,18 +19,18 @@ claim you'll check in Part 0:
 
 > The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
-I chose it because it is short, and it is about a recording most people have not heard of, so the
-model cannot lean on what it remembers.
+I chose it because it is short and about a recording few people know, so it is a fair test of what
+the model remembers.
 
 The agent has to give a *verdict*: *supported*, *refuted* or *doesn't say*. It also has to quote the
 sentences from Wikipedia that its verdict rests on, its *evidence*. No source comes with the claim.
 The agent finds its own evidence by searching and reading Wikipedia as it is today.
 
 The claims in this homework come from HoVer, a public dataset of claims that each need two, three or
-four Wikipedia articles to check. A claim like this often does not name the page that holds the
-answer, so something has to be looked up first before the right page is even known. That is why one
-search is usually not enough. To check the whole claim, the agent has to work out what the claim is
-made of, look up each piece, and put the pieces together. That is what you'll study.
+four Wikipedia articles to check. Many HoVer claims do not name the page that holds the answer, so one
+fact has to be found before you know which page to read next. Whether one search is enough, and when,
+is one of the things you'll measure. The agent works out what a claim is made of, looks up each piece,
+and puts the pieces together, and how it does that is what you'll study.
 
 ## What you need before you start
 
@@ -42,7 +42,8 @@ You used all of these in earlier homeworks:
 - git, and your GitHub account.
 - A text editor. You type every answer in it.
 - Your API key. I sent you your own API key by Slack direct message. The agent calls the Claude API
-  directly, not through your Claude Code account, so it needs this key.
+  directly, not through your Claude Code account, so it needs this key. Doing the whole homework once
+  costs about a dollar on your key.
 
 ## Getting started
 
@@ -65,7 +66,8 @@ You used all of these in earlier homeworks:
    uv run python -m workbench
    ```
 
-   It opens the homework page in your browser and prints its address. Leave this terminal tab open
+   The first time, it spends a minute or two installing what it needs. Then it opens the homework
+   page in your browser and prints its address. Leave this terminal tab open
    while you work: closing it stops the page. To start the page again later, go into the folder and run
    the same command.
 
@@ -75,7 +77,8 @@ You used all of these in earlier homeworks:
 
 - The homework page lists every step, 0a to 3e, and ticks each one when it is done. For each step it
   shows what you're finding out and what counts as done. Under "If you're stuck" it shows the step's
-  full instructions, from the pages in `instructions/`. Step 0a, the set-up step, shows them in full.
+  full instructions, from the pages in `instructions/`. Open it for every step, stuck or not: it has
+  the exact commands and what I am looking for. Step 0a, the set-up step, shows them in full.
 - Each step has its own Claude session: a Claude Code session that is your tutor and lab assistant for
   that step. The homework page shows the command that starts it, with a **Copy** button. Open a new
   terminal tab, go into the homework's folder, paste the command and press Enter. When you finish a
@@ -86,18 +89,19 @@ You used all of these in earlier homeworks:
 - You decide what happens. Claude does nothing until you ask, and each step's instructions say what to
   ask for. Before it runs anything whose result you'll judge, Claude will ask what you expect.
 - You type your answers yourself, in `WRITEUP.md`, in your editor. Claude will not write them, because
-  you are graded on your own explanations and judgments.
+  you are graded on your own explanations and judgments. Keep each answer free of blank lines: a blank
+  line ends the answer, so to start a new paragraph put a line with just `>` between the two.
 - Claude will run commands for you, explain the code, the tools, Wikipedia's API and the scores as often
   as you ask, and paste a program's output into `WRITEUP.md` where a question asks for it.
 - The results viewer is where you read your runs. Open **Results** at the top of the homework page; it
-  opens in a new tab. It shows each run's accuracy and cost, each claim's verdicts from all three versions, the agent's lookups
-  for a claim one at a time, and two runs side by side. Long results are easier to read there.
+  opens in a new tab. It shows each run's accuracy and cost, each claim's verdicts from all three
+  versions, the agent's trace for a claim one entry at a time, and two runs side by side. Long results
+  are easier to read there.
 - Your work is saved when you finish each part. When every step of a part is ticked, the homework page
   saves your conversations with Claude in `TRANSCRIPT.md`, commits your work as `Part N done`, and
   pushes it to your fork. The commit holds everything in the repository that git does not ignore: your
   answers, `instructions.md`, your claims, everything under `runs/` and `TRANSCRIPT.md`. If you change
-  an answer after that, it commits the change too. I read
-  `TRANSCRIPT.md` when I grade, so start every Claude session in the homework's folder. Don't edit
+  an answer after that, it commits the change too. I read `TRANSCRIPT.md` when I grade, so start every Claude session in the homework's folder. Don't edit
   `TRANSCRIPT.md` yourself: the page writes it again before each commit.
 - The two long runs, in steps 1e and 3d, take about 20 minutes and about 10 minutes. You start them
   yourself, in a terminal tab of their own, because a run started by Claude stops if you
@@ -127,6 +131,8 @@ little over 2 hours each for Parts 1 and 3, and about an hour and a half for Par
 - **lookup**: one call to `search`, `read` or `wikidata`.
 - **tool**: one of the four things the agent can call: `search`, `read`, `wikidata` and `answer`.
 - **trace**: the list of the agent's lookups for one claim, in order, with what each returned.
+- **entry**: one numbered line of a trace, a lookup or an answer. The numbers count every entry; a
+  "Lookups" count counts only `search`, `read` and `wikidata`.
 - **baseline**: a simpler method the agent is compared with. There are two: **the no-tools baseline**
   (the model answers from memory) and **the one-search baseline** (one search, one page, then an
   answer).
@@ -138,7 +144,7 @@ little over 2 hours each for Parts 1 and 3, and about an hour and a half for Par
   *not supported*.
 - **the dataset's label**: HoVer's *supported* or *not supported*. A verdict of *refuted* or
   *doesn't say* counts as *not supported*.
-- **the development claims**: the 12 claims in `data/dev.jsonl`.
+- **the development claims**: the 12 claims in `data/dev.jsonl`, a small set for trying things out.
 - **the evaluation claims**: the 200 claims in `data/eval.jsonl`.
 - **a run**: one use of `evaluate.py`, saved in a folder under `runs/`.
 - **the limit of 12 lookups**: the most lookups the loop allows for one claim.
@@ -149,7 +155,8 @@ little over 2 hours each for Parts 1 and 3, and about an hour and a half for Par
 ## Submitting
 
 Submit once, when all four parts are done, through the
-[assignment submission form](https://forms.gle/mgKcnqzTGxNaGvteA). Choose "HW3" and give your
+[assignment submission form](https://forms.gle/mgKcnqzTGxNaGvteA). Choose "Homework submission",
+then "HW3", and give your
 repository's address. Before you submit, check on GitHub that your fork shows the `Part 3 done`
 commit, since I grade what is on GitHub.
 

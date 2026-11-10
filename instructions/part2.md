@@ -76,21 +76,23 @@ totals, and "The agent used all 12 lookups on N claims.", where "N claims" links
 **What to write:** In `WRITEUP.md`, under 2b:
 
 - How much more does the agent cost per claim than the one-search baseline? Give the numbers.
-- For which kinds of claims is that extra cost worth paying, and for which is it not?
+- For which kinds of claims (for example by number of articles, or by what the claim asks) is that extra cost worth paying, and for which is it not?
 - Did the agent ever use all 12 lookups? If so, pick one such claim and say what it was doing.
 
 **You're done when:** The homework page ticks 2b: the three answers have text after the `>`.
 
 ## 2c. Check the evidence yourself
 
-**What you're finding out:** Whether the agent's evidence really supports its verdicts, and so whether
-accuracy alone is a fair measure of the agent.
+**What you're finding out:** Whether the agent's quoted evidence really supports its verdicts, and so
+whether accuracy alone is a fair measure of the agent.
 
 The loop already checks that every quoted sentence appears in something the agent read. A quote can be
-real and still not support the verdict.
+real and still not support the verdict. For a verdict of *refuted*, the question is whether the quotes
+show that the claim is false.
 
 **Words in this step:** *verdict*: *supported*, *refuted* or *doesn't say*. *evidence*: the sentences
 the agent quoted from Wikipedia. *the dataset's label*: HoVer's *supported* or *not supported*.
+*entry*: one numbered line of a trace, a lookup or an answer.
 
 **What to do:**
 
@@ -100,15 +102,16 @@ the agent quoted from Wikipedia. *the dataset's label*: HoVer's *supported* or *
 3. Click "Clear the filters" under the claims filters.
 4. Set "Verdict" in "The agent" box to "supported or refuted"; leave "Order" at "Order of the claims file".
 5. Take rows 1 to 10.
-6. Click row 1. Under "Quoted evidence", click "lookup N" to read each quote highlighted.
-7. Decide whether the quotes support the agent's verdict.
+6. Click row 1. Under "Quoted evidence", click "entry N" to read each quote highlighted.
+7. Decide whether the quoted evidence supports the agent's verdict.
 8. Click "open the live page" whenever you're unsure, to see today's page at that quote.
 9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 10.
 10. Answer the two questions.
 
 **What you'll see:** The "Row" column counts the rows shown, in the order of the claims file, so rows 1
 to 10 are fixed by the rule. I ask for the first ten so that nobody, you or Claude, chooses which claims
-get checked. To read more of a page as the agent read it, ask Claude to run one of these (`--no-log`
+get checked. A claim's page says, under "The agent", whether its verdict "matches the dataset's label":
+that is the table's fourth column. To read more of a page as the agent read it, ask Claude to run one of these (`--no-log`
 keeps them out of your record from 1b):
 
 ```
@@ -119,15 +122,15 @@ uv run python lookup.py --no-log read "<page title>" "<section>"
 **What to write:** In `WRITEUP.md`, under 2c, fill in the table and answer:
 
 - The first ten claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
-- Of the ten, how many matched the dataset's label, and how many of those rest on evidence you accept?
+- Of the ten, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
 **You're done when:** The homework page ticks 2c: all ten rows are filled, and both answers have text
 after the `>`.
 
-**Hint:** Claude can fill in the first three columns (the number, the claim's first few words and the
-agent's verdict); the last two are yours. Claude will not say whether a quote supports a verdict,
-because that judgment is what this step is about.
+**Hint:** You type all the columns. Claude can show you each claim's first words and the agent's
+verdict in the chat. Claude will not say whether the quoted evidence supports a verdict, because that
+judgment is what this step is about.
 
 ## 2d. Find where Wikipedia has changed
 
@@ -139,20 +142,22 @@ of the agent's "wrong" answers may be right about today's Wikipedia.
 
 **Words in this step:** *the dataset's label*: HoVer's *supported* or *not supported*; *refuted* and
 *doesn't say* count as *not supported*. *evidence*: the sentences the agent quoted from Wikipedia.
+*the closest case*: the claim that came nearest, and what kept it from being clear.
 
 **What to do:**
 
 1. Start this step's Claude session with the command the homework page shows for 2d, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open **Results** at the top of the homework page, then "runs/part2".
-3. Set "Result" in "The agent" box to "does not match the dataset's label (any reason)".
-4. Click these claims one at a time; "Next →" goes to the next one.
-5. For each, decide whether the agent's evidence is sound and today's page disagrees with the label.
-6. See the page as it was in 2017: on Wikipedia, choose "View history" and pick a 2017 version.
-7. Find at least two such claims, and fill in a row of the table for each.
-8. Stop if you have read ten of the agent's wrong answers and found fewer than two.
-9. In that case, fill each remaining row with the closest case you found, and say it is not a clear case.
-10. Answer the question under the table.
+3. Click "Clear the filters" under the claims filters.
+4. Set "Result" in "The agent" box to "does not match the dataset's label (any reason)".
+5. Click these claims one at a time; "Next →" goes to the next one.
+6. For each, decide whether its quoted evidence supports its verdict and today's page disagrees with the label.
+7. For a claim you think qualifies, look at its page as it was at the end of 2017 (see the Hint).
+8. Find at least two such claims, and fill in a row of the table for each.
+9. Stop if you have read ten of the agent's wrong answers and found fewer than two.
+10. In that case, fill each remaining row with the closest case you found, and say it is not a clear case.
+11. Answer the question under the table.
 
 **What you'll see:** A claim's page shows "The dataset's label" at the top, and "The dataset lists these
 articles for this claim:" and "Pages it read, live on Wikipedia today:" link to today's pages. The
@@ -165,12 +170,17 @@ uv run python lookup.py --no-log read "<page title>"
 
 **What to write:** In `WRITEUP.md`, under 2d, fill in the table and answer:
 
-- Two claims where the agent's evidence is sound and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
+- Two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
 - What does this tell you about using a fixed dataset to judge a system that reads a live source?
 
 **You're done when:** The homework page ticks 2d: both rows are filled, and the answer has text after
 the `>`. That finishes Part 2, so the page commits your work as `Part 2 done` and pushes it to your
 fork.
+
+**Hint:** For a claim you think qualifies, open the Wikipedia page that holds the fact. Choose "View
+history", open "Filter revisions", set "To date" to 31 December 2017 and press "Show revisions". The
+first row is the page as it was at the end of 2017. This is for the table's last column; if you can't
+tell what changed, say so there.
 
 ## What I look for
 

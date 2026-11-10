@@ -35,7 +35,7 @@ Did that page settle the claim? If not, why do you think the search led there?
 
 ## 0d. Run the agent and read its trace
 
-In one or two sentences, how did the agent get from the claim to its verdict? Point to the lookups by their numbers in the trace.
+In one or two sentences, how did the agent get from the claim to its verdict? Point to the entries by their numbers in the trace.
 
 >
 
@@ -97,7 +97,7 @@ Did you have to back up and try something else? What happened?
 
 ## 1c. Watch the agent work
 
-The six traces you read closely: two claims each that need 2, 3 and 4 articles. For each number of articles, one the agent got right and one it got wrong, where there is one.
+The six traces you read closely: two claims each that need 2, 3 and 4 articles. For each number of articles, one the agent got right and one it got wrong, where there is one. One of the six must be claim 2 from 1b.
 
 | # | Claim (first few words) | Articles | Did it match the dataset's label? | Did it get there for a good reason? Why or why not |
 |---|---|---|---|---|
@@ -163,7 +163,7 @@ How much more does the agent cost per claim than the one-search baseline? Give t
 
 >
 
-For which kinds of claims is that extra cost worth paying, and for which is it not?
+For which kinds of claims (for example by number of articles, or by what the claim asks) is that extra cost worth paying, and for which is it not?
 
 >
 
@@ -175,20 +175,20 @@ Did the agent ever use all 12 lookups? If so, pick one such claim and say what i
 
 The first ten claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 
-| # | Claim (first few words) | Agent's verdict | Does the quoted evidence support that verdict? | Why or why not |
-|---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
-| 6 | | | | |
-| 7 | | | | |
-| 8 | | | | |
-| 9 | | | | |
-| 10 | | | | |
+| # | Claim (first few words) | Agent's verdict | Matched the dataset's label? | Does the quoted evidence support that verdict? | Why or why not |
+|---|---|---|---|---|---|
+| 1 | | | | | |
+| 2 | | | | | |
+| 3 | | | | | |
+| 4 | | | | | |
+| 5 | | | | | |
+| 6 | | | | | |
+| 7 | | | | | |
+| 8 | | | | | |
+| 9 | | | | | |
+| 10 | | | | | |
 
-Of the ten, how many matched the dataset's label, and how many of those rest on evidence you accept?
+Of the ten, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 
 >
 
@@ -198,7 +198,7 @@ Is accuracy alone a good measure of this agent? Why or why not?
 
 ## 2d. Find where Wikipedia has changed
 
-Two claims where the agent's evidence is sound and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
+Two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
 
 | # | Claim (first few words) | The dataset's label | What today's Wikipedia says | What changed on the page, if you can tell |
 |---|---|---|---|---|
@@ -219,7 +219,7 @@ Your topic, and why you know it well.
 
 Your claims, at least eight: some true and some false, at least two that need two or more Wikipedia articles, and at least two where you think Wikipedia doesn't say or says something wrong. Write each verdict as `supported` if the claim is true or `refuted` if it is false, according to the source you trust. For more claims, add rows numbered 9, 10 and so on.
 
-| # | Claim | Your verdict | The source you would trust |
+| # | Claim | Your verdict | The source you would trust (a link, a book, or how you know it first-hand) |
 |---|---|---|---|
 | 1 | | | |
 | 2 | | | |
@@ -262,7 +262,7 @@ What did you change, and why did you expect it to help?
 
 >
 
-Did it fix the failure you aimed at? Give the numbers before and after on your claims.
+Did it fix the failure you aimed at? Give how many of your claims the agent matched before and after, and say whether the claims you gave that label now match.
 
 >
 
