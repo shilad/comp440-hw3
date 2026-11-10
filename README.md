@@ -107,13 +107,14 @@ You used all of these in earlier homeworks:
 | Part | What you do | Weight |
 |---|---|---|
 | [Part 0: Set up](instructions/part0.md) | Get your copy running, then check one claim three ways: the model alone, one search, and the agent | 10% |
-| [Part 1: How the agent works](instructions/part1.md) | Read the agent's loop, check a claim yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 25% |
+| [Part 1: How the agent works](instructions/part1.md) | Read the agent's loop, check two claims yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 25% |
 | [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy and cost by how many articles a claim needs, check the agent's evidence yourself, and find where Wikipedia has changed | 35% |
 | [Part 3: Your own claims](instructions/part3.md) | Write claims about a topic you know, sort the agent's failures, make one change, and write up what you found | 30% |
 
 Everything is due 8:00am Tuesday, November 24.
 
-[[HOURS_LINE]]
+I expect this homework to take about 7 hours in all, in four sittings: about 50 minutes for Part 0, a
+little over 2 hours each for Parts 1 and 3, and about an hour and a half for Part 2.
 
 ## Words this homework uses
 
