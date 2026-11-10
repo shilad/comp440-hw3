@@ -859,30 +859,53 @@ def rule_4(runs):
 
 
 def rule_5(runs):
-    """Enforce the limit."""
+    """Enforce the limit. Each sentence gives the numbers that tell what the loop did: how many
+    lookups it had run (as the made-up Wikipedia saw them), max_steps, and when it first sent
+    back OUT_OF_STEPS."""
     for key in ("limit_answer", "limit_again"):
         run = runs[key]
         m = run.max_steps
+        want = agent.OUT_OF_STEPS.format(n=m)
+        for k in range(1, m + 1):       # lookups the limit leaves room for
+            if not any(name in LOOKUPS for name, _ in run.made_for(k)):
+                back = sent_back(run.request(k + 1), run.calls(k)[0].id)
+                back = ("OUT_OF_STEPS" if back == want else
+                        "nothing" if back is MISSING else short(back))
+                raise NotYet(run, f"{run.said(k)}, and your loop sent back {back} instead of "
+                                  f"running it, though it had run {ran(run, k)} before that one "
+                                  f"and max_steps was {m}")
         over = m + 1    # the reply that asks for one lookup more than the limit
         call = run.calls(over)[0]
         said = f"{run.said(over)} with the limit of {m} lookups reached, and"
         run.request(over)
         if len(run.requests) == over and run.ended == "returned":
+            numbers = (f"it had run {ran(run, over)}, max_steps was {m}, and the result it "
+                       f"returned had steps {short(run.result['steps'])}" if run.finished() else
+                       f"it had run {ran(run, over)}, and max_steps was {m}")
             raise NotYet(run, f"{said} your loop returned a result instead of sending back "
-                         "OUT_OF_STEPS the first time")
+                              f"OUT_OF_STEPS: {numbers}")
         if any(name in LOOKUPS for name, _ in run.made_for(over)):
-            raise NotYet(run, f"{said} your loop ran it")
+            story = f"; {first_warning(runs['limit_again'])}" if key == "limit_answer" else ""
+            raise NotYet(run, f"{said} your loop ran it: it had run {ran(run, over)} before that "
+                              f"one, and max_steps was {m}{story}")
         back = sent_back(run.request(over + 1), call.id)
-        want = agent.OUT_OF_STEPS.format(n=m)
         if back is MISSING:
             raise NotYet(run, f"{said} the next request your loop sent held no result with that "
-                         "call's id")
+                              "call's id")
         if back != want:
             raise NotYet(run, f"{said} your loop sent back {short(back)}, where the rule says "
-                         f"OUT_OF_STEPS with n={m}: {want!r}")
+                              f"OUT_OF_STEPS with n={m}: {want!r}")
         last, after = over + 1, " after OUT_OF_STEPS had been sent back"
         if any(name in LOOKUPS for name, _ in run.lookups[run.lookups_at[over]:]):
-            raise NotYet(run, f"{run.said(last)}{after}, and your loop ran it")
+            raise NotYet(run, f"{run.said(last)}{after}, and your loop ran it: it had run "
+                              f"{ran(run, last)} before that one, and max_steps was {m}")
+        if len(run.requests) > last and run.calls(last)[0].name in LOOKUPS:
+            again = sent_back(run.requests[last], run.calls(last)[0].id)
+            again = ("OUT_OF_STEPS again" if again == want else
+                     "nothing" if again is MISSING else short(again))
+            raise NotYet(run, f"{run.said(last)}{after}, and your loop asked the model again "
+                              f"instead of stopping: it had run {ran(run, last)}, max_steps "
+                              f"was {m}, and for that search it sent back {again}")
         result = run.returned_after(last, "asked the model again instead of stopping", after)
         if key == "limit_answer":
             run.expect(last, result, "doesn't say", [], NOT_SAID_WHY, after=after)
@@ -890,13 +913,34 @@ def rule_5(runs):
             run.expect(last, result, None, [], agent.RAN_OUT, "RAN_OUT", after=after)
         if result["steps"] != m:
             raise NotYet(run, f"{run.said(last)}{after}, and the result your loop returned had "
-                         f"steps {short(result['steps'])}, where {count(m, 'lookup')} had been "
-                         "run")
+                              f"steps {short(result['steps'])}, where it had run "
+                              f"{ran(run, last)}")
         if not has_entry(result["trace"], {"tool": call.name, "input": call.input,
                                            "result": want}):
             raise NotYet(run, f"{said} the trace your loop returned has no entry for it with "
-                         "what was sent back")
+                              "what was sent back")
 
+
+def ran(run, k):
+    """"2 lookups": how many lookups the loop had run before it handled the model's kth reply,
+    as the made-up Wikipedia saw them."""
+    n = sum(name in LOOKUPS for name, _ in run.lookups[:run.lookups_at[k - 1]])
+    return f"{n} lookup{'' if n == 1 else 's'}"
+
+
+def first_warning(run):
+    """When the loop first sent back OUT_OF_STEPS in the made-up check whose model asks for
+    one search after another, or that it never did."""
+    m = run.max_steps
+    asked = len(run.script)
+    for k in range(1, min(len(run.requests) - 1, asked) + 1):
+        if sent_back(run.requests[k], run.calls(k)[0].id) == agent.OUT_OF_STEPS.format(n=m):
+            return (f"in another made-up check the model asked for {asked} searches, and your "
+                    f"loop first sent back OUT_OF_STEPS when it had run {ran(run, k)}")
+    total = sum(name in LOOKUPS for name, _ in run.lookups)
+    which = f"all {asked}" if total == asked else f"{total} of them"
+    return (f"in another made-up check the model asked for {asked} searches, and your loop ran "
+            f"{which} and never sent back OUT_OF_STEPS")
 
 
 def rule_6(runs):
