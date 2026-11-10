@@ -729,7 +729,7 @@ when what you are doing changes, note what the student expects before a run, and
 checkpoint above that says you tick it, once the student has reached it{", then mark the step done, since it has nothing to fill in" if manual else ""}.
 
 The session opens with the message "Start step {label}." Reply to it by saying in one or two
-sentences what this step is finding out, then {"say what its first step is" if s.setup else "ask what they expect, or what they would like to try first"}, and wait for the
+sentences what this step is finding out, then {"say what its first step is" if s.setup else "ask exactly one question (what they expect, or what they would like to try first; never both)"}, and wait for the
 student. If the student comes back to this session later, say in one or two sentences what they
 have reached so far.
 """.strip()

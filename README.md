@@ -213,12 +213,6 @@ statistics site or an encyclopedia other than Wikipedia. Tell me which site befo
 only after Part 3 is done, because it changes the agent. Then run the agent on your own claims again.
 When do the two sources disagree, and how should the agent decide which to believe?
 
-Write what you found under a heading `## Extra credit` at the end of `WRITEUP.md`. The homework page
-commits only when a part is finished or a finished part's answers change, so commit and push your
-extra credit yourself, in a terminal in the homework's folder:
-
-```
-git add -A
-git commit -m "Extra credit"
-git push
-```
+Write what you found under a heading `## Extra credit` at the end of `WRITEUP.md`. Keep the homework
+page running while you work on it: once Part 3 is done, the page commits and pushes any further change
+about a minute after you save it, as `Part 3 updated`. Check on GitHub that your fork shows it.
