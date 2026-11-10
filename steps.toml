@@ -46,7 +46,7 @@ effort = "medium"
 
 # Commands every step may run without asking.
 allow = [
-  "Bash(git log:*)", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git show:*)",
+  "Bash(git status:*)", "Bash(git diff:*)",
   "Bash(ls:*)", "Edit(WRITEUP.md)",
 ]
 
@@ -590,7 +590,7 @@ part = 1
 title = "Write the loop"
 page = "instructions/part1.md"
 section = "1a. Write the loop"
-minutes = 90
+minutes = 100
 slots = ["1a.*"]
 files = ["runs/part1/loop-check.txt"]
 # The file is the check's own record, not a run: no link to it in the results viewer.

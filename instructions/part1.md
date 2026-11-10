@@ -4,7 +4,7 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you build and study the agent. You write its loop, check two claims yourself with its
 four tools, watch it work on 12 claims, write its instructions, and then start the full run on 200
-claims while you predict how it will do. It should take about 2 hours and 55 minutes, plus about 20
+claims while you predict how it will do. It should take about 3 hours and 5 minutes, plus about 20
 minutes for the full run, which goes on by itself while you do other things.
 
 ## 1a. Write the loop
