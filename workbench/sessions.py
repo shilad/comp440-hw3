@@ -331,7 +331,8 @@ class StepSession:
                 keys = step_keys(Step(id=s.id, part=s.part, title="", slots=c.slots), slots) if c.slots else []
                 covered.update(keys)
                 ok = all(present(repo, pat) for pat in c.files) and all(filled(slots.get(k)) for k in keys)
-                item["files"] = [f for f in found if not self.hub.secret(f)][-2:]   # never a link to .env
+                item["files"] = [f for f in found if not self.hub.secret(f)            # never a link to .env
+                                 and not (s.hide_results and f.startswith("runs/"))][-2:]
                 item["slots"] = [self.slot(k, slots) for k in keys]
                 wp = repo / a.writeup
                 when = max([(repo / f).stat().st_mtime for f in found]
@@ -445,7 +446,10 @@ class StepSession:
 
     def results(self) -> str | None:
         """The newest file under runs/ of the first `files` entry that has one, for the results
-        viewer, which opens nothing outside runs/ (so never .env, never the student's claims)."""
+        viewer, which opens nothing outside runs/ (so never .env, never the student's claims). None
+        for a step with hide_results, which asks the student not to look at results yet."""
+        if self.step.hide_results:
+            return None
         for pattern in self.step.files:
             found = [f for f in present(self.hub.repo, pattern)
                      if f.relative_to(self.hub.repo).parts[:1] == ("runs",)]

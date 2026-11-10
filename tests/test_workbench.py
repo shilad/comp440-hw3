@@ -972,6 +972,24 @@ def test_results_go_to_the_viewer_when_there_is_one(tmp_path, monkeypatch):
         sys.path[:] = [p for p in sys.path if p != str(h.student)]
 
 
+def test_a_step_with_hide_results_offers_no_link_to_them(tmp_path):
+    hidden = STEPS.replace('allow = ["Bash(uv run python check.py:*)"]',
+                           'allow = ["Bash(uv run python check.py:*)"]\nhide_results = true')
+    h = homework(tmp_path, {"steps.toml": hidden})
+    app = server.App(h.student)
+    finish_part0(h.student)
+    snap = app.hub.sessions["0b"].snapshot()
+    assert snap["results"] is None
+    assert all(not f.startswith("runs/") for c in snap["record"]["checkpoints"] for f in c["files"])
+    assert {x["id"]: x for x in steps.status(app.a, h.student, set())}["0b"]["complete"]   # still ticks
+    (tmp_path / "plain").mkdir()
+    shown = homework(tmp_path / "plain")                     # the same step without the key
+    plain = server.App(shown.student)
+    finish_part0(shown.student)
+    assert plain.hub.sessions["0b"].snapshot()["results"] == "runs/part0/no-tools-1.json"
+    assert (ROOT / "workbench/static/index.html").read_text().count('href="/results/"') == 1   # the header's
+
+
 def test_a_step_with_results_links_to_the_newest(tmp_path):
     steps_ = STEPS.replace('slots = ["Name"]', 'slots = ["Name"]\nfiles = [".env"]').replace(
         'slots = ["1a.*"]', 'slots = ["1a.*"]\nfiles = ["data/my-claims.jsonl"]')
