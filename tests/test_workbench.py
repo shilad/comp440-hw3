@@ -353,16 +353,21 @@ def test_every_step_of_the_real_homework_has_a_command_and_a_prompt(tmp_path):
     assert json.loads(json.dumps(app.assignment()))["steps"]
 
 
-def test_a_checkpoint_is_ticked_only_by_its_own_file_answers_or_claude(tmp_path):
+def test_a_checkpoint_with_a_file_or_answers_is_ticked_only_by_them(tmp_path):
     h = homework(tmp_path)
     app = server.App(h.student)
-    finish_part0(h.student)                                 # 0b complete: its file and answers
+    (h.student / "WRITEUP.md").write_text(FILLED)           # 0b's answers typed, no run file yet
     rec = app.hub.sessions["0b"].record()
-    assert [c["done"] for c in rec["checkpoints"]] == [False, True, True]   # no prediction was ticked
+    # The prediction (no file or answer of its own) is implied by the later answers; the run's
+    # file is not there, so its box stays empty and the student can see what is missing.
+    assert [c["done"] for c in rec["checkpoints"]] == [True, False, True]
+    assert rec["now"] == {"todo": "You've seen the model answer"}
+    (h.student / "runs/part0").mkdir(parents=True)
+    (h.student / "runs/part0/no-tools-1.json").write_text("{}")
+    rec = app.hub.sessions["0b"].record()
+    assert [c["done"] for c in rec["checkpoints"]] == [True, True, True]
     assert sorted(x["text"] for x in rec["summary"] if x["kind"] == "reached") == \
         ["You've seen the model answer", "Your answers"]     # each line says its checkpoint
-    app.hub.record("0b", "checkpoint", n=1, text="You said what you expect before it ran")
-    assert [c["done"] for c in app.hub.sessions["0b"].record()["checkpoints"]] == [True, True, True]
 
 
 def test_the_name_has_its_own_plain_now_line(tmp_path):
