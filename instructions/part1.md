@@ -77,6 +77,9 @@ passes.
 - A result sent back is `{"type": "tool_result", "tool_use_id": call.id, "content": result}`.
 - A trace entry is `{"tool": name, "input": input, "result": result}`. An accepted answer's result is
   `ACCEPTED`. A reminder is recorded as tool `"(reminder)"`, input `{}`, result `REMINDED`.
+- Every tool call gets one entry in `trace`, with the result it was given: what a lookup returned,
+  `ACCEPTED`, `REJECTED` followed by the problem, or `OUT_OF_STEPS`. The results viewer numbers these
+  entries, so a loop that records only lookups shows wrong traces.
 - The answer is cleaned first: `answer = clean_answer(call.input)`.
 - `finish(claim, verdict, evidence, explanation, trace, tokens, steps)` makes what the loop returns.
   "Stop with no verdict" means `return finish(claim, None, [], why, trace, tokens, steps)`, where `why` is
