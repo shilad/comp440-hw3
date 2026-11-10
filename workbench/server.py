@@ -38,7 +38,7 @@ from urllib.parse import parse_qs, urlparse
 from . import steps as stepmod
 from . import transcript
 from .sessions import Hub
-from .updates import FETCH_EVERY, Updates, git, normal
+from .updates import FETCH_EVERY, GENERATED, Updates, git, normal
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent              # the homework's repository, which this folder is part of
@@ -245,6 +245,7 @@ class App:
                 traceback.print_exc()
                 say(f"Couldn't write record/: {err}")
             self.git("add", "-u")
+            self.git("reset", "-q", "--", *GENERATED)   # uv.lock is uv's, not the student's work
             paths = [self.a.writeup, transcript.NAME, "record"] + self.part_files(parts)
             paths = [p for p in dict.fromkeys(paths) if (self.repo / p).exists()]
             if paths:  # git refuses the whole add if one path is git-ignored

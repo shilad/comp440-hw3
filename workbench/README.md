@@ -36,6 +36,7 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
   it fails, the commit stays on the laptop, the page says in one sentence that the work is
   committed but not pushed and how to push by hand (`git push`), and it tries again every five
   minutes. It also pushes, at start, commits from before a restart that never reached `origin`.
+- **Never commits `uv.lock`.** A student's own `uv` may rewrite it; it is uv's file, not their work.
 - **Never commits a key.** A staged file that holds something like `sk-ant-...`, or a file named
   in `never_read`, is left out of the commit, and the page says so.
 - **Offers updates.** See below.
@@ -78,6 +79,7 @@ the page lists their subjects with an **Update** button. The button:
 
 1. commits the student's changes as `Save work before update`, so nothing they typed can be lost
    and git never refuses for want of a clean folder;
+   (a rewritten `uv.lock` is put back as committed instead);
 2. runs `git merge --no-edit upstream/main`;
 3. if the merge fails (a real conflict, or an untracked file in the way), runs `git merge --abort`
    where needed, so every file is as it was, and says: the update could not be applied

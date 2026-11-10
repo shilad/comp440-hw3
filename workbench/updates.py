@@ -9,7 +9,8 @@ lists their subjects with an Update button, which merges them.
 
 An update must never lose the student's work or leave a merge half done. Before merging, the page
 commits the student's changes ("Save work before update"), so git never has to refuse because a
-file has uncommitted edits, and those edits are in a commit whatever happens next. If the merge
+file has uncommitted edits, and those edits are in a commit whatever happens next. (uv.lock, which
+uv writes, is put back as it was committed instead.) If the merge
 still fails (a real conflict, or an untracked file in the way), `git merge --abort` puts every file
 back as it was, and the student is told to ask for help.
 """
@@ -27,6 +28,9 @@ from typing import Callable
 FETCH_EVERY = 30 * 60
 FETCH_TIMEOUT = 20
 BUSY = ("MERGE_HEAD", "rebase-merge", "rebase-apply", "CHERRY_PICK_HEAD", "REVERT_HEAD")
+# Files a program writes, not the student. A student's own uv may rewrite uv.lock; the page never
+# commits that, and puts the file back before an update so it can't stand in the update's way.
+GENERATED = ("uv.lock",)
 
 
 def git(repo: Path, *args: str, timeout: float = 60, env: dict | None = None) -> subprocess.CompletedProcess:
@@ -104,6 +108,9 @@ class Updates:
                 return {"ok": True, "changed": []}
             if any((self.git_dir() / x).exists() for x in BUSY) or not save():
                 return {"ok": False, "changed": []}
+            for f in GENERATED:
+                if self.git("diff", "--quiet", "--", f).returncode == 1:
+                    self.git("checkout", "--", f)
             before = self.git("rev-parse", "HEAD").stdout.strip()
             merged = self.git("merge", "--no-edit", self.ref, timeout=120)
             if merged.returncode:

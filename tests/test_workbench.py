@@ -551,6 +551,21 @@ def test_an_untracked_file_in_the_way_changes_nothing(tmp_path):
     assert not (h.student / ".git/MERGE_HEAD").exists()
 
 
+def test_a_lock_file_rewritten_by_uv_is_never_committed_nor_in_the_way(tmp_path):
+    h = homework(tmp_path, {"uv.lock": "version = 1\n"})
+    app = server.App(h.student, upstream=str(h.cls))
+    app.updates.setup()
+    (h.student / "uv.lock").write_text("version = 1\n# rewritten by a newer uv\n")
+    finish_part0(h.student)
+    app.commit_finished_parts()
+    assert subjects(h.student)[0] == "Part 0 done"
+    assert "uv.lock" not in git(h.student, "show", "--name-only", "--format=", "HEAD")
+    upstream_commit(h, "uv.lock", "version = 2\n", "Update the lock file")
+    app.updates.fetch()
+    assert app.update() == {"ok": True}
+    assert (h.student / "uv.lock").read_text() == "version = 2\n"
+
+
 def test_after_an_update_the_steps_are_read_again_and_a_code_change_asks_for_a_restart(tmp_path):
     h = homework(tmp_path, {"workbench/note.py": "one\n"})
     app = server.App(h.student, upstream=str(h.cls))
