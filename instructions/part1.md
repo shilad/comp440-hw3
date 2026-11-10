@@ -79,7 +79,9 @@ passes.
   `ACCEPTED`. A reminder is recorded as tool `"(reminder)"`, input `{}`, result `REMINDED`.
 - Every tool call gets one entry in `trace`, with the result it was given: what a lookup returned,
   `ACCEPTED`, `REJECTED` followed by the problem, or `OUT_OF_STEPS`. The results viewer numbers these
-  entries, so a loop that records only lookups shows wrong traces.
+  entries, so a loop that records only lookups shows wrong traces. The one exception is a lookup the
+  model asks for after `OUT_OF_STEPS` has been sent: the loop stops there, and that lookup needs no
+  entry.
 - The answer is cleaned first: `answer = clean_answer(call.input)`.
 - `finish(claim, verdict, evidence, explanation, trace, tokens, steps)` makes what the loop returns.
   "Stop with no verdict" means `return finish(claim, None, [], why, trace, tokens, steps)`, where `why` is
