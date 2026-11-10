@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from workbench import claude_md, labels, server, steps, transcript  # noqa: E402
+from workbench.sessions import stamp  # noqa: E402
 
 STEPS = '''
 title = "COMP 440 HW9: A small homework"
@@ -279,6 +280,77 @@ def test_each_command_carries_the_model_and_the_line_about_it(tmp_path):
     assert "--model claude-opus-5-5 --effort medium" in snap["command"]
     js = (ROOT / "workbench/static/app.js").read_text()
     assert "If Claude says the model is not available, delete" in js
+
+
+def test_a_chained_call_is_labelled_by_what_is_left(tmp_path):
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    save_session(h.student, app.hub.session_id("0a"), [
+        ("user", "Start step 0a."),
+        ("assistant", [{"type": "tool_use", "id": "t1", "name": "Bash", "input": {
+            "command": 'python3 .workbench/page.py 0a done 4 && grep -n "^Name:" WRITEUP.md',
+            "description": "Tick the checkpoint and confirm the name line"}}]),
+        ("user", [tool_result(1, "The page now shows it as reached.\n3:Name: Sam")]),
+    ])
+    s = app.hub.sessions["0a"]
+    s.refresh()
+    assert [x["text"] for x in s.record()["entries"] if x["kind"] == "ran"] == ["Ran grep"]
+
+
+def test_each_tick_sits_at_the_moment_it_was_reached(tmp_path):
+    two = STEPS.replace('"You said what you expect before it ran",', '"You said what you expect before it ran", "You asked it to run",')
+    h = homework(tmp_path, {"steps.toml": two})
+    app = server.App(h.student)
+    save_session(h.student, app.hub.session_id("0b"), [
+        ("user", "Start step 0b."), ("assistant", [{"type": "text", "text": "What do you expect?"}]),
+        ("user", "Supported."), ("assistant", [{"type": "text", "text": "Noted."}]),
+        ("user", "Run it."), ("assistant", [{"type": "text", "text": "Done."}]),
+    ])
+    with open(app.hub.page_log, "a") as f:                       # what Claude told the page, and when
+        for clock, n in (("18:59:00", 1), ("19:04:30", 2)):
+            f.write(json.dumps({"t": stamp(f"2026-11-10T{clock}Z"), "step": "0b", "kind": "checkpoint", "n": n}) + "\n")
+    s = app.hub.sessions["0b"]
+    s.refresh()
+    marked = {x.get("text"): x["reached"] for x in s.record()["entries"] if x.get("reached")}
+    assert marked == {None: ["You said what you expect before it ran"], "Run it.": ["You asked it to run"]}
+
+
+def test_the_guard_lets_a_status_line_mention_the_key_file(tmp_path):
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    guard = app.hub.dir / "guard.py"
+
+    def refused(command):
+        event = {"tool_name": "Bash", "tool_input": {"command": command}, "session_id": "s"}
+        out = subprocess.run([sys.executable, str(guard), "pre"], input=json.dumps(event),
+                             capture_output=True, text=True).stdout
+        return "deny" in out
+
+    assert not refused('python3 .workbench/page.py 0a status "Waiting for you to make .env"')
+    assert not refused("test -f .env && echo there")
+    assert refused("cat .env")
+    assert refused('python3 .workbench/page.py 0a status "x" && cat .env')
+    assert refused('python3 .workbench/page.py 0a status "$(cat .env)"')
+    assert refused("git commit -m x")
+
+
+def test_every_step_of_the_real_homework_has_a_command_and_a_prompt(tmp_path):
+    for name in ("steps.toml", "WRITEUP.md", "README.md"):
+        (tmp_path / name).write_text((ROOT / name).read_text())
+    (tmp_path / "instructions").mkdir()
+    for f in (ROOT / "instructions").glob("*.md"):
+        (tmp_path / "instructions" / f.name).write_text(f.read_text())
+    git(tmp_path, "init", "-q", "-b", "main")
+    app = server.App(tmp_path)
+    for s in app.a.steps:
+        sess = app.hub.sessions[s.id]
+        sess.prepare()
+        label = app.a.label(s)
+        assert sess.command().startswith(f'claude -n "{label} ')
+        prompt = (app.hub.dir / f"{label}.md").read_text()
+        assert app.a.tutor.strip()[:60] in prompt and "(No section" not in prompt, label
+        assert json.loads((app.hub.dir / f"{label}.json").read_text())["permissions"]["allow"]
+    assert json.loads(json.dumps(app.assignment()))["steps"]
 
 
 # -- saving the student's work -------------------------------------------------------------------

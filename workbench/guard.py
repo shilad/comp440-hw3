@@ -26,6 +26,7 @@ HERE = Path(__file__).resolve().parent
 EXISTS = re.compile(r"(?:\btest\s+-[ef]\s+\S+|\[\s+-[ef]\s+\S+\s+\])")
 SEPARATOR = re.compile(r"\s*(?:&&|\|\||;|\||\n)\s*")
 EDITS = ("Edit", "Write", "MultiEdit")
+WORDS_ONLY = re.compile(r"(echo|printf)\b|(uv run )?python3?\s+\S*page\.py\b")   # their words are only text
 
 
 def pieces(cmd):
@@ -38,12 +39,13 @@ def pieces(cmd):
 
 def touches(secret, inp, tool):
     """Whether a call could read or write the secret file. Checking that it exists is fine, and so
-    is text that only mentions it (echo ".env missing"); .env.example is another file."""
+    is text that only mentions it (echo ".env missing", or a status line for the homework page);
+    .env.example is another file."""
     if tool == "Bash":
         text = EXISTS.sub("", inp.get("command", ""))
         parts = pieces(text)
-        if parts is not None:   # no redirect or substitution, so echo's words are only words
-            text = "\n".join(x for x in parts if not re.match(r"(echo|printf)\b", x))
+        if parts is not None:   # no redirect or substitution, so these words are only words
+            text = "\n".join(x for x in parts if not WORDS_ONLY.match(x))
     else:
         text = json.dumps(inp)
     return re.search(r"(?<![\w.])" + re.escape(secret) + r"(?![\w.])", text) is not None

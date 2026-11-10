@@ -202,7 +202,10 @@ class StepSession:
                     elif b.get("type") == "tool_use":
                         inp = b.get("input") or {}
                         if b.get("name") == "Bash":   # leave out the page skill's own calls, keep the rest
-                            inp = {**inp, "command": labels.without_page_calls(inp.get("command", ""))}
+                            real = labels.without_page_calls(inp.get("command", ""))
+                            if real != inp.get("command", "").strip():   # its description was of the whole
+                                inp = {k: v for k, v in inp.items() if k != "description"}
+                            inp = {**inp, "command": real}
                         if b.get("name") == "Bash" and not inp["command"]:
                             cat, label = "page", "Updated the homework page"
                         else:
@@ -390,7 +393,7 @@ class StepSession:
             text = "Your answers are in " + a.writeup if item["slots"] else item["text"]
             before = [x for x in entries if x["t"] <= reached[i] + 2]
             if before:
-                target = before[-1]
+                target = max(before, key=lambda x: x["t"])
             else:
                 target = {"kind": "mark", "t": reached[i]}
                 entries.append(target)

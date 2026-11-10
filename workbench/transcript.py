@@ -193,6 +193,8 @@ def render(session_id: str, lines: list[dict]) -> tuple[str, str] | None:
         if speaker != prev:
             body.append(f"\n**{speaker}:**\n")
             prev = speaker
+        else:
+            body.append("\n")    # HW2's has none; a blank line keeps text apart from a tool's output
         body.append(text + "\n")
     start = start or "unknown"
     turns = sum(s == "User" for s, _ in chunks)
