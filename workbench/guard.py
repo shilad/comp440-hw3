@@ -95,8 +95,11 @@ def main():
             records.append({**base, "kind": "refused", "text": "Refused a git command: the page makes the commits."})
         for secret in conf["never_read"]:
             if touches(secret, inp, tool):
+                # Claude Code shows this to the step's Claude as the refused call's result.
                 reason = (f"Never read, print or edit {secret}: it holds the student's own key. Ask "
-                          "them to edit it themselves in their editor.")
+                          "them to edit it themselves in their editor.") if secret == ".env" else \
+                         (f"Never open {secret}: it holds a finished version of what the student writes "
+                          "themselves in this homework. Do not look for its contents anywhere else either.")
                 records.append({**base, "kind": "refused", "text": f"Refused a call that touched {secret}."})
         if reason is None and tool in EDITS:
             text = writeup_text(conf, inp)
