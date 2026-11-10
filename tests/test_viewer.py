@@ -760,6 +760,32 @@ def test_numbers_into_a_trace_are_entries_and_counts_are_lookups(repo):
         assert not re.search(r"\blookup \d", text_of(body)), route  # a number into a trace is an entry
 
 
+def test_the_limit_of_lookups_comes_from_the_run(repo, monkeypatch):
+    # runs/part2 was made with the limit at 12: h3's trace shows "You have used all 12 steps".
+    # The student has since set MAX_STEPS to 8 in agent.py.
+    monkeypatch.setattr(R.RULES, "max_steps", lambda: 8)
+    words = text_of(get(repo, "/results/run?dir=runs/part2")[2])
+    assert "The agent used all 12 lookups on 1 claim." in words
+    assert "Only claims where the agent used all 12 lookups" in words
+    assert shown_ids(get(repo, "/results/run?dir=runs/part2&used_all=1")[2]) == ["h3"]  # not h4 (7 lookups)
+    # A run made under the new limit shows it in its own trace.
+    after = [result("agent", "h1", "supported", steps=8,
+                    trace=[{"tool": "read", "input": {"title": "Delta"}, "result": "Page: Delta\n\nx"}] * 8
+                    + [{"tool": "search", "input": {"query": "q"},
+                        "result": "You have used all 8 steps. Call answer() now."}]),
+             result("agent", "h2", "refuted", steps=3)]
+    write_jsonl(repo / "runs" / "part3" / "after-eval" / "agent.jsonl", after)
+    assert "used all 8 lookups" in text_of(get(repo, "/results/run?dir=runs/part3/after-eval")[2])
+    words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/part3/after-eval")[2])
+    assert "A was made with a limit of 12 lookups per claim, and B with a limit of 8." in words
+    # No result shows a limit: agent.py's is used, unless a result used more lookups than that.
+    write_jsonl(repo / "runs" / "b" / "agent.jsonl", [result("agent", "h1", "supported", steps=3)])
+    assert "used all 8 lookups" in text_of(get(repo, "/results/run?dir=runs/b")[2])
+    write_jsonl(repo / "runs" / "c" / "agent.jsonl", [result("agent", "h1", "supported", steps=10)])
+    assert "used all 10 lookups" in text_of(get(repo, "/results/run?dir=runs/c")[2])
+    assert "A was made with a limit" not in text_of(get(repo, "/results/compare?a=runs/b&b=runs/part3/after-eval")[2])
+
+
 def test_report_txt_and_run_json_open_their_run(repo):
     (repo / "runs" / "part2" / "report.txt").write_text("tables")
     (repo / "runs" / "part2" / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}))

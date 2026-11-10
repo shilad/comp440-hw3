@@ -490,8 +490,7 @@ def matches(run: R.Run, i: str, f: dict, max_steps: int) -> bool:
 
 
 def filtered(run: R.Run, f: dict) -> list[str]:
-    max_steps = R.RULES.max_steps()
-    ids = [i for i in run.ids if matches(run, i, f, max_steps)]
+    ids = [i for i in run.ids if matches(run, i, f, run.limit)]
     m = focus(run)
     sort = f.get("sort", "")
     if sort and m:
@@ -546,6 +545,9 @@ def run_facts(run: R.Run) -> str:
         if run.bad.get(m):
             out.append(f'<p class="note">{plural(run.bad[m], "line")} in <code>{e(m)}.jsonl</code> could '
                        'not be read. If the run is still going, it may be writing that line now.</p>')
+    if len(run.limits) > 1:
+        out.append('<p class="note">The agent\'s results here were made under different limits of lookups per '
+                   'claim: ' + " and ".join(str(n) for n in run.limits) + '.</p>')
     if len(run.versions) > 1:
         out.append(f'<p class="note">The agent\'s results here were made by {len(run.versions)} different versions '
                    'of its files (<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>).</p>')
@@ -681,7 +683,7 @@ def cost_section(run: R.Run) -> str:
                'prices in <code>agent.py</code>.</p>')
     if "agent" in sts:
         n = sts["agent"]["all_steps"]
-        out.append(f'<p class="small">The agent used all {R.RULES.max_steps()} lookups on '
+        out.append(f'<p class="small">The agent used all {run.limit} lookups on '
                    f'{a(link("/run", dir=run.rel, used_all="1") + "#claims", plural(n, "claim"))}.</p>')
     out.append('</section>')
     return "".join(out)
@@ -720,7 +722,7 @@ def claims_section(run: R.Run, f: dict) -> str:
     if "agent" in run.methods:
         checked = " checked" if f.get("used_all") else ""
         out.append(f'<label class="check"><input type="checkbox" name="used_all" value="1" data-auto{checked}> '
-                   f'Only claims where the agent used all {R.RULES.max_steps()} lookups</label>')
+                   f'Only claims where the agent used all {run.limit} lookups</label>')
     out.append('</div><div class="row actions"><button type="submit">Show these claims</button> '
                f'{a(link("/run", dir=run.rel) + "#claims", "Clear the filters")}</div></form>')
     out.append(f'<p class="count" role="status" aria-live="polite">Showing <strong>{len(ids):,}</strong> '
@@ -1102,6 +1104,9 @@ def compare_page(repo: Path, q: dict) -> str:
             len(set(A.versions) | set(B.versions)) == 1:
         out.append('<p class="note">A and B used the same version of the agent (the same '
                    '<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>).</p>')
+    if "agent" in shared and A.limit != B.limit:
+        out.append(f'<p class="note">A was made with a limit of {A.limit} lookups per claim, and B with a limit '
+                   f'of {B.limit}.</p>')
     for side, ms in (("A", only_a), ("B", only_b)):
         if ms:
             out.append(f'<p class="small">Only in {side}, so not compared: '
