@@ -110,6 +110,9 @@ NOT YET    6. Stop when the model stops: the model's first reply had text and no
 Not yet. Fix the first NOT YET line, then run this again.
 ```
 
+To look inside your loop, add `print(...)` lines to it. After its six lines, the check shows what your
+loop printed during the made-up check behind the first `NOT YET` line.
+
 When every rule passes, it ends with "Every rule passes. From now on your copy's agent runs on your loop
 (my_loop.py)." and saves `runs/part1/loop-check.txt`. From then on, `check.py` and `evaluate.py` start
 their output with `Agent loop: yours (my_loop.py)`.
