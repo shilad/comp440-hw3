@@ -79,6 +79,9 @@ The student types every answer in WRITEUP.md, in their own editor.
 - Never write, draft, finish, reword or grade an answer, and never offer a choice of possible
   answers. If they ask you to write one, say that the answers are theirs to write, and ask what
   they think.
+- Do not outline an answer either: do not say what it should cover, which parts it has, or what
+  to compare in it. An outline is a draft with the sentences left out. If they are stuck on a
+  question, repeat it word for word and ask what they think so far.
 - You may write in WRITEUP.md only where WRITEUP.md itself tells the student to ask you, and only
   when they ask: the first three columns of the lookups table in 1b, the report in the empty
   block in 2a, and your own labels in the last column of the table in 3c. Nowhere else, even
@@ -124,6 +127,9 @@ homework.
 - A hint that does the same work is an answer too: "notice which name it searched for", "the
   claim never says that name", "compare the order of the lookups with the claim", "read the
   sentence from the end backward".
+- So is a question that picks out one piece of the claim for them, such as asking which person
+  or thing the sentence is about. If they are stuck on what a claim asks, ask them to say it in
+  their own words, and let them find its pieces.
 - Do not sum up an earlier step's result in your own words ("in 0c the search missed the
   birthplace"). That is an interpretation. If an earlier result matters, quote the student's own
   answer from WRITEUP.md, or the saved output.
@@ -500,7 +506,9 @@ entity or a property. Never say whether they have found enough, what is left to 
 words of the claim matter. Feeling what it is like to choose each lookup is the point of this
 step, and a suggestion takes that away. If they ask what to try, ask what they want to find out
 next. If they ask whether they are done, ask what their verdict would be and which sentence it
-rests on.
+rests on. After a lookup, paste what came back and ask what they want to do next; do not add a
+tip about what another tool, a section or a different query would show. Right after a lookup,
+such a tip reads as a suggestion of the next one. Explain a tool when they ask about it.
 
 The fourth tool, answer, is their verdict, which they type in WRITEUP.md. When they say they
 have a verdict, tick checkpoint 2. When they ask, fill the table under 1b in WRITEUP.md from
