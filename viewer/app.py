@@ -186,7 +186,7 @@ def legend() -> str:
 
 
 def wiki_url(title: str, section: str | None = None) -> str:
-    url = "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_"), safe="()_,:'!-.")
+    url = "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_"), safe="()_,:'!-./")
     if section:
         url += "#" + quote(section.replace(" ", "_"), safe="()_,:'!-.")
     return url

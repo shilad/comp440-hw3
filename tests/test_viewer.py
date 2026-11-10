@@ -540,6 +540,33 @@ def test_standalone_server_uses_next_free_port(repo):
         taken.close()
 
 
+def test_a_file_is_read_again_only_when_it_changes(repo):
+    folder = repo / "runs" / "part3" / "after-eval"
+    write_jsonl(folder / "agent.jsonl", full_rows()["agent"][:2])
+    first = R.get_run(repo, folder, "runs/part3/after-eval")
+    assert R.get_run(repo, folder, "runs/part3/after-eval") is first  # nothing changed: not read again
+    with (folder / "agent.jsonl").open("a") as f:
+        f.write(json.dumps(full_rows()["agent"][2]) + "\n")
+    again = R.get_run(repo, folder, "runs/part3/after-eval")
+    assert again is not first and len(again.rows["agent"]) == 3
+    assert "the agent has 3 of 5" in text_of(get(repo, "/results/run?dir=runs/part3/after-eval")[2])
+
+
+def test_page_of_links_what_the_agent_read():
+    def call(tool, result, **inp):
+        return {"tool": tool, "input": inp, "result": result}
+    assert R.page_of(call("read", "Page: Robert Palmer\n\nText")) == \
+        {"kind": "wikipedia", "title": "Robert Palmer", "section": None}
+    assert R.page_of(call("read", "Page: Drunk in Love, section: Composition\n\nText"))["section"] == "Composition"
+    assert R.page_of(call("read", "There is no Wikipedia page titled 'X'. Try search() first.")) is None
+    assert R.page_of(call("wikidata", "Wikidata: Myles Kennedy (Q289003), occupation: singer",
+                          entity="Myles Kennedy"))["id"] == "Q289003"
+    assert R.page_of(call("wikidata", "Wikidata has no occupation for Jordan (Q113865537).",
+                          entity="Jordan"))["id"] == "Q113865537"
+    assert app.wiki_url("Eve's Leaves") == "https://en.wikipedia.org/wiki/Eve's_Leaves"
+    assert app.wiki_url("AC/DC & Me?") == "https://en.wikipedia.org/wiki/AC/DC_%26_Me%3F"
+
+
 # ------------------------------------------------------------------ what evaluate.py saves beside the results
 
 def test_run_json_names_the_claims_file(repo, tmp_path_factory):

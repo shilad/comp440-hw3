@@ -754,7 +754,7 @@ def quote_places(row: dict) -> list[dict]:
 
 PAGE = re.compile(r"^Page: (.+?)(?:, section: (.+))?$", re.M)
 NO_SECTION = re.compile(r"^(.+?) has no section called ")
-WIKIDATA = re.compile(r"^Wikidata: .*?\((Q\d+)\)")
+WIKIDATA = re.compile(r"^Wikidata[: ].*?\((Q\d+)\)")  # "Wikidata: X (Q1), ..." or "Wikidata has no ... (Q1)."
 
 
 def page_of(call: dict) -> dict | None:
