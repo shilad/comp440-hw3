@@ -126,7 +126,7 @@ def test_loads_the_way_the_page_does(a):
     assert a.title and a.tutor.strip() and a.writeup == "WRITEUP.md"
     assert a.model == "claude-opus-5-5" and a.effort == "medium"
     assert a.push is True and a.commit_parts is True
-    assert a.never_read == [".env", "reference_loop.py"]
+    assert a.never_read == [".env", "reference_loop.py", "tests/test_loop_check.py"]
     assert a.allow == GLOBAL_ALLOW
 
 
@@ -355,6 +355,9 @@ def test_1a_forbids_writing_the_loop_and_reading_the_reference(a):
     tutor = flat(a.tutor)
     assert "never write, dictate, complete or correct a line of my_loop.py" in tutor
     assert "cannot be opened from any step's session" in tutor
+    # The guard is a courtesy: the loop is also in the git history, so the rule is in words.
+    assert "not in the git history" in tutor
+    assert "never run `git show` or `git log -p` on agent.py, my_loop.py or reference_loop.py" in tutor
 
 
 def test_the_loop_has_more_than_two_ways_to_end():
