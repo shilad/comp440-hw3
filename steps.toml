@@ -31,7 +31,9 @@ overview = "README.md"
 writeup = "WRITEUP.md"
 commit_parts = true
 push = true
-before_commit = "python3 dump_transcript.py"   # run only if the file exists
+# The class repository. The page fetches its main branch now and then, and offers students an
+# Update button when it has commits their fork lacks.
+upstream = "https://github.com/shilad/comp440-hw3"
 never_read = [".env"]              # the student's own API key and email, for the agent
 # The model and effort every step's Claude Code session starts with (instructor, Nov 9), so each
 # student gets the same tutor whatever their own default is.
@@ -185,6 +187,9 @@ Facts about the programs that come up in several steps:
   a run is going. Say so if they mention editing it during a run.
 - The model does not give the same answer every time. Running one claim again with check.py
   gives a different trace from the one saved in a run.
+- In the results viewer a trace numbers every entry, answers and reminders included, so after an
+  answer the loop sent back, the entry numbers run ahead of the count of lookups. "Found in
+  lookup 3" means entry 3 of the trace. Explain that if a number puzzles the student.
 - When Wikipedia asks the program to slow down, the program prints "Wikipedia asked this program
   to slow down, so it is waiting N seconds before it tries again." and carries on by itself. If
   you see it, paste it with the rest of the output, and say in one line that the program waits
@@ -624,7 +629,10 @@ Before running, check with `git diff --stat -- instructions.md`; if the file has
 in one line and ask whether to run anyway. Then ask what they expect, for example on how many of
 the 12 claims the agent's verdict will match the dataset's label. When it finishes, paste the
 output in full, and say the run is in the results viewer as runs/part1/before. Its report is
-saved in runs/part1/before/report.txt.
+saved in runs/part1/before/report.txt. On that run's page, the claims table's filters include
+"The number of articles" and, in "The agent" box, "Result" ("matches the dataset's label" or
+"does not match the dataset's label (any reason)"); "Claim contains" finds a claim by its words.
+Give these labels when they ask how to find claims.
 
 The student picks six claims to read closely: two each that need 2, 3 and 4 articles, and for
 each number one the agent got right and one it got wrong, where there is one. One of the six must
@@ -697,9 +705,12 @@ instructions as they are now:
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after --fresh
 
 Before each run, ask what they expect to change in the traces. When it finishes, paste the output
-in full, and say the two runs can be compared in the results viewer: "Compare two runs", with
-runs/part1/before and runs/part1/after. They must not change instructions.md while a run is
-going, because the agent reads it again for every claim.
+in full, and say the two runs can be compared in the results viewer: "Compare two runs", then
+the link "Step 1d: runs/part1/before with runs/part1/after". That page shows "Accuracy" (columns
+"A", "B", "B minus A") and "Claims that changed", where "Open A and B" puts both traces side by
+side. If it says "A and B used the same version of the agent", the change to instructions.md was
+not in the second run. They must not change instructions.md while a run is going, because the
+agent reads it again for every claim.
 
 If the output ends with a note that the saved results were made by an earlier version of the
 agent, nothing was run. Say in one sentence that the results shown come from their instructions
@@ -834,14 +845,17 @@ No new run is needed. This step reads the second table of the full run's report,
 runs/part2/report.txt: the average lookups, tokens, seconds and cost per claim for each version.
 Show it when asked.
 
-In the results viewer the student can filter the run's claims to those where the agent used all
-12 lookups. If they ask, you may list those claims from runs/part2/agent.jsonl (its "steps" field
-counts lookups) with each claim's first few words, and paste a trace when asked. Tick checkpoint
-1 when they have looked, whether or not there are any.
+In the results viewer, on the page for runs/part2, the "Cost" part has the tables "Average per
+claim" and "Totals for the claims saved so far", and the line "The agent used all 12 lookups on N
+claims.", where "N claims" is a link to those claims. The same claims show when the student ticks
+"Only claims where the agent used all 12 lookups" above the claims table. If they ask, you may
+also list those claims from runs/part2/agent.jsonl (its "steps" field counts lookups) with each
+claim's first few words, and paste a trace when asked. Tick checkpoint 1 when they have looked,
+whether or not there are any.
 
-How much more the agent costs, for which claims that is worth paying, and what the agent was
-doing in a trace, are theirs to say. Point them to the numbers; do not make the comparison for
-them.
+How much more the agent costs, for which kinds of claims that is worth paying, and what the agent
+was doing in a trace, are theirs to say. Point them to the numbers; do not make the comparison
+for them.
 '''
 
 [[step]]
@@ -863,20 +877,21 @@ brief = '''
 The student checks whether the agent's quoted evidence really supports its verdicts. A quote can
 be real and still not support the verdict.
 
-Which ten claims is fixed by a rule: in the results viewer, open the Part 2 run (runs/part2),
-filter the claims table to those where the agent answered *supported* or *refuted*, and take the
-first ten rows. Do not pick claims yourself, and do not suggest others.
+Which ten claims is fixed by a rule, so that every student gets the same ten: in the results
+viewer, on the page for runs/part2, click "Clear the filters", then set "Verdict" in "The agent"
+box to "supported or refuted", and leave "Order" at "Order of the claims file". Rows 1 to 10 of
+the claims table are the ten. Do not pick claims yourself, and do not suggest others. If they ask
+which ten, give them that rule.
 
-For each claim they ask about, you may show the claim word for word, the agent's verdict, its
-quoted evidence and its explanation, from runs/part2/agent.jsonl, and say which lookup in the
-trace each quote came from. To show a page as the agent read it, run what they ask, with
-`--no-log` so that 1b's record in runs/part1/lookups.jsonl stays as it was:
+On a claim's page, under "Quoted evidence", each quote says "Found in lookup N (read),
+highlighted below"; "lookup N" jumps to it in the trace, and "open the live page" opens today's
+Wikipedia page at that quote. For each claim they ask about, you may also show the claim word for
+word, the agent's verdict, its quoted evidence and its explanation, from runs/part2/agent.jsonl,
+and say which lookup in the trace each quote came from. To show a page as the agent read it, run
+what they ask, with `--no-log` so that 1b's record in runs/part1/lookups.jsonl stays as it was:
 
     uv run python lookup.py --no-log read "<page title>"
     uv run python lookup.py --no-log read "<page title>" "<section>"
-
-The live page is at https://en.wikipedia.org/wiki/ followed by its title, with spaces as
-underscores; give the address when asked.
 
 Never say whether a quote supports the verdict, whether it is relevant, or whether the agent was
 right. The student types the whole table under 2c and the answers after it; you may show the
@@ -902,10 +917,15 @@ brief = '''
 HoVer's labels were made from Wikipedia as it was in 2017. The agent reads today's Wikipedia.
 Pages change, so an answer scored as wrong can be a sound reading of today's page.
 
-In the results viewer the student filters the Part 2 run (runs/part2) to the claims the agent got
-"wrong", and looks for ones where the agent's evidence is sound and today's page disagrees with
-the dataset's label. They need at least two. If after reading ten of the agent's wrong answers
-they have found fewer than two, they write up what they found and describe the closest case.
+In the results viewer, on the page for runs/part2, the student sets "Result" in "The agent" box
+to "does not match the dataset's label (any reason)", and looks for claims where the agent's
+evidence is sound and today's page disagrees with the dataset's label. A claim's page shows "The
+dataset's label" at the top, and "The dataset lists these articles for this claim:" and "Pages it
+read, live on Wikipedia today:" link to today's pages. They need two. The rule when they find
+fewer: if they have read ten of the agent's wrong answers and found fewer than two, they fill
+each remaining row of the table with the closest case they found, and say in that row that it is
+not a clear case. The page ticks 2d only when both numbered rows are full. Confirm that rule when
+asked; never pick a case for them, and never say which case is closest.
 
 When asked, show a claim word for word, its dataset label (from data/eval.jsonl), and the agent's
 verdict, evidence and trace (from runs/part2/agent.jsonl). Run the lookups they ask for, to see
@@ -917,12 +937,13 @@ it was:
     uv run python lookup.py --no-log search "<query>"
 
 To see an older version of a page, the student opens it on Wikipedia, chooses "View history",
-and picks a version from 2017. Explain that if asked; the student does it in their browser.
+and picks a version from 2017; the results viewer cannot show old versions. Explain that if
+asked; the student does it in their browser.
 
 Never say which claims are cases of a changed page, whether the agent's evidence is sound, or
 what changed on a page. The student types the whole table under 2d and the answer after it; you
 may show the facts the table asks for in the chat. Tick checkpoint 1 when they say they have
-found two, or have read ten wrong answers.
+found two, or have read ten wrong answers and filled the rows with the closest cases.
 '''
 
 # ---- Part 3: Your own claims --------------------------------------------------------------
@@ -950,19 +971,24 @@ a verdict is right: the run in 3b does that, and the point is to compare it with
 
 The step asks for at least eight claims, typed in the table under 3a in WRITEUP.md: some true and
 some false; at least two that need two or more Wikipedia articles; at least two where they think
-Wikipedia doesn't say, or says something wrong. Each has their own verdict (*supported*,
-*refuted* or *doesn't say*) and the source they would trust. When asked, say which part of that
-mix is missing, going by what the table shows; you may ask which claims they think need two or
-more articles. Never propose a claim to fill a gap.
+Wikipedia doesn't say, or says something wrong. Each has the source they would trust and their own
+verdict, which is what is true according to that source: `supported` if the claim is true,
+`refuted` if it is false. *doesn't say* is not a choice for the student's own verdicts; it stays
+one of the agent's three. If they ask what to put for a claim where they think Wikipedia has
+nothing or is wrong, say only that the verdict is what is true according to their source, and
+that seeing what the agent does with such a claim is part of the step. When asked, say which part
+of the mix is missing, going by what the table shows; you may ask which claims they think need
+two or more articles. Never propose a claim to fill a gap.
 
 When they ask, copy the table into data/my-claims.jsonl, one JSON object per line, with each
 claim's words exactly as typed:
 
     {"id": "mine-1", "claim": "...", "source": "mine", "label": "supported"}
 
-The id is "mine-" and the claim's number in the table. The label is their verdict, spelled
-exactly supported, refuted or doesn't say. If a verdict is written another way ("true",
-"Supported", "unclear"), ask which of the three they mean. Then paste the file in full.
+The id is "mine-" and the claim's number in the table. The label is their verdict, spelled exactly
+supported or refuted. If a row has anything else ("true", "Supported", "doesn't say"), do not
+guess: say which row, and that the verdict must be one of those two words, and let them fix the
+table. Then paste the file in full.
 
 Results are saved by claim id. Once 3b has run, a claim whose words change needs a new id (the
 next unused number), and new claims go at the end with new ids. Otherwise 3b's command gives back
@@ -990,10 +1016,12 @@ The command (about 3 minutes, a few cents on the student's key):
 
     uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
 
-For the student's own claims the label is their verdict, and a version agrees only if it gives
-the same one of the three verdicts. Before running, ask what they expect, for example on how many
-of their claims each version will agree with them. When it finishes, paste the output in full,
-and say the run is in the results viewer as runs/part3/before.
+For the student's own claims the label is their verdict, `supported` or `refuted`, and a version
+agrees only when its verdict is the same word. So a version's *doesn't say* never matches one of
+their claims; explain that when asked how the count works. Before running, ask what they expect,
+for example on how many of their claims each version will agree with them. When it finishes,
+paste the output in full, and say the run is in the results viewer as runs/part3/before, whose
+accuracy table counts how many verdicts matched their verdict.
 
 If they ask, you may show, claim by claim, their verdict beside each version's, from
 data/my-claims.jsonl and the two files in runs/part3/before. Do not say who is right, and do not
@@ -1035,9 +1063,10 @@ and each claim's trace). The claim's number is the number in its id: mine-3 is c
 
 The order, which the step's instructions also give the student:
 
-1. The student reads the trace of every failure in the results viewer, gives each one label, and
-   types the label and the line of the trace that shows it into the table under 3c, without
-   telling you their labels. In your first reply, say that this step starts with them labeling
+1. The student reads the trace of every failure in the results viewer (on the page for
+   runs/part3/before, "Result" in "The agent" box set to "does not match your verdict (any
+   reason)"), gives each one label, and types the label and the line of the trace that shows it
+   into the table under 3c, without telling you their labels. In your first reply, say that this step starts with them labeling
    in their table and then asking for your labels, and ask whether their labels are typed. If
    they start to tell you their labels before you have given yours, ask them to hold on until
    you have given your own. While they work you may paste a trace or explain a lookup, when

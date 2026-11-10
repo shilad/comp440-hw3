@@ -127,6 +127,15 @@ def test_loads_the_way_the_page_does(a):
     assert a.allow == GLOBAL_ALLOW
 
 
+def test_top_level_keys():
+    """Read from the file itself, so the check holds whatever version of the page reads it."""
+    import tomllib
+    data = tomllib.loads(STEPS.read_text(encoding="utf-8"))
+    assert data.get("upstream") == "https://github.com/shilad/comp440-hw3"
+    assert "before_commit" not in data, "the page no longer reads before_commit"
+    assert "demo" not in data
+
+
 def test_parts(a):
     assert {n: p["title"] for n, p in a.parts.items()} == PARTS
     assert all(p.get("due") == DUE for p in a.parts.values())
