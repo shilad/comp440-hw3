@@ -268,11 +268,12 @@ def test_long_runs_are_shown_as_run_yourself():
             assert "run_yourself" not in s, step_id
 
 
-def test_only_1e_hides_its_results():
+def test_only_1a_and_1e_hide_their_results():
+    """1e asks the student not to look at results yet; 1a's file is the loop check's record, not a run."""
     import tomllib
     steps = {s["id"]: s for s in tomllib.loads(STEPS.read_text(encoding="utf-8"))["step"]}
-    assert steps["1e"].get("hide_results") is True
-    assert not [i for i, s in steps.items() if i != "1e" and "hide_results" in s]
+    assert steps["1a"].get("hide_results") is True and steps["1e"].get("hide_results") is True
+    assert not [i for i, s in steps.items() if i not in ("1a", "1e") and "hide_results" in s]
 
 
 # Steps whose goal differs from the page's first line on purpose, with the reason.

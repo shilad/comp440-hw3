@@ -589,12 +589,14 @@ section = "1a. Write the loop"
 minutes = 70
 slots = ["1a.*"]
 files = ["runs/part1/loop-check.txt"]
+# The file is the check's own record, not a run: no link to it in the results viewer.
+hide_results = true
 allow = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loop.py --use-reference)", "Bash(uv run pytest:*)"]
 summary = "Write the agent's loop yourself, in my_loop.py, until every rule of the check passes."
 goal = "What an agent is made of, by writing its loop yourself: ask the model, run the lookups it chooses, send back what they return, and stop."
 checkpoints = [
   "You have read agent.py: the four tools, the evidence check and finish()",
-  { text = "Your loop in my_loop.py passes every rule of the check", files = ["runs/part1/loop-check.txt"] },
+  { text = "Your loop in my_loop.py passes every rule of the check, or you have chosen to keep the reference loop", files = ["runs/part1/loop-check.txt"] },
   { text = "Your answers are in WRITEUP.md", slots = ["1a.*"] },
 ]
 brief = '''
