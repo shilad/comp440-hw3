@@ -29,11 +29,6 @@ STATIC = Path(__file__).parent / "static"
 STATIC_TYPES = {".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8"}
 HTML = "text/html; charset=utf-8"
 
-CORRECT_MEANS = ("<em>Correct</em> means only that the verdict matches the dataset's label. For "
-                 "your own claims, the label is the verdict you gave. HoVer labels a claim only "
-                 "<em>supported</em> or <em>not supported</em>, so <em>refuted</em> and "
-                 "<em>doesn't say</em> both count as <em>not supported</em>.")
-
 FOLD_AT = 700      # results longer than this many characters start folded
 PEEK = 260         # characters shown while a result is folded
 
@@ -164,25 +159,51 @@ def dollars(x: float, places: int = 4) -> str:
 
 
 def verdict_cell(row: dict | None) -> str:
-    """A verdict with a plain mark for whether it counted as correct."""
+    """A verdict with a plain mark for whether it matched the label."""
     o = R.outcome(row)
     if o == "notrun":
         return '<span class="o notrun">not run yet</span>'
     if o == "error":
         return ('<span class="o wrong"><span class="mk" aria-hidden="true">✗</span>'
-                '<span class="sr">counted as wrong: </span>stopped with an error</span>')
+                '<span class="sr">did not match: </span>stopped with an error</span>')
     text = row["verdict"] if row["verdict"] is not None else "no verdict"
     if o == "correct":
         return (f'<span class="o correct"><span class="mk" aria-hidden="true">✓</span>'
-                f'<span class="sr">correct: </span>{e(text)}</span>')
+                f'<span class="sr">matched: </span>{e(text)}</span>')
     return (f'<span class="o wrong"><span class="mk" aria-hidden="true">✗</span>'
-            f'<span class="sr">wrong: </span>{e(text)}</span>')
+            f'<span class="sr">did not match: </span>{e(text)}</span>')
 
 
-def legend() -> str:
-    return ('<p class="legend small"><span class="o correct"><span class="mk">✓</span> correct</span>'
-            '<span class="o wrong"><span class="mk">✗</span> wrong</span> A claim with no verdict, '
-            'or that stopped with an error, counts as wrong, as it does in evaluate.py.</p>')
+def sources_of(items) -> set:
+    return {it.get("source") for it in items}
+
+
+def noun(items) -> str:
+    """What a verdict is compared with, in the words students see."""
+    sources = sources_of(items)
+    if sources and sources <= {"mine"}:
+        return "your verdict"
+    if "mine" in sources:
+        return "the label"
+    return "the dataset's label"
+
+
+def matched_means(items) -> str:
+    """Said once on a page, where a ✓ first appears."""
+    sources = sources_of(items)
+    if sources and sources <= {"mine"}:
+        return ("A ✓ means the agent's or baseline's verdict matched your verdict, the one in your "
+                "claims file.")
+    text = "A ✓ means the verdict matched the dataset's label"
+    text += (", or, for your own claims, your verdict. " if "mine" in sources else ". ")
+    return text + ("HoVer labels each claim only <em>supported</em> or <em>not supported</em>, so "
+                   "<em>refuted</em> and <em>doesn't say</em> both count as <em>not supported</em>.")
+
+
+def legend(items) -> str:
+    return (f'<p class="legend small"><span class="o correct"><span class="mk">✓</span> matched {noun(items)}</span>'
+            '<span class="o wrong"><span class="mk">✗</span> did not match</span> A missing verdict, or a '
+            'claim that stopped with an error, counts as not matching, as it does in evaluate.py.</p>')
 
 
 def wiki_url(title: str, section: str | None = None) -> str:
@@ -227,87 +248,112 @@ def json_str(v) -> str:
 
 # ------------------------------------------------------------------ home
 
+EMPTY_PART = {
+    0: "Nothing yet. Steps 0b, 0c and 0d each save a check in <code>runs/part0/</code>.",
+    1: ("Nothing yet. Step 1b saves your lookups in <code>runs/part1/lookups.jsonl</code>, and steps 1c "
+        "and 1d save runs in <code>runs/part1/before/</code> and <code>runs/part1/after/</code>."),
+    2: "Nothing yet. Step 1e starts the run that fills <code>runs/part2/</code>.",
+    3: "Nothing yet. Steps 3b and 3d save runs in <code>runs/part3/</code>.",
+}
+PART_TITLES = {0: "Part 0: Set up", 1: "Part 1: How the agent works",
+               2: "Part 2: The agent against the baselines", 3: "Part 3: Your own claims"}
+
+
 def home(repo: Path, q: dict) -> str:
     evals, checks, lookups = R.walk_runs(repo)
-    out = ['<h1>Your runs</h1><p class="lede">Every run saved in <code>runs/</code>: evaluation '
-           'runs first, then single checks, then the lookups you made by hand.</p>']
+    out = ['<h1>Your runs</h1><p class="lede">Everything saved in <code>runs/</code>, part by part, in '
+           'the order the homework makes it. Open a run or a check to read it.</p>']
     if not evals and not checks and not lookups:
-        out.append('<p class="empty">No runs yet. Your first one appears here after you check a '
-                   'claim in Part 0.</p>')
+        out.append('<p class="empty">No runs yet. Your first one appears here after step 0b.</p>')
         return shell("Your runs", "".join(out))
+    runs = {}
+    for rel in evals:
+        path, rel = R.safe_path(repo, rel)
+        run = R.get_run(repo, path, rel)
+        if run is not None:
+            runs[rel] = run
+    if runs:
+        out.append(f'<p class="small">{matched_means([it for r in runs.values() for it in r.items.values()] or [{}])}</p>')
+    if len(runs) > 1:
+        out.append(f'<p>{a(link("/compare"), "Compare two runs side by side")}</p>')
+    for part in (0, 1, 2, 3, None):
+        ev = sorted((r for r in runs if R.part_of(r) == part), key=R.homework_order)
+        ch = [r for r in checks if R.part_of(r) == part]
+        lk = sorted((r for r in lookups if R.part_of(r) == part), key=R.homework_order)
+        if part is None and not (ev or ch or lk):
+            continue
+        title = PART_TITLES.get(part, "Other runs")
+        hid = f"part-{part}" if part is not None else "part-other"
+        out.append(f'<section aria-labelledby="{hid}"><h2 id="{hid}">{e(title)}</h2>')
+        if not (ev or ch or lk):
+            out.append(f'<p class="empty">{EMPTY_PART[part]}</p></section>')
+            continue
+        out.append(checks_html(repo, ch))
+        out.append(lookups_html(repo, lk))
+        if ev:
+            out.append(runs_table([runs[r] for r in ev]))
+        out.append('</section>')
+    return shell("Your runs", "".join(out))
 
-    out.append('<section aria-labelledby="h-evals"><h2 id="h-evals">Evaluation runs</h2>')
-    if not evals:
-        out.append('<p class="empty">No evaluation runs yet. You make the first one in Part 2.</p>')
-    else:
-        out.append(f'<p class="small">{CORRECT_MEANS}</p>')
-        out.append('<div class="scroll"><table class="grid"><thead><tr><th scope="col">Folder</th>'
-                   '<th scope="col">Made</th><th scope="col">Method</th>'
-                   '<th scope="col">Claims done</th><th scope="col">Correct</th></tr></thead><tbody>')
-        for rel in evals:
+
+def runs_table(runs: list) -> str:
+    out = ['<div class="scroll"><table class="grid"><thead><tr><th scope="col">Run</th>'
+           '<th scope="col">Made</th><th scope="col">Version</th><th scope="col">Claims done</th>'
+           '<th scope="col">Matched</th></tr></thead><tbody>']
+    for run in runs:
+        total = run.total()
+        span = max(len(run.methods), 1)
+        status = "" if run.finished() else '<br><span class="tag">not finished</span>'
+        head = (f'<th scope="rowgroup" rowspan="{span}">{a(link("/run", dir=run.rel), e(run.rel))}{status}'
+                f'</th><td rowspan="{span}" class="nums">{when(run.started)}<br>'
+                f'<span class="small">last saved {when(run.mtime)}</span></td>')
+        if not run.methods:
+            out.append(f'<tr class="first">{head}<td colspan="3" class="small">No results saved yet.</td></tr>')
+            continue
+        for k, m in enumerate(run.methods):
+            st = R.stats(run, m)
+            done = f"{st['n']:,} of {total:,}" if total else f"{st['n']:,}"
+            out.append(f'<tr class="{"first" if k == 0 else ""}">{head if k == 0 else ""}'
+                       f'<td>{e(R.method_name(m))}</td><td class="nums">{done}</td>'
+                       f'<td class="nums">{frac(st["correct"], st["n"])}</td></tr>')
+    out.append('</tbody></table></div>')
+    return "".join(out)
+
+
+def checks_html(repo: Path, checks: list) -> str:
+    folders: dict[str, list] = {}
+    for rel in checks:
+        folders.setdefault(rel.rsplit("/", 1)[0], []).append(rel)
+    out = []
+    for folder in sorted(folders, key=R.homework_order):
+        rows = []
+        for rel in folders[folder]:
             path, rel = R.safe_path(repo, rel)
-            run = R.get_run(repo, path, rel)
-            if run is None:
-                continue
-            total = run.total()
-            span = len(run.methods)
-            for k, m in enumerate(run.methods):
-                st = R.stats(run, m)
-                head = ""
-                if k == 0:
-                    note = ' <span class="small">(may still be running)</span>' if (
-                        run.recently_changed() and not run.finished()) else ""
-                    head = (f'<th scope="rowgroup" rowspan="{span}">{a(link("/run", dir=rel), e(rel))}'
-                            f'</th><td rowspan="{span}" class="nums">{when(run.started)}<br>'
-                            f'<span class="small">last saved {when(run.mtime)}</span>{note}</td>')
-                done = f"{st['n']:,} of {total:,}" if total else f"{st['n']:,}"
-                out.append(f'<tr class="{"first" if k == 0 else ""}">{head}<td>{e(R.method_name(m))}</td>'
-                           f'<td class="nums">{done}</td><td class="nums">{frac(st["correct"], st["n"])}</td></tr>')
-        out.append('</tbody></table></div>')
-        if len(evals) > 1:
-            out.append(f'<p>{a(link("/compare"), "Compare two runs side by side")}</p>')
-    out.append('</section>')
-
-    out.append('<section aria-labelledby="h-checks"><h2 id="h-checks">Single checks</h2>')
-    if not checks:
-        out.append('<p class="empty">No single checks yet. Part 0 saves three of them, in '
-                   '<code>runs/part0/</code>.</p>')
-    else:
-        folders: dict[str, list] = {}
-        for rel in checks:
-            folders.setdefault(rel.rsplit("/", 1)[0], []).append(rel)
-        for folder, files in folders.items():
-            rows = []
-            for rel in files:
-                path, rel = R.safe_path(repo, rel)
-                row = R.CACHE.get(path, R.load_check)
-                if row is None:
-                    continue
+            row = R.CACHE.get(path, R.load_check)
+            if row is not None:
                 rows.append((R.check_time(path), rel, row))
-            rows.sort(key=lambda x: -x[0])
-            out.append(f'<h3 id="{e(anchor(folder))}"><code>{e(folder)}/</code></h3>'
-                       '<div class="scroll"><table class="grid"><thead><tr><th scope="col">Saved</th>'
-                       '<th scope="col">Method</th><th scope="col">Verdict</th><th scope="col">Claim</th>'
-                       '</tr></thead><tbody>')
-            for t, rel, row in rows:
-                method = str(row.get("method") or Path(rel).name.rsplit("-", 1)[0])
-                verdict = row["verdict"] if row["verdict"] is not None else "no verdict"
-                out.append(f'<tr><td class="nums nowrap">{when(t)}</td><td class="nowrap">'
-                           f'{e(R.method_name(method))}</td><td class="nowrap">{e(verdict)}</td>'
-                           f'<td class="claimcell">{a(link("/check", file=rel), e(row.get("claim", rel)))}</td></tr>')
-            out.append('</tbody></table></div>')
-    out.append('</section>')
+        rows.sort(key=lambda x: x[0])  # the order they were made in
+        out.append(f'<h3 id="{e(anchor(folder))}">Single checks in <code>{e(folder)}/</code></h3>'
+                   '<div class="scroll"><table class="grid"><thead><tr><th scope="col">Saved</th>'
+                   '<th scope="col">Version</th><th scope="col">Verdict</th><th scope="col">Claim</th>'
+                   '</tr></thead><tbody>')
+        for t, rel, row in rows:
+            method = str(row.get("method") or Path(rel).name.rsplit("-", 1)[0])
+            verdict = row["verdict"] if row["verdict"] is not None else "no verdict"
+            out.append(f'<tr><td class="nums nowrap">{when(t)}</td><td class="nowrap">'
+                       f'{e(R.method_name(method))}</td><td class="nowrap">{e(verdict)}</td>'
+                       f'<td class="claimcell">{a(link("/check", file=rel), e(row.get("claim", rel)))}</td></tr>')
+        out.append('</tbody></table></div>')
+    return "".join(out)
 
-    out.append('<section aria-labelledby="h-lookups"><h2 id="h-lookups">Lookups by hand</h2>')
-    if not lookups:
-        out.append('<p class="empty">No lookups by hand yet. In Part 1 you check a claim with the '
-                   'agent\'s tools yourself, and each call is saved in '
-                   '<code>runs/part1/lookups.jsonl</code>.</p>')
+
+def lookups_html(repo: Path, lookups: list) -> str:
+    out = []
     for rel in lookups:
         path, rel = R.safe_path(repo, rel)
-        loaded = R.CACHE.get(path, R.load_lookups) or ([], 0)
-        rows, bad = loaded
-        out.append(f'<h3 id="{e(anchor(rel))}"><code>{e(rel)}</code>: {plural(len(rows), "call")}</h3>')
+        rows, bad = R.CACHE.get(path, R.load_lookups) or ([], 0)
+        out.append(f'<h3 id="{e(anchor(rel))}">Your lookups by hand, in <code>{e(rel)}</code>: '
+                   f'{plural(len(rows), "lookup")}</h3>')
         if rows:
             out.append('<ol class="lookups">')
             for row in rows:
@@ -316,8 +362,7 @@ def home(repo: Path, q: dict) -> str:
             out.append('</ol>')
         if bad:
             out.append(f'<p class="small">{plural(bad, "line")} in this file could not be read.</p>')
-    out.append('</section>')
-    return shell("Your runs", "".join(out))
+    return "".join(out)
 
 
 def anchor(rel: str) -> str:
@@ -339,18 +384,27 @@ def load_run(repo: Path, rel) -> R.Run:
 
 
 def part_hint(rel: str) -> str:
-    m = re.match(r"runs/part(\d)", rel)
-    return f"It fills in when you reach that step in Part {m.group(1)}." if m else ""
+    """Which step makes what is at `rel`, from the homework's step list."""
+    parts = rel.split("/")
+    for n in range(len(parts), 1, -1):
+        hint = R.WHERE_FROM.get("/".join(parts[:n]))
+        if hint:
+            return hint
+    return ""
 
 
-FILTER_KEYS = ("q", "hops", "label", "steps", "sort")
-SORTS = {"": "Order of the claim file", "cost-high": "Cost, highest first",
-         "cost-low": "Cost, lowest first", "calls-high": "Most tool calls first",
-         "calls-low": "Fewest tool calls first"}
-OUTCOMES = {"": "any result", "correct": "correct", "wrong": "wrong (any reason)",
+FILTER_KEYS = ("q", "articles", "label", "used_all", "sort")
+SORTS = {"": "Order of the claims file", "cost-high": "Cost, highest first",
+         "cost-low": "Cost, lowest first", "lookups-high": "Most lookups first",
+         "lookups-low": "Fewest lookups first"}
+VERDICT_CHOICES = {"": "any verdict", "supported-or-refuted": "supported or refuted",
+                   "supported": "supported", "refuted": "refuted", "doesn't say": "doesn't say",
+                   "none": "no verdict"}
+
+
+def outcomes(items) -> dict:
+    return {"": "any result", "matched": f"matched {noun(items)}", "unmatched": "did not match (any reason)",
             "none": "gave no verdict", "error": "stopped with an error", "notrun": "not run yet"}
-VERDICT_CHOICES = {"": "any verdict", "supported": "supported", "refuted": "refuted",
-                   "doesn't say": "doesn't say", "none": "no verdict"}
 
 
 def focus(run: R.Run) -> str | None:
@@ -376,7 +430,7 @@ def matches(run: R.Run, i: str, f: dict, max_steps: int) -> bool:
         text = R.norm_claim(item["claim"])
         if not all(w in text for w in f["q"].lower().split()):
             return False
-    if f.get("hops") and (R.hops_text(item) or "none") != f["hops"]:
+    if f.get("articles") and (R.hops_text(item) or "none") != f["articles"]:
         return False
     if f.get("label") and R.label_text(item) != f["label"]:
         return False
@@ -385,7 +439,10 @@ def matches(run: R.Run, i: str, f: dict, max_steps: int) -> bool:
         want = f.get("r_" + m)
         if want:
             o = R.outcome(row)
-            if want == "wrong":
+            if want == "matched":
+                if o != "correct":
+                    return False
+            elif want == "unmatched":
                 if o not in ("wrong", "none", "error"):
                     return False
             elif o != want:
@@ -394,9 +451,15 @@ def matches(run: R.Run, i: str, f: dict, max_steps: int) -> bool:
         if v:
             if row is None or row["failed"]:
                 return False
-            if (row["verdict"] is None) != (v == "none") or (v != "none" and row["verdict"] != v):
+            if v == "none":
+                if row["verdict"] is not None:
+                    return False
+            elif v == "supported-or-refuted":
+                if row["verdict"] not in ("supported", "refuted"):
+                    return False
+            elif row["verdict"] != v:
                 return False
-    if f.get("steps"):
+    if f.get("used_all"):
         if "agent" not in run.rows or not R.used_all_steps(run.rows["agent"].get(i), max_steps):
             return False
     return True
@@ -408,7 +471,7 @@ def filtered(run: R.Run, f: dict) -> list[str]:
     m = focus(run)
     sort = f.get("sort", "")
     if sort and m:
-        field = "cost_usd" if sort.startswith("cost") else "steps"
+        field = "cost_usd" if sort.startswith("cost") else "steps"  # "steps" is agent.py's word for lookups
         have = [i for i in ids if i in run.rows[m]]
         missing = [i for i in ids if i not in run.rows[m]]
         have.sort(key=lambda i: run.rows[m][i][field], reverse=sort.endswith("high"))
@@ -421,6 +484,9 @@ def run_page(repo: Path, q: dict) -> str:
     f = filters_of(q, run)
     out = [f'<h1><code>{e(run.rel)}</code></h1>']
     out.append(run_facts(run))
+    if not run.methods:
+        out.append('<p class="empty">No results saved yet. If the run has just started, reload in a minute.</p>')
+        return shell(run.rel, "".join(out), [e(run.rel)])
     out.append(accuracy_section(run))
     out.append(cost_section(run))
     out.append(claims_section(run, f))
@@ -430,25 +496,27 @@ def run_page(repo: Path, q: dict) -> str:
 def run_facts(run: R.Run) -> str:
     out = ['<div class="facts">']
     total = run.total()
+    made = f"Made {when(run.started)}, last saved {when(run.mtime)}."
     if run.file:
-        out.append(f'<p>Claims from <code>{e(run.file[0])}</code> ({plural(run.file[1], "claim")}). '
-                   f'Made {when(run.started)}, last saved {when(run.mtime)}.</p>')
+        out.append(f'<p>Claims from <code>{e(run.file[0])}</code> ({plural(run.file[1], "claim")}). {made}</p>')
     else:
-        out.append(f'<p>{plural(len(run.ids), "claim")}. Made {when(run.started)}, last saved {when(run.mtime)}.</p>')
+        out.append(f'<p>{plural(len(run.ids), "claim")}. {made}</p>')
     missing = sum(1 for i in run.ids if "source" not in run.items[i])
     if missing:
         out.append(f'<p class="note">{plural(missing, "claim")} {"is" if missing == 1 else "are"} in no '
-                   'file in <code>data/</code>, so the label and number of articles are not known.</p>')
-    parts = []
-    for m in run.methods:
-        n = len(run.rows[m])
-        parts.append(f"the {e(R.method_name(m))} has {n:,}" + (f" of {total:,}" if total else ""))
-    out.append(f'<p>Results saved: {"; ".join(parts)}.</p>')
-    if total and not run.finished():
-        line = ("Some claims have no result yet. A claim that stopped with an error is not saved, "
-                "so running the same command again tries it again.")
+                   'claims file, so the label and the number of articles are not known.</p>')
+    if run.methods:
+        parts = [f"the {e(R.method_name(m))} has {len(run.rows[m]):,}" + (f" of {total:,}" if total else "")
+                 for m in run.methods]
+        out.append(f'<p>Results saved: {"; ".join(parts)}.</p>')
+    if not run.finished():
+        line = ("<strong>This run has not finished.</strong> Its folder has no <code>report.txt</code> yet, "
+                "and evaluate.py saves that only when every claim has a result. ")
         if run.recently_changed():
-            line += " These files changed in the last two minutes, so the run may still be going: reload to see more."
+            line += "Its files changed in the last two minutes, so it is probably still going: reload to see more."
+        else:
+            line += ("It may still be going, or it may have stopped early. To finish it, run the same command "
+                     "again: it picks up where it stopped and runs only the claims that have no result.")
         out.append(f'<p class="note">{line}</p>')
     for m in run.methods:
         if run.bad.get(m):
@@ -459,37 +527,29 @@ def run_facts(run: R.Run) -> str:
                    'of its files (<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>).</p>')
     relabelled = len(run.relabelled)
     if relabelled:
-        out.append(f'<p class="note">For {plural(relabelled, "result")}, the label in <code>data/</code> '
-                   'has changed since the run: with today\'s label it would count the other way. This page '
-                   'uses what the run saved, as evaluate.py does.</p>')
+        out.append(f'<p class="note">For {plural(relabelled, "result")}, the label in the claims file has '
+                   'changed since the run, so today it would count the other way. This page uses what the run '
+                   'saved, as evaluate.py does.</p>')
     if R.RULES.problem and R.RULES.module is None:
         out.append(f'<p class="note">evaluate.py could not be loaded (<code>{e(R.RULES.problem)}</code>), '
                    'so this page uses its own copy of evaluate.py\'s rules for grouping claims.</p>')
-    others = f' {a(link("/compare", a=run.rel), "Compare this run with another")}'
-    out.append(f'<p>{a("#claims", "Go to the claims")} ·{others}</p></div>')
+    if run.methods:
+        out.append(f'<p>{a("#claims", "Go to the claims")} · '
+                   f'{a(link("/compare", a=run.rel), "Compare this run with another")}</p>')
+    out.append('</div>')
     return "".join(out)
 
 
 def accuracy_section(run: R.Run) -> str:
+    items = list(run.items.values())
     out = ['<section aria-labelledby="h-acc"><h2 id="h-acc">Accuracy</h2>',
-           f'<p class="small">{CORRECT_MEANS}</p>']
+           f'<p class="small">{matched_means(items)}</p>']
     sts = {m: R.stats(run, m) for m in run.methods}
-    groups = R.group_names(run)
-    out.append('<div class="scroll"><table class="grid nums"><caption>Correct verdicts, by the number '
-               'of Wikipedia articles a claim needs</caption><thead><tr><th scope="col">Claims</th>')
-    out += [f'<th scope="col">{e(R.method_name(m))}</th>' for m in run.methods]
-    out.append('</tr></thead><tbody>')
-    for g in groups + ["All"]:
-        cls = ' class="all"' if g == "All" else ""
-        out.append(f'<tr{cls}><th scope="row">{e(g if g != "All" else "All claims")}</th>')
-        for m in run.methods:
-            c, n = (sts[m]["correct"], sts[m]["n"]) if g == "All" else sts[m]["groups"].get(g, (0, 0))
-            out.append(f'<td>{frac(c, n)}</td>')
-        out.append('</tr>')
-    out.append('</tbody></table></div>')
+    out.append(accuracy_table(run.methods, sts, R.group_names(run),
+                              f"How many verdicts matched {noun(items)}, by the number of articles a claim needs"))
     if len({sts[m]["n"] for m in run.methods}) > 1:
-        out.append('<p class="note">The methods do not all have results for the same claims yet. Each '
-                   'column counts only the claims that method has finished.</p>')
+        out.append('<p class="note">The versions do not all have results for the same claims yet. Each '
+                   'column counts only the claims that version has finished.</p>')
     text = R.report_text(run)
     if text:
         out.append('<details class="report"><summary>The same numbers as evaluate.py prints them</summary>'
@@ -501,19 +561,62 @@ def accuracy_section(run: R.Run) -> str:
             bits = []
             if st["no_verdict"]:
                 bits.append(a(link("/run", dir=run.rel, **{"r_" + m: "none"}) + "#claims",
-                              plural(st["no_verdict"], "claim") + " gave no verdict"))
+                              plural(st["no_verdict"], "claim") + " with no verdict"))
             if st["failed"]:
                 bits.append(a(link("/run", dir=run.rel, **{"r_" + m: "error"}) + "#claims",
-                              plural(st["failed"], "claim") + " stopped with an error"))
+                              plural(st["failed"], "claim") + " that stopped with an error"))
             bad.append(f'<li>The {e(R.method_name(m))}: {"; ".join(bits)}.</li>')
-    out.append('<h3>Claims that failed or gave no verdict</h3>')
+    out.append('<h3>Claims with no verdict, or that stopped with an error</h3>')
     if bad:
-        out.append('<p class="small">They count as wrong above. A claim gives no verdict when, for '
-                   'example, the model declined, ran out of steps or had its answer sent back three '
-                   'times.</p><ul>' + "".join(bad) + '</ul>')
+        out.append('<p class="small">They count as not matching above. A verdict is missing when the program '
+                   'could not get one from the model: for example the model declined, the agent used all its '
+                   'lookups, or its answer was sent back three times. Each claim\'s page shows the text that '
+                   'was saved with it.</p><ul>' + "".join(bad) + '</ul>')
     else:
         out.append('<p class="small">None: every saved result has a verdict.</p>')
     out.append('</section>')
+    return "".join(out)
+
+
+def accuracy_table(methods: list, sts: dict, groups: list, caption: str, b_sts: dict | None = None) -> str:
+    """evaluate.py's first table: one row per group, "All", then the same count by the dataset's
+    label. With b_sts, two columns (A and B) and their difference, for one version."""
+    rows = [(g, "group") for g in groups] + [("All", "all")]
+    label_names = [name for _, name in R.LABEL_ROWS]
+    if any(sts[m]["labels"] for m in methods):
+        rows += [(name, "label") for name in label_names]
+
+    def count(st, g, kind):
+        if kind == "all":
+            return st["correct"], st["n"]
+        return tuple((st["labels"] if kind == "label" else st["groups"]).get(g, (0, 0)))
+
+    if b_sts is None:
+        head = "".join(f'<th scope="col">{e(R.method_name(m))}</th>' for m in methods)
+    else:
+        head = '<th scope="col">A</th><th scope="col">B</th><th scope="col">B minus A</th>'
+    out = [f'<div class="scroll"><table class="grid nums"><caption>{caption}</caption><thead><tr>'
+           f'<th scope="col">Claims</th>{head}</tr></thead><tbody>']
+    first_label = True
+    for g, kind in rows:
+        cls = ""
+        if kind == "all":
+            cls = ' class="all"'
+        elif kind == "label" and first_label:
+            cls, first_label = ' class="first"', False
+        name = "All claims" if kind == "all" else g
+        out.append(f'<tr{cls}><th scope="row">{e(name)}</th>')
+        if b_sts is None:
+            for m in methods:
+                c, n = count(sts[m], g, kind)
+                out.append(f'<td>{frac(c, n)}</td>')
+        else:
+            m = methods[0]
+            ca, n = count(sts[m], g, kind)
+            cb, _ = count(b_sts[m], g, kind)
+            out.append(f'<td>{frac(ca, n)}</td><td>{frac(cb, n)}</td><td>{diff_points(ca, cb, n)}</td>')
+        out.append('</tr>')
+    out.append('</tbody></table></div>')
     return "".join(out)
 
 
@@ -521,7 +624,7 @@ def cost_section(run: R.Run) -> str:
     sts = {m: R.stats(run, m) for m in run.methods}
     out = ['<section aria-labelledby="h-cost"><h2 id="h-cost">Cost</h2>',
            '<div class="scroll"><table class="grid nums"><caption>Average per claim</caption><thead><tr>'
-           '<th scope="col">Method</th><th scope="col">Claims</th><th scope="col">Tool calls</th>'
+           '<th scope="col">Version</th><th scope="col">Claims</th><th scope="col">Lookups</th>'
            '<th scope="col">Tokens</th><th scope="col">Seconds</th><th scope="col">Dollars</th>'
            '</tr></thead><tbody>']
     for m in run.methods:
@@ -531,7 +634,7 @@ def cost_section(run: R.Run) -> str:
                    f'<td>{dollars(st["cost"])}</td></tr>')
     out.append('</tbody></table></div>')
     out.append('<div class="scroll"><table class="grid nums"><caption>Totals for the claims saved so far'
-               '</caption><thead><tr><th scope="col">Method</th><th scope="col">Tool calls</th>'
+               '</caption><thead><tr><th scope="col">Version</th><th scope="col">Lookups</th>'
                '<th scope="col">Tokens in</th><th scope="col">Tokens out</th>'
                '<th scope="col">Seconds, added up</th><th scope="col">Dollars</th></tr></thead><tbody>')
     for m in run.methods:
@@ -540,22 +643,22 @@ def cost_section(run: R.Run) -> str:
                    f'<td>{st["total_in"]:,}</td><td>{st["total_out"]:,}</td>'
                    f'<td>{st["total_seconds"]:,.1f}</td><td>{dollars(st["total_cost"])}</td></tr>')
     if len(run.methods) > 1:
-        out.append(f'<tr class="all"><th scope="row">All methods</th>'
+        out.append(f'<tr class="all"><th scope="row">All versions</th>'
                    f'<td>{sum(s["total_steps"] for s in sts.values()):,}</td>'
                    f'<td>{sum(s["total_in"] for s in sts.values()):,}</td>'
                    f'<td>{sum(s["total_out"] for s in sts.values()):,}</td>'
                    f'<td>{sum(s["total_seconds"] for s in sts.values()):,.1f}</td>'
                    f'<td>{dollars(sum(s["total_cost"] for s in sts.values()))}</td></tr>')
     out.append('</tbody></table></div>')
-    out.append('<p class="small">Tool calls are the lookups: <code>search</code>, <code>read</code> and '
-               '<code>wikidata</code>. The final answer is not counted. Tokens are input and output '
+    out.append('<p class="small">A lookup is one call to <code>search</code>, <code>read</code> or '
+               '<code>wikidata</code>; the final answer is not counted. Tokens are input and output '
                'together. Seconds are each claim\'s own time, added up; claims run a few at a time, so '
                'the whole run took less time than that. Dollars are worked out from the tokens at the '
                'prices in <code>agent.py</code>.</p>')
     if "agent" in sts:
         n = sts["agent"]["all_steps"]
-        out.append(f'<p class="small">The agent used all its steps on '
-                   f'{a(link("/run", dir=run.rel, steps="1") + "#claims", plural(n, "claim"))}.</p>')
+        out.append(f'<p class="small">The agent used all {R.RULES.max_steps()} lookups on '
+                   f'{a(link("/run", dir=run.rel, used_all="1") + "#claims", plural(n, "claim"))}.</p>')
     out.append('</section>')
     return "".join(out)
 
@@ -570,7 +673,9 @@ def select(name: str, label: str, choices: dict, value: str) -> str:
 def claims_section(run: R.Run, f: dict) -> str:
     ids = filtered(run, f)
     m_focus = focus(run)
-    hops = sorted({R.hops_text(run.items[i]) or "none" for i in run.ids})
+    items = list(run.items.values())
+    label_name = "Your verdict" if noun(items) == "your verdict" else "The dataset's label"
+    numbers = sorted({R.hops_text(run.items[i]) or "none" for i in run.ids})
     labels = sorted({R.label_text(run.items[i]) for i in run.ids})
     out = ['<section aria-labelledby="claims"><h2 id="claims" tabindex="-1">Claims</h2>',
            f'<form class="filters" method="get" action="{e(link("/run"))}#claims" role="search" '
@@ -579,40 +684,40 @@ def claims_section(run: R.Run, f: dict) -> str:
            '<div class="row">',
            f'<label class="field grow"><span>Claim contains</span><input type="search" name="q" '
            f'value="{e(f.get("q", ""))}" placeholder="words in the claim"></label>',
-           select("hops", "Articles needed", {"": "any number",
-                  **{h: (h if h != "none" else "not given") for h in hops}}, f.get("hops", "")),
-           select("label", "Dataset's label", {"": "any label", **{x: x for x in labels}}, f.get("label", "")),
+           select("articles", "The number of articles", {"": "any number",
+                  **{h: (h if h != "none" else "not given") for h in numbers}}, f.get("articles", "")),
+           select("label", label_name, {"": "any", **{x: x for x in labels}}, f.get("label", "")),
            select("sort", "Order", SORTS if m_focus else {"": SORTS[""]}, f.get("sort", "")),
            '</div><div class="row">']
     for m in run.methods:
-        out.append(f'<fieldset class="method"><legend>{e(R.method_name(m))}</legend>'
-                   + select("r_" + m, "Result", OUTCOMES, f.get("r_" + m, ""))
+        out.append(f'<fieldset class="method"><legend>The {e(R.method_name(m))}</legend>'
+                   + select("r_" + m, "Result", outcomes(items), f.get("r_" + m, ""))
                    + select("v_" + m, "Verdict", VERDICT_CHOICES, f.get("v_" + m, "")) + '</fieldset>')
     if "agent" in run.methods:
-        checked = " checked" if f.get("steps") else ""
-        out.append(f'<label class="check"><input type="checkbox" name="steps" value="1" data-auto{checked}> '
-                   'Only claims where the agent used all its steps</label>')
+        checked = " checked" if f.get("used_all") else ""
+        out.append(f'<label class="check"><input type="checkbox" name="used_all" value="1" data-auto{checked}> '
+                   f'Only claims where the agent used all {R.RULES.max_steps()} lookups</label>')
     out.append('</div><div class="row actions"><button type="submit">Show these claims</button> '
                f'{a(link("/run", dir=run.rel) + "#claims", "Clear the filters")}</div></form>')
     out.append(f'<p class="count" role="status" aria-live="polite">Showing <strong>{len(ids):,}</strong> '
                f'of {plural(len(run.ids), "claim")}.</p>')
-    out.append(legend())
+    out.append(legend(items))
     if not ids:
         out.append('<p class="empty">No claims match these filters.</p></section>')
         return "".join(out)
-    sort_note = f" ({e(R.method_name(m_focus))})" if m_focus else ""
-    out.append('<div class="scroll"><table class="grid claims"><thead><tr><th scope="col" class="num">#</th>'
-               '<th scope="col">Claim</th><th scope="col">Label</th><th scope="col" class="num">Articles</th>')
-    out += [f'<th scope="col">{e(R.method_name(m))}</th>' for m in run.methods]
+    sort_note = f" (the {e(R.method_name(m_focus))})" if m_focus else ""
+    out.append('<div class="scroll"><table class="grid claims"><thead><tr>'
+               '<th scope="col" class="num">Row</th><th scope="col">Claim</th>'
+               f'<th scope="col">{label_name}</th><th scope="col" class="num">Number of articles</th>')
+    out += [f'<th scope="col">The {e(R.method_name(m))}</th>' for m in run.methods]
     if m_focus:
-        out.append(f'<th scope="col" class="num">Tool calls{sort_note}</th>'
+        out.append(f'<th scope="col" class="num">Lookups{sort_note}</th>'
                    f'<th scope="col" class="num">Cost{sort_note}</th>')
     out.append('</tr></thead><tbody>')
-    params = {k: v for k, v in f.items()}
-    for i in ids:
+    for n, i in enumerate(ids, 1):
         item = run.items[i]
-        href = link("/claim", dir=run.rel, id=i, **params)
-        out.append(f'<tr id="row-{e(i)}"><td class="num">{run.position[i] + 1}</td>'
+        href = link("/claim", dir=run.rel, id=i, **f)
+        out.append(f'<tr id="row-{e(i)}"><td class="num" title="Line {run.position[i] + 1} of the claims file">{n}</td>'
                    f'<td class="claimcell">{a(href, e(item["claim"]))}</td>'
                    f'<td class="nowrap">{e(R.label_text(item))}</td><td class="num">{e(R.hops_text(item))}</td>')
         for m in run.methods:
@@ -648,15 +753,16 @@ def claim_page(repo: Path, q: dict) -> str:
     else:
         nav = pager(None, None, "This claim is not among the ones your filters show", back)
     full = q.get("full") == "1"
-    out = [nav, claim_head(item, run.items[i].get("source") is not None)]
-    out.append(f'<p class="small">{CORRECT_MEANS}</p>')
+    out = [nav, claim_head(item, run.items[i].get("source") is not None,
+                           [("", run.rows["agent"].get(i))] if "agent" in run.rows else [])]
+    out.append(f'<p class="small">{matched_means([item])}</p>')
     cols = []
     for m in run.methods:
         row = run.rows[m].get(i)
         note = ""
         if (m, i) in run.relabelled:
             note = ('<p class="note">The label in <code>data/</code> has changed since this run. The run '
-                    f'saved this result as {"correct" if row["correct"] else "wrong"}.</p>')
+                    f'saved this result as {"matching" if row["correct"] else "not matching"}.</p>')
         cols.append(result_card(m, row, note, anchor_for=m))
     out.append(f'<div class="cards n{len(cols)}">{"".join(cols)}</div>')
     for m in reversed(run.methods):  # the agent first: its trace is the long one
@@ -679,22 +785,43 @@ def pager(prev, nxt, where, back) -> str:
             f'{a(back, "back to the table")}{keys}</span>{n}</nav>')
 
 
-def claim_head(item: dict, known: bool) -> str:
+def claim_head(item: dict, known: bool, reads: list | None = None) -> str:
+    """The claim, its label and the number of articles, and the articles the dataset lists for it,
+    marked with whether the agent read each one. `reads` is [(name of the run, the agent's row)]."""
     out = [f'<h1 class="claim">{e(item["claim"])}</h1><div class="facts">']
     if known:
-        bits = [f'Label: <strong>{e(R.label_text(item))}</strong>']
-        if item.get("source") == "hover":
-            bits.append(f"HoVer, {e(R.hops_text(item))} articles")
-        elif item.get("source") == "mine":
-            bits.append("one of your own claims: the label is the verdict you gave")
+        if item.get("source") == "mine":
+            bits = [f'Your verdict: <strong>{e(R.label_text(item))}</strong> (one of your own claims)']
+        else:
+            bits = [f"The dataset's label: <strong>{e(R.label_text(item))}</strong>"]
+            if R.hops_text(item):
+                bits.append(f"the number of articles: {e(R.hops_text(item))}")
         out.append("<p>" + " · ".join(bits) + "</p>")
-        arts = item.get("articles")
-        if isinstance(arts, list) and arts:
-            links = ", ".join(a(wiki_url(str(t)), e(t), new_tab=True) for t in arts)
-            out.append(f'<p class="small">Articles the dataset lists for this claim: {links}</p>')
+        if isinstance(item.get("articles"), list) and item["articles"]:
+            out.append(articles_html(item, reads or []))
     else:
-        out.append('<p class="note">This claim is in no file in <code>data/</code>, so its label is not known.</p>')
+        out.append('<p class="note">This claim is in no claims file, so its label is not known.</p>')
     out.append(f'<p class="small">Id: <code>{e(item.get("id", ""))}</code></p></div>')
+    return "".join(out)
+
+
+def articles_html(item: dict, reads: list) -> str:
+    out = ['<p class="small arts-head">The dataset lists these articles for this claim:</p><ul class="arts">']
+    marks = [(name, row, dict(R.articles_read(item, row))) for name, row in reads if row is not None]
+    for title in item["articles"]:
+        bits = []
+        for name, row, seen in marks:
+            n = seen.get(str(title))
+            who = f"the agent in {name}" if name else "the agent"
+            if n:
+                anchor_id = f"#call-{(name.lower() + '-') if name else ''}agent-{n}"
+                bits.append(f'<span class="o correct"><span class="mk" aria-hidden="true">✓</span>read by {who} '
+                            f'({a(anchor_id, f"lookup {n}")})</span>')
+            else:
+                bits.append(f'<span class="o notread">not read by {who}</span>')
+        out.append(f'<li>{a(wiki_url(str(title)), e(title), new_tab=True)}'
+                   + (" · " + " · ".join(bits) if bits else "") + '</li>')
+    out.append('</ul>')
     return "".join(out)
 
 
@@ -722,12 +849,12 @@ def result_card(method: str, row: dict | None, note: str = "", anchor_for: str =
         out.append('</ol>')
     t = row["tokens"]
     out.append('<dl class="numbers">'
-               f'<div><dt>Tool calls</dt><dd>{row["steps"]}</dd></div>'
+               f'<div><dt>Lookups</dt><dd>{row["steps"]}</dd></div>'
                f'<div><dt>Tokens</dt><dd>{t["input"]:,} in, {t["output"]:,} out</dd></div>'
                f'<div><dt>Cost</dt><dd>{dollars(row["cost_usd"])}</dd></div>'
                f'<div><dt>Time</dt><dd>{row["seconds"]:.1f} seconds</dd></div></dl>')
     if row["trace"]:
-        out.append(f'<p class="small">{a("#trace-" + anchor_for, "Its trace, one call at a time")}</p>')
+        out.append(f'<p class="small">{a("#trace-" + anchor_for, "Its trace, one lookup at a time")}</p>')
     out.append('</article>')
     return "".join(out)
 
@@ -741,7 +868,7 @@ def quote_where(row: dict, place: dict, n: int, who: str) -> str:
     bits = []
     for hit in place["hits"]:
         call = row["trace"][hit["call"]]
-        where = a(f"#call-{who}-{hit['call'] + 1}", f"call {hit['call'] + 1} ({e(call['tool'])})")
+        where = a(f"#call-{who}-{hit['call'] + 1}", f"lookup {hit['call'] + 1} ({e(call['tool'])})")
         page = R.page_of(call)
         extra = ""
         if page and page["kind"] == "wikipedia":
@@ -790,14 +917,16 @@ def trace_section(method: str, row: dict, full: bool, toggle: str, heading: str 
 
 
 def trace_counts(trace: list) -> str:
-    """What the entries were: lookups, lookups refused after the last step, answers, reminders."""
-    refused = sum(1 for c in trace if R.OUT_OF_STEPS.search(c["result"]))
+    """What the entries were: lookups, lookups refused after the limit, answers, reminders."""
+    refused = [R.OUT_OF_STEPS.search(c["result"]) for c in trace]
+    refused = [m for m in refused if m]
     answers = sum(1 for c in trace if c["tool"] == "answer")
     reminders = sum(1 for c in trace if c["tool"] == "(reminder)")
-    lookups = len(trace) - refused - answers - reminders
+    lookups = len(trace) - len(refused) - answers - reminders
     bits = [plural(lookups, "lookup") + " (<code>search</code>, <code>read</code> or <code>wikidata</code>)"]
     if refused:
-        bits.append(plural(refused, "lookup") + " refused because it had used all its steps")
+        bits.append(plural(len(refused), "lookup") + " refused because the agent had already used all "
+                    f"{refused[0].group(1)} lookups")
     if answers:
         bits.append(plural(answers, "answer"))
     if reminders:
@@ -881,9 +1010,9 @@ def check_page(repo: Path, q: dict) -> str:
         item, name, _ = found
         item = dict(item)
         row["correct"] = R.RULES.is_correct(item, row["verdict"]) if not row["failed"] else False
-        out.append(claim_head(item, True))
+        out.append(claim_head(item, True, [("", row)] if method == "agent" else []))
         out.append(f'<p class="small">This claim is in <code>{e(name)}</code>, which gives the label above. '
-                   f'{CORRECT_MEANS}</p>')
+                   f'{matched_means([item])}</p>')
         card = result_card(method, row, anchor_for=method)
     else:
         out.append(f'<h1 class="claim">{e(row.get("claim", ""))}</h1>')
@@ -900,10 +1029,10 @@ def check_page(repo: Path, q: dict) -> str:
 
 # ------------------------------------------------------------------ two runs side by side
 
-CHANGE_KINDS = {"": "every change", "now-correct": "wrong in A, correct in B",
-                "now-wrong": "correct in A, wrong in B",
-                "both-correct": "verdict changed, correct in both",
-                "both-wrong": "verdict changed, wrong in both"}
+CHANGE_KINDS = {"": "every change", "now-matched": "did not match in A, matched in B",
+                "now-unmatched": "matched in A, did not match in B",
+                "both-matched": "verdict changed, matched in both",
+                "both-unmatched": "verdict changed, did not match in both"}
 
 
 def change_kind(ra: dict, rb: dict) -> str | None:
@@ -911,53 +1040,53 @@ def change_kind(ra: dict, rb: dict) -> str | None:
     va = "error" if ra["failed"] else ra["verdict"]
     vb = "error" if rb["failed"] else rb["verdict"]
     if ca != cb:
-        return "now-correct" if cb else "now-wrong"
+        return "now-matched" if cb else "now-unmatched"
     if va != vb:
-        return "both-correct" if ca else "both-wrong"
+        return "both-matched" if ca else "both-unmatched"
     return None
 
 
 def compare_page(repo: Path, q: dict) -> str:
     evals, _, _ = R.walk_runs(repo)
+    evals = sorted(evals, key=R.homework_order)
     ra, rb = q.get("a", ""), q.get("b", "")
     A = load_run(repo, ra) if ra else None
     B = load_run(repo, rb) if rb else None
-    out = ['<h1>Two runs side by side</h1>']
-    if q.get("id") is None:
-        out.append(picker(evals, A.rel if A else "", B.rel if B else ""))
+    if A and B and q.get("id") is not None:
+        return compare_claim(A, B, q)
+    out = ['<h1>Compare two runs</h1>', picker(evals, A.rel if A else "", B.rel if B else "")]
     if not evals:
-        out.append('<p class="empty">No evaluation runs yet. You make the first one in Part 2.</p>')
+        out.append('<p class="empty">No runs yet. The first one you can compare is made in step 1c.</p>')
         return shell("Compare two runs", "".join(out), ["Compare two runs"])
     if not (A and B):
-        out.append('<p>Pick two evaluation runs, for example the agent before and after you changed its '
-                   'instructions. Run A is the one you count from.</p>')
+        out.append(suggested(evals))
         return shell("Compare two runs", "".join(out), ["Compare two runs"])
-    if q.get("id") is not None:
-        return compare_claim(A, B, q)
     shared = [m for m in A.methods if m in B.methods]
     only_a = [m for m in A.methods if m not in B.methods]
     only_b = [m for m in B.methods if m not in A.methods]
-    out.append(f'<p>A is <code>{a(link("/run", dir=A.rel), e(A.rel))}</code>, last saved {when(A.mtime)}. '
-               f'B is <code>{a(link("/run", dir=B.rel), e(B.rel))}</code>, last saved {when(B.mtime)}. '
+    out.append(f'<p>A is {a(link("/run", dir=A.rel), "<code>" + e(A.rel) + "</code>")}, made {when(A.started)}. '
+               f'B is {a(link("/run", dir=B.rel), "<code>" + e(B.rel) + "</code>")}, made {when(B.started)}. '
                f'{a(link("/compare", a=B.rel, b=A.rel), "Swap A and B")}</p>')
     if A.rel == B.rel:
         out.append('<p class="note">A and B are the same run.</p>')
-    if A.versions and B.versions and "agent" in A.methods and "agent" in B.methods:
-        files = '<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>'
-        if set(A.versions) == set(B.versions):
-            out.append(f'<p class="note">The agent in A and the agent in B were made from the same version of '
-                       f'its files ({files}).</p>')
-        else:
-            out.append(f'<p class="small">The agent\'s files ({files}) were different when A and B were made.</p>')
+    for run in (A, B):
+        if not run.finished():
+            out.append(f'<p class="note"><code>{e(run.rel)}</code> has not finished: its folder has no '
+                       '<code>report.txt</code> yet.</p>')
+    if "agent" in shared and A.versions_complete and B.versions_complete and \
+            len(set(A.versions) | set(B.versions)) == 1:
+        out.append('<p class="note">A and B used the same version of the agent (the same '
+                   '<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>).</p>')
     for side, ms in (("A", only_a), ("B", only_b)):
         if ms:
             out.append(f'<p class="small">Only in {side}, so not compared: '
                        + ", ".join(f"the {e(R.method_name(m))}" for m in ms) + '.</p>')
     if not shared:
-        out.append('<p class="empty">These two runs have no method in common, so there is nothing to compare.</p>')
+        out.append('<p class="empty">These two runs have no version in common, so there is nothing to compare.</p>')
         return shell("Compare two runs", "".join(out), ["Compare two runs"])
-    out.append(f'<p class="small">{CORRECT_MEANS}</p>')
     common = {m: [i for i in A.ids if i in A.rows[m] and i in B.rows[m]] for m in shared}
+    items = [A.items[i] for m in shared for i in common[m]]
+    out.append(f'<p class="small">{matched_means(items)}</p>')
     for m in shared:
         na, nb, nc = len(A.rows[m]), len(B.rows[m]), len(common[m])
         if not (na == nb == nc):
@@ -970,29 +1099,21 @@ def compare_page(repo: Path, q: dict) -> str:
     out.append('<section aria-labelledby="h-cacc"><h2 id="h-cacc">Accuracy</h2>')
     for m in shared:
         sa, sb = R.stats(A, m, common[m]), R.stats(B, m, common[m])
-        groups = R.group_names(A, common[m])
-        out.append(f'<div class="scroll"><table class="grid nums"><caption>The {e(R.method_name(m))}: correct '
-                   'verdicts, by the number of articles a claim needs</caption><thead><tr><th scope="col">Claims</th>'
-                   '<th scope="col">A</th><th scope="col">B</th><th scope="col">B minus A</th></tr></thead><tbody>')
-        for g in groups + ["All"]:
-            ca, n = (sa["correct"], sa["n"]) if g == "All" else sa["groups"].get(g, (0, 0))
-            cb, _ = (sb["correct"], sb["n"]) if g == "All" else sb["groups"].get(g, (0, 0))
-            cls = ' class="all"' if g == "All" else ""
-            out.append(f'<tr{cls}><th scope="row">{e(g if g != "All" else "All claims")}</th><td>{frac(ca, n)}</td>'
-                       f'<td>{frac(cb, n)}</td><td>{diff_points(ca, cb, n)}</td></tr>')
-        out.append('</tbody></table></div>')
+        out.append(accuracy_table([m], {m: sa}, R.group_names(A, common[m]),
+                                  f"The {e(R.method_name(m))}: how many verdicts matched {noun(items)}, "
+                                  "by the number of articles a claim needs", {m: sb}))
     out.append('</section>')
     # cost
     out.append('<section aria-labelledby="h-ccost"><h2 id="h-ccost">Cost per claim</h2>'
                '<div class="scroll"><table class="grid nums"><caption>Averages over the claims both runs have'
-               '</caption><thead><tr><th scope="col">Method</th><th scope="col">Per claim</th><th scope="col">A</th>'
+               '</caption><thead><tr><th scope="col">Version</th><th scope="col">Per claim</th><th scope="col">A</th>'
                '<th scope="col">B</th><th scope="col">B minus A</th></tr></thead><tbody>')
     for m in shared:
         sa, sb = R.stats(A, m, common[m]), R.stats(B, m, common[m])
-        rows = [("Tool calls", "steps", "{:.1f}", 1), ("Tokens", "tokens", "{:,.0f}", 0),
+        rows = [("Lookups", "steps", "{:.1f}", 1), ("Tokens", "tokens", "{:,.0f}", 0),
                 ("Seconds", "seconds", "{:.1f}", 1), ("Dollars", "cost", "${:.4f}", 4)]
         for k, (label, key, fmt, places) in enumerate(rows):
-            head = f'<th scope="rowgroup" rowspan="4">{e(R.method_name(m))}</th>' if k == 0 else ""
+            head = f'<th scope="rowgroup" rowspan="4">The {e(R.method_name(m))}</th>' if k == 0 else ""
             # The difference of the two numbers as shown, so that the row adds up on the page.
             d = round(round(sb[key], places) - round(sa[key], places), places)
             sign = "+" if d > 0 else ("−" if d < 0 else "")
@@ -1007,14 +1128,14 @@ def compare_page(repo: Path, q: dict) -> str:
     counts = {k: sum(1 for c in changes if c[2] == k) for k in CHANGE_KINDS if k}
     shown = [c for c in changes if (not kind_f or c[2] == kind_f) and (not meth_f or c[1] == meth_f)]
     out.append('<section aria-labelledby="h-changes"><h2 id="h-changes" tabindex="-1">Claims that changed</h2>')
-    out.append('<p>A claim is listed when its verdict, or whether it counted as correct, differs between '
+    out.append(f'<p>A claim is listed when its verdict, or whether it matched {noun(items)}, differs between '
                'A and B.</p><ul class="kinds">' + "".join(
                    f'<li>{a(link("/compare", a=A.rel, b=B.rel, kind=k, m=meth_f) + "#h-changes", CHANGE_KINDS[k])}: '
                    f'{n:,}</li>' for k, n in counts.items()) + '</ul>')
     out.append(f'<form class="filters" method="get" action="{e(link("/compare"))}#h-changes"><div class="row">'
                f'<input type="hidden" name="a" value="{e(A.rel)}"><input type="hidden" name="b" value="{e(B.rel)}">'
                + select("kind", "Change", CHANGE_KINDS, kind_f)
-               + (select("m", "Method", {"": "every method", **{m: R.method_name(m) for m in shared}}, meth_f)
+               + (select("m", "Version", {"": "every version", **{m: R.method_name(m) for m in shared}}, meth_f)
                   if len(shared) > 1 else "")
                + '</div><div class="row actions"><button type="submit">Show these claims</button></div></form>')
     out.append(f'<p class="count" role="status">Showing <strong>{len(shown):,}</strong> of '
@@ -1023,20 +1144,38 @@ def compare_page(repo: Path, q: dict) -> str:
         out.append('<p class="empty">No claims changed in this way.</p>' if changes else
                    '<p class="empty">No claim changed: every shared claim has the same verdict in A and B.</p>')
     else:
-        out.append(legend())
-        out.append('<div class="scroll"><table class="grid claims"><thead><tr><th scope="col">Claim</th>'
-                   '<th scope="col">Label</th><th scope="col" class="num">Articles</th><th scope="col">Method</th>'
-                   '<th scope="col">A</th><th scope="col">B</th><th scope="col">Both traces</th></tr></thead><tbody>')
-        for i, m, kind in shown:
+        out.append(legend(items))
+        out.append('<div class="scroll"><table class="grid claims"><thead><tr><th scope="col" class="num">Row</th>'
+                   '<th scope="col">Claim</th><th scope="col">Label</th><th scope="col" class="num">Number of articles</th>'
+                   '<th scope="col">Version</th><th scope="col">A</th><th scope="col">B</th>'
+                   '<th scope="col">Both traces</th></tr></thead><tbody>')
+        for n, (i, m, kind) in enumerate(shown, 1):
             item = A.items[i]
             href = link("/compare", a=A.rel, b=B.rel, id=i, m=m, kind=kind_f, mf=meth_f)
-            out.append(f'<tr><td class="claimcell">{a(href, e(item["claim"]))}</td><td class="nowrap">{e(R.label_text(item))}</td>'
+            out.append(f'<tr><td class="num">{n}</td><td class="claimcell">{a(href, e(item["claim"]))}</td>'
+                       f'<td class="nowrap">{e(R.label_text(item))}</td>'
                        f'<td class="num">{e(R.hops_text(item))}</td><td class="nowrap">{e(R.method_name(m))}</td>'
                        f'<td class="nowrap">{verdict_cell(A.rows[m][i])}</td><td class="nowrap">{verdict_cell(B.rows[m][i])}</td>'
                        f'<td class="nowrap">{a(href, "Open A and B")}</td></tr>')
         out.append('</tbody></table></div>')
     out.append('</section>')
     return shell("Compare two runs", "".join(out), ["Compare two runs"])
+
+
+def suggested(evals: list) -> str:
+    """The comparisons the homework asks for, as links when both runs exist."""
+    have = set(evals)
+    out = ['<p>Pick two runs above. Run A is the one you count from. The homework asks for these '
+           'comparisons:</p><ul class="kinds">']
+    for ra, rb, step in R.COMPARISONS:
+        text = f"Step {step}: <code>{e(ra)}</code> with <code>{e(rb)}</code>"
+        if ra in have and rb in have:
+            out.append(f'<li>{a(link("/compare", a=ra, b=rb), text)}</li>')
+        else:
+            missing = " and ".join(f"<code>{e(r)}</code>" for r in (ra, rb) if r not in have)
+            out.append(f'<li>{text} <span class="small">({missing} not made yet)</span></li>')
+    out.append('</ul>')
+    return "".join(out)
 
 
 def change_list(A, B, shared, common) -> list[tuple]:
@@ -1100,7 +1239,8 @@ def compare_claim(A: R.Run, B: R.Run, q: dict) -> str:
         nav = pager(None, None, "This claim did not change", back)
     item = A.items[i]
     full = q.get("full") == "1"
-    out = [nav, claim_head(item, "source" in item), f'<p class="small">{CORRECT_MEANS}</p>']
+    reads = [(side, run.rows["agent"].get(i)) for side, run in (("A", A), ("B", B))] if m == "agent" else []
+    out = [nav, claim_head(item, "source" in item, reads), f'<p class="small">{matched_means([item])}</p>']
     out.append(f'<p>The {e(R.method_name(m))} in A (<code>{e(A.rel)}</code>) and in B (<code>{e(B.rel)}</code>).</p>')
     cols = []
     for side, run in (("A", A), ("B", B)):
