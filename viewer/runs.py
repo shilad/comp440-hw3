@@ -40,8 +40,8 @@ def method_key(method: str):
 
 class Rules:
     """is_correct() and group_of() from the repository's own evaluate.py, so the numbers here
-    are the numbers it prints. If evaluate.py (or agent.py, which it imports) cannot be loaded,
-    for example while agent.py is half edited, the copies below are used and `problem` says why."""
+    are the numbers it prints. If evaluate.py (or agent.py or a loop file, which it imports) cannot be
+    loaded, for example while one is half edited, the copies below are used and `problem` says why."""
 
     def __init__(self):
         self.lock = threading.Lock()

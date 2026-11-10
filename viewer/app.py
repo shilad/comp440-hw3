@@ -29,6 +29,11 @@ STATIC = Path(__file__).parent / "static"
 STATIC_TYPES = {".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8"}
 HTML = "text/html; charset=utf-8"
 
+# What one version of the agent is made of, said the same way everywhere: evaluate.py's
+# fingerprint (agent_version) covers these files and the loop file in use.
+AGENT_FILES = ('<code>instructions.md</code>, <code>agent.py</code>, <code>wiki.py</code> and the loop '
+               '(<code>my_loop.py</code> or <code>reference_loop.py</code>)')
+
 FOLD_AT = 700      # results longer than this many characters start folded
 PEEK = 260         # characters shown while a result is folded
 
@@ -550,7 +555,7 @@ def run_facts(run: R.Run) -> str:
                    'claim: ' + " and ".join(str(n) for n in run.limits) + '.</p>')
     if len(run.versions) > 1:
         out.append(f'<p class="note">The agent\'s results here were made by {len(run.versions)} different versions '
-                   'of its files (<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>).</p>')
+                   f'of the agent: different {AGENT_FILES}.</p>')
     relabelled = len(run.relabelled)
     if relabelled:
         out.append(f'<p class="note">For {plural(relabelled, "result")}, the label in the claims file has '
@@ -1102,8 +1107,7 @@ def compare_page(repo: Path, q: dict) -> str:
                        '<code>report.txt</code> yet.</p>')
     if "agent" in shared and A.versions_complete and B.versions_complete and \
             len(set(A.versions) | set(B.versions)) == 1:
-        out.append('<p class="note">A and B used the same version of the agent (the same '
-                   '<code>instructions.md</code>, <code>agent.py</code> and <code>wiki.py</code>).</p>')
+        out.append(f'<p class="note">A and B used the same version of the agent: the same {AGENT_FILES}.</p>')
     if "agent" in shared and A.limit != B.limit:
         out.append(f'<p class="note">A was made with a limit of {A.limit} lookups per claim, and B with a limit '
                    f'of {B.limit}.</p>')
@@ -1318,8 +1322,8 @@ def open_page(repo: Path, q: dict) -> str:
         return go(link("/check", file=rel))
     if R.is_run(path.parent, root_real):  # a results file, report.txt or run.json
         return go(link("/run", dir=rel.rsplit("/", 1)[0]))
-    folder = rel.rsplit("/", 1)[0]
-    return go(link("/") + ("#" + anchor(folder) if folder != "runs" else ""))
+    part = R.part_of(rel)
+    return go(link("/") + (f"#part-{part}" if part is not None else ""))
 
 
 def go(to: str):
