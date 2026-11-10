@@ -10,7 +10,7 @@ assignment page.
 
 ## Step 1: Get the repository and start Claude
 
-Nothing to write here. `/setup` checks that everything works.
+Write your name at the top of this file. There is nothing else to write for this step.
 
 ## Step 2: Ask the model on its own
 
