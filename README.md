@@ -24,9 +24,9 @@ sentences from Wikipedia that its verdict rests on, its *evidence*. No source co
 The agent finds its own evidence by searching and reading Wikipedia as it is today.
 
 The claims in this homework come from HoVer, a public dataset of claims that each need two, three or
-four Wikipedia articles to check. One search usually finds one of those articles at most. To check the
-whole claim, the agent has to work out what the claim is made of, look up each piece, and put the
-pieces together. That is what you'll study.
+four Wikipedia articles to check. Because the evidence is spread across several articles, one search
+and one page are usually not enough. To check the whole claim, the agent has to work out what the
+claim is made of, look up each piece, and put the pieces together. That is what you'll study.
 
 ## What you need before you start
 
