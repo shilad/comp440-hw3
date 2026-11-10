@@ -49,16 +49,19 @@ ALL_STEPS = [step for _, _, steps in PARTS.values() for step in steps]
 # required; the others appear only where a step needs them.
 LABELS = [
     ("**Words in this step:**", False),
-    ("**What to do:**", True),
-    ("**What you'll see:**", False),
-    ("**What to write:**", True),
-    ("**You're done when:**", True),
-    ("**If something goes wrong:**", False),
+    ("**Actions:**", True),
+    ("**Output:**", False),
+    ("**Write-up:**", True),
+    ("**Completion:**", True),
+    ("**Troubleshooting:**", False),
     ("**Hint:**", False),
 ]
 
-# The two labels the opening paragraph used to carry. No page uses them now.
-OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**"]
+# Labels the pages used to carry. Each was the first half of a sentence; a label is now a short
+# phrase, with a full sentence after it. No page uses the old ones.
+OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**", "**What to do:**",
+                    "**What you'll see:**", "**What to write:**", "**You're done when:**",
+                    "**If something goes wrong:**"]
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.

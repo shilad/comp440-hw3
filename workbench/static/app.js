@@ -147,7 +147,7 @@ function minutes(s) {
 
 function leftCol(s) {
   const plain = s.setup || !s.goal;   // a setup step, or a step with no goal yet: the brief's text in full
-  return (plain ? `<span class="label">What you do</span><div class="doc">${md(s.body)}</div>`
+  return (plain ? `<span class="label">Instructions</span><div class="doc">${md(s.body)}</div>`
     : `<p class="goal">${esc(s.goal)}</p>
        ${s.claim && A.sample_claim ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : ""}`)
     + `<div class="counts" id="dw-${s.label}"></div>`

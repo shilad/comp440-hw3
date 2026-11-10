@@ -154,7 +154,7 @@ details.stuck[open] summary::before { content: "− "; }
   .step-head .chev { grid-column: 3; grid-row: 1; }
 }
 
-/* The brief's own text, rendered from Markdown, under "What you do" or "If you're stuck" */
+/* The brief's own text, rendered from Markdown, under "Instructions" or "If you're stuck" */
 .doc { max-width: 62ch; }
 .doc p { margin: 0 0 8px; }
 .doc h3, .doc h4 { margin: 14px 0 6px; color: var(--ink); font-size: 15px; }

@@ -14,7 +14,7 @@ Claude API.
 **Words in this step:** *Claude*: your Claude Code session, your tutor and lab assistant; each step has
 its own. *`.env`*: the file that holds your API key and your email; only you edit it.
 
-**What to do:** First fork the repository, clone your fork and start the homework page, as the README's
+**Actions:** First fork the repository, clone your fork and start the homework page, as the README's
 Getting started section says. Then:
 
 1. Open a new terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
@@ -28,7 +28,7 @@ Getting started section says. Then:
 9. Fix each line marked `NOT READY` in your editor, save, and ask Claude to run the check again.
 10. Repeat action 9 until the check's last line reads "Everything is ready."
 
-**What you'll see:** Claude runs this command:
+**Output:** Claude runs this command:
 
 ```
 uv run python check_setup.py
@@ -39,13 +39,13 @@ is filled in, the email is filled in, Wikipedia answered a search, and the Claud
 A `NOT READY` line says what to fix. The check never prints your key or email, and costs a small
 fraction of a cent.
 
-**What to write:** Only your name, after `Name:` at the top of `WRITEUP.md`.
+**Write-up:** Write only your name, after `Name:` at the top of `WRITEUP.md`.
 
-**You're done when:** The check's last line reads "Everything is ready." and the homework page ticks 0a:
+**Completion:** The check's last line reads "Everything is ready." and the homework page ticks 0a:
 the saved `WRITEUP.md` has your name after `Name:`, and the check has passed (it then saves
 `runs/part0/setup-check.txt`, which is how the page knows).
 
-**If something goes wrong:**
+**Troubleshooting:**
 
 - Claude says the model in the command is not available: delete `--model claude-opus-5-5 --effort medium`
   from the command, and run the rest of it.
@@ -78,7 +78,7 @@ homework calls. *baseline*: a simpler method the agent is compared with. *verdic
 *refuted* or *doesn't say*. *token*: the unit the API counts text in and charges by, about three
 quarters of a word.
 
-**What to do:**
+**Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 0b, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
@@ -87,7 +87,7 @@ quarters of a word.
 4. Read the output Claude pastes into the chat.
 5. Answer the two questions in `WRITEUP.md`.
 
-**What you'll see:** Claude runs this command:
+**Output:** Claude runs this command:
 
 ```
 uv run python check.py --method no-tools --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
@@ -96,15 +96,15 @@ uv run python check.py --method no-tools --out runs/part0 'The composer of "Pers
 The output gives the verdict, the model's explanation, and a line with the lookups (none here),
 tokens, cost and time. The result is saved as `runs/part0/no-tools-<number>.json`.
 
-**What to write:** In `WRITEUP.md`, under 0b:
+**Write-up:** Answer these questions in `WRITEUP.md`, under 0b:
 
 - What verdict did the model give, and what reason did it give? Quote the lines of the output that show them.
 - How much would you trust this answer, and why?
 
-**You're done when:** The homework page ticks 0b: a `runs/part0/no-tools-<number>.json` file exists,
+**Completion:** The homework page ticks 0b: a `runs/part0/no-tools-<number>.json` file exists,
 and both answers have text after the `>`.
 
-**If something goes wrong:** If the run says the API key is missing or wrong, check in your editor that
+**Troubleshooting:** If the run says the API key is missing or wrong, check in your editor that
 your key comes right after `ANTHROPIC_API_KEY=` in `.env`. Never paste the key into the chat.
 
 ## 0c. Give it one search
@@ -120,7 +120,7 @@ The claim you check in Part 0:
 the program reads the opening paragraphs of the top page found, and the model answers from that page
 alone. *verdict*: *supported*, *refuted* or *doesn't say*.
 
-**What to do:**
+**Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 0c, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
@@ -131,7 +131,7 @@ alone. *verdict*: *supported*, *refuted* or *doesn't say*.
 5. Click "Open these results" under 0c on the homework page to read the whole page it read.
 6. Answer the two questions in `WRITEUP.md`.
 
-**What you'll see:** Claude runs this command:
+**Output:** Claude runs this command:
 
 ```
 uv run python check.py --method one-search --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
@@ -142,15 +142,15 @@ it read and a short version of that page. Then come the verdict, the explanation
 time. The result is saved as `runs/part0/one-search-<number>.json`. In the results viewer, a long result
 is folded: click "+ Show the whole result".
 
-**What to write:** In `WRITEUP.md`, under 0c:
+**Write-up:** Answer these questions in `WRITEUP.md`, under 0c:
 
 - Which Wikipedia page did it read? Quote the line of the output that shows it.
 - Did that page settle the claim? If not, why do you think the search led there?
 
-**You're done when:** The homework page ticks 0c: a `runs/part0/one-search-<number>.json` file exists,
+**Completion:** The homework page ticks 0c: a `runs/part0/one-search-<number>.json` file exists,
 and both answers have text after the `>`.
 
-**If something goes wrong:**
+**Troubleshooting:**
 
 - The run warns that `WIKIPEDIA_CONTACT` is not set: add `WIKIPEDIA_CONTACT=` and your Macalester email
   to `.env`, in your editor.
@@ -175,7 +175,7 @@ record of the agent's lookups for one claim, in order, with what each returned; 
 report. *entry*: one numbered line of a trace, a lookup or an answer. *evidence*: the sentences quoted
 from Wikipedia that a verdict rests on.
 
-**What to do:**
+**Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 0d, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
@@ -185,7 +185,7 @@ from Wikipedia that a verdict rests on.
 5. Click "Open these results" under 0d and read "The agent's trace", with each lookup's full result.
 6. Answer the two questions in `WRITEUP.md`.
 
-**What you'll see:** Claude runs this command:
+**Output:** Claude runs this command:
 
 ```
 uv run python check.py --method agent --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
@@ -205,16 +205,16 @@ A trace sometimes shows an answer that was sent back (rejected) before a later o
 is the loop's evidence check: a quoted sentence was not in anything the agent had read, and text shown
 in a search result does not count as read.
 
-**What to write:** In `WRITEUP.md`, under 0d:
+**Write-up:** Answer these questions in `WRITEUP.md`, under 0d:
 
 - In one or two sentences, how did the agent get from the claim to its verdict? Point to the entries by their numbers in the trace.
 - Which lookup would you have done differently, and how? If none, which one surprised you?
 
-**You're done when:** The homework page ticks 0d: a `runs/part0/agent-<number>.json` file exists, and
+**Completion:** The homework page ticks 0d: a `runs/part0/agent-<number>.json` file exists, and
 both answers have text after the `>`. That finishes Part 0, so the page commits your work as
 `Part 0 done` and pushes it to your fork.
 
-**If something goes wrong:**
+**Troubleshooting:**
 
 - Wikipedia asks the program to slow down: it waits and tries again by itself. If the run stops with an
   error anyway, ask Claude to run the same command again.

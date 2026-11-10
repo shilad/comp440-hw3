@@ -18,17 +18,17 @@ each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't s
 *not supported*. *the number of articles*: how many
 Wikipedia articles a claim needs (2, 3 or 4).
 
-**What to do:**
+**Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 2a, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Check that the full run has finished (see "What you'll see").
+2. Check that the full run has finished (see "Output").
 3. Open **Results** at the top of the homework page, then "runs/part2", and read "Accuracy".
 4. Ask Claude to paste the report into the empty block under 2a in `WRITEUP.md`.
 5. Compare the report's first table with your predictions under 1e.
 6. Answer the three questions.
 
-**What you'll see:** A finished run ends with two tables in the tab where you started it, and saves them
+**Output:** A finished run ends with two tables in the tab where you started it, and saves them
 as `runs/part2/report.txt`. If it stopped early, or its tables end with a line saying some runs stopped
 with an error, run the same command again in a terminal tab in the homework's folder; it keeps every
 claim it already finished:
@@ -41,14 +41,14 @@ The first table gives, for each version, how many claims matched the dataset's l
 by number of articles, for all 200, and by the dataset's label. The "Accuracy" table in the results
 viewer shows the same counts with percentages.
 
-**What to write:** In `WRITEUP.md`, under 2a, fill in the block and answer:
+**Write-up:** In `WRITEUP.md`, under 2a, fill in the block and answer:
 
 - The report of your full run, from `runs/part2/report.txt`. Ask Claude to paste it into the empty block below.
 - How do the results compare with your predictions? Where were you furthest off? Use the numbers from your run, by number of articles.
 - Does the gap between the agent and the one-search baseline grow with the number of articles? If it does not, what might explain that?
 - The no-tools baseline read nothing. How did it do, and what does that tell you about these claims?
 
-**You're done when:** The homework page ticks 2a: `runs/part2/report.txt` exists, the block holds the
+**Completion:** The homework page ticks 2a: `runs/part2/report.txt` exists, the block holds the
 report, and the three answers have text after the `>`.
 
 ## 2b. Compare cost
@@ -60,7 +60,7 @@ when that extra cost is worth paying.
 for one claim. *token*: the unit the API counts text in and charges by, about three quarters of a word.
 *trace*: the agent's lookups for one claim, in order, with what each returned.
 
-**What to do:**
+**Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 2b, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
@@ -70,17 +70,17 @@ for one claim. *token*: the unit the API counts text in and charges by, about th
 5. If any are listed, click one and read "The agent's trace".
 6. Answer the three questions.
 
-**What you'll see:** The second table gives, for each version, the average lookups, tokens, seconds and
+**Output:** The second table gives, for each version, the average lookups, tokens, seconds and
 dollars per claim. The results viewer's "Cost" section has the same "Average per claim" table, the
 totals, and "The agent used all 12 lookups on N claims.", where "N claims" links to those claims.
 
-**What to write:** In `WRITEUP.md`, under 2b:
+**Write-up:** Answer these questions in `WRITEUP.md`, under 2b:
 
 - How much more does the agent cost per claim than the one-search baseline? Give the numbers.
 - For which kinds of claims (for example by number of articles, or by what the claim asks) is that extra cost worth paying, and for which is it not?
 - Did the agent ever use all 12 lookups? If so, pick one such claim and say what it was doing.
 
-**You're done when:** The homework page ticks 2b: the three answers have text after the `>`.
+**Completion:** The homework page ticks 2b: the three answers have text after the `>`.
 
 ## 2c. Check the evidence yourself
 
@@ -96,7 +96,7 @@ the agent quoted from Wikipedia. *the dataset's label*: the label that HoVer, th
 these claims come from, gives each claim, *supported* or *not supported*.
 *entry*: one numbered line of a trace, a lookup or an answer.
 
-**What to do:**
+**Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 2c, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
@@ -110,7 +110,7 @@ these claims come from, gives each claim, *supported* or *not supported*.
 9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 5.
 10. Answer the two questions.
 
-**What you'll see:** The "Row" column counts the rows shown, in the order of the claims file, so rows 1
+**Output:** The "Row" column counts the rows shown, in the order of the claims file, so rows 1
 to 5 are fixed by the rule. I ask for the first five so that nobody, you or Claude, chooses which claims
 get checked. A claim's page says, under "The agent", whether its verdict "matches the dataset's label":
 that is the table's fourth column. To read more of a page as the agent read it, ask Claude to run one of these (`--no-log`
@@ -121,13 +121,13 @@ uv run python lookup.py --no-log read "<page title>"
 uv run python lookup.py --no-log read "<page title>" "<section>"
 ```
 
-**What to write:** In `WRITEUP.md`, under 2c, fill in the table and answer:
+**Write-up:** In `WRITEUP.md`, under 2c, fill in the table and answer:
 
 - The first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 - Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
-**You're done when:** The homework page ticks 2c: all five rows are filled, and both answers have text
+**Completion:** The homework page ticks 2c: all five rows are filled, and both answers have text
 after the `>`. That finishes Part 2, so the page commits your work as `Part 2 done` and pushes it to
 your fork.
 
@@ -161,7 +161,7 @@ each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't s
 *not supported*. *evidence*: the sentences the agent quoted from Wikipedia.
 *the closest case*: the claim that came nearest, and what kept it from being clear.
 
-**What to do:**
+**Actions:**
 
 1. Open **Results** at the top of the homework page, then "runs/part2".
 2. Click "Clear the filters" under the claims filters.
@@ -174,7 +174,7 @@ each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't s
 9. In that case, use the closest case you found for each remaining row, and say it is not a clear case.
 10. Type a heading `## Extra credit` at the end of `WRITEUP.md`, and under it the table and question below.
 
-**What you'll see:** A claim's page shows "The dataset's label" at the top, and "The dataset lists these
+**Output:** A claim's page shows "The dataset's label" at the top, and "The dataset lists these
 articles for this claim:" and "Pages it read, live on Wikipedia today:" link to today's pages. The
 results viewer cannot show older versions; Wikipedia's "View history" can. To read today's page as the
 agent reads it, ask Claude to run this, or run it yourself in a terminal in the homework's folder:
@@ -183,7 +183,7 @@ agent reads it, ask Claude to run this, or run it yourself in a terminal in the 
 uv run python lookup.py --no-log read "<page title>"
 ```
 
-**What to write:** Under `## Extra credit` at the end of `WRITEUP.md`, copy this, then fill in the table
+**Write-up:** Under `## Extra credit` at the end of `WRITEUP.md`, copy this, then fill in the table
 and type your answer after the `>`:
 
 ```
@@ -199,7 +199,7 @@ What does this tell you about using a fixed dataset to judge a system that reads
 >
 ```
 
-**You're done when:** Both rows are filled and the question has an answer. The homework page does not
+**Completion:** Both rows are filled and the question has an answer. The homework page does not
 tick extra credit. It commits it with the rest of your work, as the Extra credit section of the README
 says.
 
