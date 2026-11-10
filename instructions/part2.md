@@ -13,7 +13,7 @@ Wikipedia has changed since the dataset was made. It should take about 1 hour an
 
 **Words in this step:** *the three versions*: the no-tools baseline (the model, Claude Haiku, answers
 from memory), the one-search baseline (one search, one page, then an answer) and the agent (the program
-in `agent.py`, which picks its own lookups). *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
+in `agent.py` and its loop, which picks its own lookups). *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
 each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say* counts as
 *not supported*. *the number of articles*: how many
 Wikipedia articles a claim needs (2, 3 or 4).

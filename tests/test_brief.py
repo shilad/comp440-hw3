@@ -23,7 +23,7 @@ PARTS = {
         "0d. Run the agent and read its trace",
     ]),
     1: ("How the agent works", "instructions/part1.md", [
-        "1a. Read the loop",
+        "1a. Write the loop",
         "1b. Be the agent",
         "1c. Watch the agent work",
         "1d. Write the agent's instructions",
@@ -73,7 +73,7 @@ def labels_for(step):
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
-SLOTS = 49
+SLOTS = 48
 
 # The files whose words students read, which must hold no placeholder when the homework ships.
 OWNED = ["README.md", "WRITEUP.md", ".env.example"] + [page for _, page, _ in PARTS.values()]
@@ -193,3 +193,53 @@ def test_no_placeholder_is_left(name):
     text = (ROOT / name).read_text(encoding="utf-8")
     left = re.findall(r"\[\[[^\]]*\]\]|\[TBD[^\]]*\]", text)
     assert not left, f"{name} still has {sorted(set(left))}"
+
+
+# ---- step 1a: the student writes the loop -----------------------------------------------------
+
+# The six rules, word for word as the check prints them and the tutor's brief gives them.
+LOOP_RULES = [
+    "1. **Ask the model.** Each turn, send the model the system text, the tools and the whole conversation so "
+    "far. Add the tokens the reply used to `tokens`, and add the reply to the conversation as the assistant's "
+    "turn.",
+    "2. **Run its lookups.** For each lookup the reply asks for, call `lookup(name, input)`, add 1 to `steps`, "
+    "and add an entry to `trace`. Keep what `read` and `wikidata` return in `read_so_far`; do not keep what "
+    "`search` returns.",
+    "3. **Send the results back.** After the reply's tool calls are handled, add one user turn to the "
+    "conversation that holds a result for every call, each marked with the id of the call it answers.",
+    "4. **Check the answer.** When the reply calls `answer`, check it with `answer_problem()`. If there is no "
+    "problem, stop and return `finish(...)` with the answer's verdict, evidence and explanation. If there is "
+    "a problem, send back `REJECTED` followed by the problem, and after `MAX_REJECTED` rejected answers stop "
+    "with no verdict.",
+    "5. **Enforce the limit.** Once `steps` has reached `max_steps`, do not run another lookup. The first time, "
+    "send back `OUT_OF_STEPS`. If the model asks for a lookup again on a later turn, stop with no verdict.",
+    "6. **Stop when the model stops.** If a reply has no tool call, remind the model once with `REMINDER`; if "
+    "the next reply has none either, stop with no verdict. If a reply's `stop_reason` is `\"refusal\"`, stop "
+    "with no verdict.",
+]
+
+
+def section_1a():
+    return one_line(sections((ROOT / "instructions/part1.md").read_text(encoding="utf-8"))["1a. Write the loop"])
+
+
+def test_1a_gives_the_six_rules_word_for_word_and_in_order():
+    page = section_1a()
+    at = [page.find(rule) for rule in LOOP_RULES]
+    assert -1 not in at, f"1a lacks rule(s) {[i + 1 for i, a in enumerate(at) if a == -1]}"
+    assert at == sorted(at)
+
+
+def test_1a_says_what_is_given_and_what_is_theirs():
+    page = section_1a()
+    for name in ("`agent.py`", "`my_loop.py`", "`reference_loop.py`", "`check_loop.py`",
+                 "uv run python check_loop.py", "uv run python check_loop.py --use-reference",
+                 "runs/part1/loop-check.txt"):
+        assert name in page, f"1a doesn't name {name}"
+
+
+def test_nothing_still_says_the_student_reads_the_loop():
+    for name in OWNED:
+        text = (ROOT / name).read_text(encoding="utf-8")
+        for old in ("Read the loop", "read its loop", "Read the agent's loop", "which is the loop"):
+            assert old not in text, f"{name} still says {old!r}"

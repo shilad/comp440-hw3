@@ -2,49 +2,145 @@
 
 Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
-In this part you look inside the agent. You read its loop, check two claims yourself with its four
-tools, watch it work on 12 claims, write its instructions, and then start the full run on 200 claims
-while you predict how it will do. It should take about 2 hours and 10 minutes, plus about 20 minutes for
-the full run, which goes on by itself while you do other things.
+In this part you build and study the agent. You write its loop, check two claims yourself with its
+four tools, watch it work on 12 claims, write its instructions, and then start the full run on 200
+claims while you predict how it will do. It should take about 2 hours and 50 minutes, plus about 20
+minutes for the full run, which goes on by itself while you do other things.
 
-## 1a. Read the loop
+## 1a. Write the loop
 
-**What you're finding out:** What one turn of the agent's loop does, how the loop ends, and the two
-rules the loop enforces that the model cannot override.
+**What you're finding out:** What an agent is made of, by writing its loop yourself: ask the model, run
+the lookups it chooses, send back what they return, and stop.
 
-**Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku,
-the small Claude model that the agent and both baselines call) picks the next lookup, reads what comes
-back, and decides when to answer. *lookup*: one call to `search`, `read` or `wikidata`; with `answer`,
-these are the agent's four tools. In the code, a *tool_use block* is the part of the model's reply that
-asks for a tool, and a *tool_result* is what the program sends back to the model.
+This is the one step where you write code. Everything around the loop is written for you; the loop is
+yours. Four files are part of this step:
+
+- `agent.py` is given. It holds the four tools, the evidence check (`answer_problem()`), `finish()`, and
+  the exact sentences a loop sends. Read it first.
+- `my_loop.py` is yours. It has the set-up lines already written, and a line that says where your loop
+  goes.
+- `reference_loop.py` is a loop I wrote. Your copy's agent uses it until your own loop passes the check,
+  so nothing else in the homework waits on this step. Don't open it until your loop passes: reading it
+  first gives the exercise away. Claude cannot open it at all.
+- `check_loop.py` checks your loop against the six rules below, with a stand-in for the model and for
+  Wikipedia. Run it as often as you like: it needs no key and no network, takes a few seconds, and costs
+  nothing.
+
+**Words in this step:** *the agent*: the program in `agent.py` and its loop, in which the model (Claude
+Haiku, the small Claude model that the agent and both baselines call) picks the next lookup, reads what
+comes back, and decides when to answer. *lookup*: one call to `search`, `read` or `wikidata`. *tool*: one
+of the four things the agent can call: `search`, `read`, `wikidata` and `answer`. *tool_use block*: the
+part of the model's reply that asks for a tool. *tool_result*: what your loop sends back to the model for
+one tool call. *the reference loop*: the loop in `reference_loop.py`, which your copy uses until yours
+passes.
 
 **What to do:**
 
 1. Start this step's Claude session with the command the homework page shows for 1a, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Open `agent.py` in your editor. It is about 210 lines.
-3. Ask Claude to read `agent.py` with you a screenful at a time, from the top.
-4. Ask Claude about any line you don't follow, as often as you like.
-5. Find `run_agent()`, which is the loop, and follow one turn of it from start to end.
-6. Find the lines that enforce the rule of at most 12 lookups per claim.
-7. Find the lines that reject an answer whose quoted sentence is not in anything the agent read.
-8. Answer the five questions in `WRITEUP.md`, in your own words, with line numbers.
+2. Open `agent.py` in your editor, and read it with Claude: the four tools, the evidence check and `finish()`.
+3. Open `my_loop.py` in your editor.
+4. Write the loop below the line that says where it goes, one rule at a time, and save.
+5. After each rule, ask Claude to run the check, or run it yourself in a terminal in the homework's folder.
+6. Fix the first `NOT YET` line, save, and run the check again.
+7. When every rule passes, open `reference_loop.py` and compare it with your loop.
+8. Answer the four questions in `WRITEUP.md`.
+
+**The six rules:**
+
+1. **Ask the model.** Each turn, send the model the system text, the tools and the whole conversation so
+   far. Add the tokens the reply used to `tokens`, and add the reply to the conversation as the assistant's
+   turn.
+2. **Run its lookups.** For each lookup the reply asks for, call `lookup(name, input)`, add 1 to `steps`,
+   and add an entry to `trace`. Keep what `read` and `wikidata` return in `read_so_far`; do not keep what
+   `search` returns.
+3. **Send the results back.** After the reply's tool calls are handled, add one user turn to the
+   conversation that holds a result for every call, each marked with the id of the call it answers.
+4. **Check the answer.** When the reply calls `answer`, check it with `answer_problem()`. If there is no
+   problem, stop and return `finish(...)` with the answer's verdict, evidence and explanation. If there is
+   a problem, send back `REJECTED` followed by the problem, and after `MAX_REJECTED` rejected answers stop
+   with no verdict.
+5. **Enforce the limit.** Once `steps` has reached `max_steps`, do not run another lookup. The first time,
+   send back `OUT_OF_STEPS`. If the model asks for a lookup again on a later turn, stop with no verdict.
+6. **Stop when the model stops.** If a reply has no tool call, remind the model once with `REMINDER`; if
+   the next reply has none either, stop with no verdict. If a reply's `stop_reason` is `"refusal"`, stop
+   with no verdict.
+
+**What the code gives you** (the details the rules and the check rely on):
+
+- The call is `client.messages.create(model=MODEL, max_tokens=16000, system=system, tools=TOOLS,
+  messages=messages)`.
+- The reply has `.content` (a list of blocks), `.stop_reason` and `.usage` (`.input_tokens`,
+  `.output_tokens`). A tool call is a block with `.type == "tool_use"`, `.name`, `.input` and `.id`.
+- A turn of the conversation is a dictionary with a `"role"` (`"user"` or `"assistant"`) and a
+  `"content"`, like the first one in `my_loop.py`. The content can be a string or a list.
+- A result sent back is `{"type": "tool_result", "tool_use_id": call.id, "content": result}`.
+- A trace entry is `{"tool": name, "input": input, "result": result}`. An accepted answer's result is
+  `ACCEPTED`. A reminder is recorded as tool `"(reminder)"`, input `{}`, result `REMINDED`.
+- The answer is cleaned first: `answer = clean_answer(call.input)`.
+- `finish(claim, verdict, evidence, explanation, trace, tokens, steps)` makes what the loop returns.
+  "Stop with no verdict" means `return finish(claim, None, [], why, trace, tokens, steps)`, where `why` is
+  `REJECTED_TOO_OFTEN.format(n=rejected)`, `RAN_OUT`, `NO_ANSWER` or `DECLINED`.
+- `REJECTED`, `OUT_OF_STEPS`, `REMINDER` and the other sentences are in `agent.py`. `OUT_OF_STEPS` and
+  `REJECTED_TOO_OFTEN` have a `{n}` to fill in with `.format(n=...)`.
+
+**What you'll see:** Claude runs this command, or you run it yourself:
+
+```
+uv run python check_loop.py
+```
+
+It prints one line for each rule, `ok` or `NOT YET`. A `NOT YET` line says what the stand-in model did
+and what your loop did or failed to do; it does not say how to fix it. Until you start, all six lines say
+"the loop is not written yet". A run partway through looks like this:
+
+[[CHECK_SAMPLE: the orchestrator replaces the block below with check_loop.py's real output]]
+
+```
+ok         1. Ask the model
+ok         2. Run its lookups
+NOT YET    3. Send the results back: the model asked for a search, and the next turn sent to it held no result with that call's id
+NOT YET    4. Check the answer: (what the stand-in model did, and what your loop did)
+NOT YET    5. Enforce the limit: (what the stand-in model did, and what your loop did)
+NOT YET    6. Stop when the model stops: (what the stand-in model did, and what your loop did)
+
+Not yet. Fix the first NOT YET line, then run this again.
+```
+
+When every rule passes, it ends with "Every rule passes. From now on your copy's agent runs on your loop
+(my_loop.py)." and saves `runs/part1/loop-check.txt`. From then on, `check.py` and `evaluate.py` start
+their output with `Agent loop: yours (my_loop.py)`.
 
 **What to write:** In `WRITEUP.md`, under 1a:
 
-- What does the program send to the model on each turn of the loop? Give the line numbers.
-- What does the program do when the model asks for a tool? Give the line numbers.
-- What are the ways the loop can end? Give the line number of each.
-- The loop allows at most 12 lookups per claim. What could go wrong without that limit? Give the line numbers where the loop enforces it.
-- The loop rejects an answer when a quoted sentence is not in anything the agent read. What could go wrong without that check? Give the line numbers where the loop makes the check.
+- What does your loop send to the model on each turn? Give the line numbers in `my_loop.py`.
+- What are the ways your loop can end? Give the line number of each.
+- Which rule took you longest to get right, and what was wrong with your first try?
+- Now open `reference_loop.py` and compare it with your loop. Name one difference, and say whether it changes what the agent does. (If you used `--use-reference`, say how far your own loop got and what stopped you.)
 
-**You're done when:** The homework page ticks 1a: all five answers have text after the `>`.
+**You're done when:** The homework page ticks 1a: the check has passed (it then saves
+`runs/part1/loop-check.txt`), or you have chosen the reference loop as below, and the four answers have
+text after the `>`.
 
-**Hint:** The comments and messages in `agent.py` call the model "Claude" and call a lookup a "step".
-In this homework, "Claude" means your Claude Code session, and the model is Claude Haiku. In a trace you
-may see an answer that was sent back (rejected) before a later one was accepted. That is the loop's
-evidence check, which you are reading here: a quoted sentence was not in anything the agent had read,
-and text shown in a search result does not count as read.
+**If something goes wrong:**
+
+- The check reports an error in your code: its line names the error and the line of `my_loop.py`. Ask
+  Claude what the error means.
+- The check says your loop did not stop: it stops a loop that runs for more than a few seconds. Read
+  that rule again, and ask Claude what the line means.
+- You can't finish your loop and want to move on. That is a real option. Ask Claude to run
+  `uv run python check_loop.py --use-reference`, or run it yourself. Your copy keeps using the reference
+  loop, and the rest of the homework works exactly as before. You lose the points for the loop itself
+  (the first line of "What I look for" below), not the rest of the homework. You can come back to your
+  loop at any time: once it passes the check, your copy switches to it.
+- You changed `my_loop.py` after it passed: run the check again. If it no longer passes, your copy goes
+  back to the reference loop until it does.
+
+**Hint:** Write rules 1 to 3 first, then run the check. Claude explains the API, Python and what a
+`NOT YET` line means as often as you ask, and will not write or correct your code: the loop is yours.
+Don't open `reference_loop.py` before your loop passes, and Claude cannot open it at all. The code calls
+a lookup a "step": `MAX_STEPS` is the limit of 12 lookups, and `OUT_OF_STEPS` tells the model it has used
+all its steps.
 
 ## 1b. Be the agent
 
@@ -302,11 +398,11 @@ Claude will not suggest a number for your predictions, because they are yours.
 
 Part 1 is 25% of the homework. At a minimum I am looking for the following:
 
-- The loop: 25% - Your answers to 1a say what the loop does in your own words and point to the lines of
-  `agent.py`.
+- Your loop: 30% - `my_loop.py` passes the check, the conversation shows it is your own work, and your
+  answers to 1a point to its lines.
 - Being the agent: 20% - Your 1b record shows each lookup and why you chose it, and names the hardest
   choice.
 - Predictions: 15% - Each prediction in 1e has a reason. They are graded on the reasoning, not on being
   right.
-- Instructions: 40% - Your `instructions.md` covers the four points in 1d, and your 1c table and 1d
+- Instructions: 35% - Your `instructions.md` covers the four points in 1d, and your 1c table and 1d
   answers compare the traces before and after with a specific example.

@@ -65,7 +65,7 @@ it will tell you if your claims are missing part of the mix.
 **What you're finding out:** Where the agent and the one-search baseline agree with your own verdicts
 on your claims.
 
-**Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku,
+**Words in this step:** *the agent*: the program in `agent.py` and its loop, in which the model (Claude Haiku,
 the small Claude model that the agent and both baselines call) picks the next lookup, reads what comes
 back, and decides when to answer. *the one-search baseline*: one search, one page, then an answer.
 
@@ -210,11 +210,13 @@ uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after
 
 - A run stops partway: run the same command again. It keeps every claim it already finished.
 - One of this step's two runs stops at once and says its folder has saved results from an earlier
-  version of your agent: you changed `instructions.md`, `agent.py` or `wiki.py` after that run started.
+  version of your agent: you changed `instructions.md`, `agent.py`, `wiki.py` or your loop after that run
+  started.
   Add `--fresh` to the end of the same command to start that run over with the agent as it is now.
 
 **Hint:** The change can be to `instructions.md`, to a tool (for example, what `search` returns, in
-`wiki.py`), or to the limit of 12 lookups (in `agent.py`). Claude will not propose a change, because
+`wiki.py`), to the limit of 12 lookups (in `agent.py`), or to your loop, in `my_loop.py` (run
+`uv run python check_loop.py` again after changing it). Claude will not propose a change, because
 choosing it is the point of this step. Start the long run in your own tab, because a run started by
 Claude stops if you close that Claude session; leave `instructions.md` alone while it runs, because the
 agent reads it again for every claim.

@@ -166,8 +166,9 @@ The claim you check in Part 0:
 
 > The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
-**Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku)
-picks the next lookup, reads what comes back, and decides when to answer. *lookup*: one call to
+**Words in this step:** *the agent*: the program in `agent.py` and its loop, in which the model (Claude
+Haiku) picks the next lookup, reads what comes back, and decides when to answer. In Part 0 it runs on
+the reference loop, a loop I wrote; you write your own in Part 1. *lookup*: one call to
 `search`, `read` or `wikidata`. `wikidata` asks Wikidata for one fact; Wikidata (wikidata.org) is a
 separate site from Wikipedia that stores single facts, such as a person's date of birth. *trace*: the
 agent's lookups for one claim, in order, with what each returned. *entry*: one numbered line of a
@@ -189,6 +190,7 @@ trace, a lookup or an answer. *evidence*: the sentences quoted from Wikipedia th
 uv run python check.py --method agent --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 ```
 
+The first line says which loop the agent ran on: `Agent loop: the reference loop (reference_loop.py)`.
 Each numbered entry is one call to one of the agent's four tools (`search`, `read`, `wikidata`,
 `answer`): what it asked for, then a short version of what came back. The last is usually `answer`. Then
 come the verdict, the evidence, the explanation, and the line of lookups, tokens, cost and time. The

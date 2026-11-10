@@ -5,8 +5,9 @@ measure what it adds over simpler methods. You will:
 
 - Understand what makes a program an *agent*: a language model that picks the next thing to look up,
   reads what comes back, and decides when to stop.
-- Gain hands-on experience with the loop around the model: its tools, its instructions, its limit of
-  12 lookups, and the check that every sentence it quotes really appears in what it read.
+- Gain hands-on experience with the loop around the model by writing it yourself: its tools, its
+  instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in
+  what it read.
 - Compare the agent with two simpler methods, and measure where it helps, where it doesn't, and what
   it costs.
 - Apply it to claims you write about a topic you know well, and find out where Wikipedia, which is
@@ -113,22 +114,26 @@ You used all of these in earlier homeworks:
 | Part | What you do | Weight |
 |---|---|---|
 | [Part 0: Set up](instructions/part0.md) | Get your copy running, then check one claim three ways: the model alone, one search, and the agent | 10% |
-| [Part 1: How the agent works](instructions/part1.md) | Read the agent's loop, check two claims yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 25% |
+| [Part 1: How the agent works](instructions/part1.md) | Write the agent's loop, check two claims yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 25% |
 | [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy and cost by how many articles a claim needs, check the agent's evidence yourself, and find where Wikipedia has changed | 35% |
 | [Part 3: Your own claims](instructions/part3.md) | Write claims about a topic you know, sort the agent's failures, make one change, and write up what you found | 30% |
 
 Everything is due 8:00am Tuesday, November 24.
 
-I expect this homework to take about 7 hours in all, in four sittings: about 50 minutes for Part 0, a
-little over 2 hours each for Parts 1 and 3, and about an hour and a half for Part 2.
+I expect this homework to take a little over 7 hours in all, in four sittings: about 50 minutes for Part
+0, a little under 3 hours for Part 1, about an hour and a half for Part 2, and a little over 2 hours for
+Part 3. On top of that, the two long runs take about 20 and about 10 minutes, while you do other things.
 
 ## Words this homework uses
 
 - **claim**: one sentence that is either true or false.
 - **verdict**: the answer to a claim, always one of *supported*, *refuted* or *doesn't say*.
 - **evidence**: the sentences quoted from Wikipedia that a verdict rests on.
-- **the agent**: the program in `agent.py`, a loop in which the model picks the next lookup, reads what
-  comes back, and decides when to answer.
+- **the agent**: the program in `agent.py` and the loop that drives it: `my_loop.py` once yours passes,
+  `reference_loop.py` until then. In the loop, the model picks the next lookup, reads what comes back, and
+  decides when to answer.
+- **the reference loop**: the loop in `reference_loop.py`, which your copy uses until your own loop
+  passes the check in step 1a.
 - **lookup**: one call to `search`, `read` or `wikidata`.
 - **tool**: one of the four things the agent can call: `search`, `read`, `wikidata` and `answer`.
 - **trace**: the list of the agent's lookups for one claim, in order, with what each returned.
@@ -165,6 +170,7 @@ In your repository I look for:
 
 - `WRITEUP.md`, with every answer filled in;
 - your `instructions.md`;
+- your loop, `my_loop.py`;
 - your runs, in `runs/`;
 - `TRANSCRIPT.md`, your conversations with Claude.
 

@@ -45,25 +45,21 @@ Which lookup would you have done differently, and how? If none, which one surpri
 
 # Part 1: How the agent works
 
-## 1a. Read the loop
+## 1a. Write the loop
 
-What does the program send to the model on each turn of the loop? Give the line numbers.
-
->
-
-What does the program do when the model asks for a tool? Give the line numbers.
+What does your loop send to the model on each turn? Give the line numbers in `my_loop.py`.
 
 >
 
-What are the ways the loop can end? Give the line number of each.
+What are the ways your loop can end? Give the line number of each.
 
 >
 
-The loop allows at most 12 lookups per claim. What could go wrong without that limit? Give the line numbers where the loop enforces it.
+Which rule took you longest to get right, and what was wrong with your first try?
 
 >
 
-The loop rejects an answer when a quoted sentence is not in anything the agent read. What could go wrong without that check? Give the line numbers where the loop makes the check.
+Now open `reference_loop.py` and compare it with your loop. Name one difference, and say whether it changes what the agent does. (If you used `--use-reference`, say how far your own loop got and what stopped you.)
 
 >
 
