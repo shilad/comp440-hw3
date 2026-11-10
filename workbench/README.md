@@ -24,9 +24,9 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
 
 - **Ticks steps.** A step is complete when every slot it names in `WRITEUP.md` is filled and every
   file it names exists, read fresh every time, however the file got there (a run in the
-  student's own terminal counts). Steps open in order. A checkpoint is ticked by its own file or
-  answers, or by Claude through the `page` skill: never by a later checkpoint, and never just
-  because the step is complete.
+  student's own terminal counts). Steps open in order. A checkpoint with a file or answers of its
+  own is ticked only by them. One without (a prediction, say) is ticked by Claude through the
+  `page` skill, or by a later checkpoint being reached. The step being complete ticks nothing.
 - **Commits each part.** When every step of Part N is complete, the page writes `TRANSCRIPT.md`
   and `record/`, then commits `Part N done`: everything in the repository that isn't git-ignored
   (`git add -A`), so `instructions.md`, the student's claims, every result under `runs/` and any

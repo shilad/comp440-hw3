@@ -342,9 +342,13 @@ class StepSession:
             cps.append(item)
             done_at.append(t)
         reached = list(done_at)                  # when each was reached, as far as anything shows
+        # A checkpoint with a file or answers of its own is ticked only by them, so a student can
+        # see what is missing. One without (a prediction, say) is ticked by Claude, or by any later
+        # checkpoint being reached. The step being complete ticks nothing by itself.
+        for i in range(len(cps) - 2, -1, -1):
+            if done_at[i] is None and not cps[i]["auto"]:
+                done_at[i] = next((t for t in done_at[i + 1:] if t is not None), None)
         for i, item in enumerate(cps):
-            # Only its own file or answers, or Claude's tick, ticks a checkpoint: never a later
-            # checkpoint, and never the step being complete (a typed name is not a set-up check).
             item["done"] = done_at[i] is not None
         extra = [k for k in step_keys(s, slots) if k not in covered]   # answers no checkpoint names
         if extra:
