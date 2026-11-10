@@ -43,7 +43,7 @@ You used all of these in earlier homeworks:
 - A text editor. You type every answer in it.
 - Your API key. I sent you your own API key by Slack direct message. The agent calls the Claude API
   directly, not through your Claude Code account, so it needs this key. Doing the whole homework once
-  costs about a dollar on your key.
+  costs about a dollar on your key. That is charged to my account for the course, not to you.
 
 ## Getting started
 

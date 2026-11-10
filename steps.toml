@@ -296,7 +296,8 @@ it at the terminal's prompt. Do not run it yourself.
 ## The API key and .env
 
 The agent and both baselines call Claude Haiku with the student's own API key, which the
-instructor sent them by Slack direct message. It is kept in .env, with WIKIPEDIA_CONTACT, the
+instructor sent them by Slack direct message. What the key spends is charged to the instructor's
+account for the course, not to the student. It is kept in .env, with WIKIPEDIA_CONTACT, the
 student's Macalester email, which Wikipedia uses to count their requests.
 
 - Never ask for the key or the email. Never open, read, print, copy or edit .env, and never put

@@ -168,9 +168,10 @@ The claim you check in Part 0:
 
 **Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku)
 picks the next lookup, reads what comes back, and decides when to answer. *lookup*: one call to
-`search`, `read` or `wikidata` (`wikidata` asks Wikidata, Wikipedia's sister site of facts, for one fact). *trace*: the agent's lookups for one claim, in order, with what each
-returned. *entry*: one numbered line of a trace, a lookup or an answer. *evidence*: the sentences
-quoted from Wikipedia that a verdict rests on.
+`search`, `read` or `wikidata`. `wikidata` asks Wikidata for one fact; Wikidata (wikidata.org) is a
+separate site from Wikipedia that stores single facts, such as a person's date of birth. *trace*: the
+agent's lookups for one claim, in order, with what each returned. *entry*: one numbered line of a
+trace, a lookup or an answer. *evidence*: the sentences quoted from Wikipedia that a verdict rests on.
 
 **What to do:**
 

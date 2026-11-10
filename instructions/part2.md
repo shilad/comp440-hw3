@@ -13,8 +13,9 @@ Wikipedia has changed since the dataset was made. It should take about 1 hour an
 
 **Words in this step:** *the three versions*: the no-tools baseline (the model, Claude Haiku, answers
 from memory), the one-search baseline (one search, one page, then an answer) and the agent (the program
-in `agent.py`, which picks its own lookups). *the dataset's label*: HoVer's *supported* or *not
-supported*; *refuted* and *doesn't say* count as *not supported*. *the number of articles*: how many
+in `agent.py`, which picks its own lookups). *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
+each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say* counts as
+*not supported*. *the number of articles*: how many
 Wikipedia articles a claim needs (2, 3 or 4).
 
 **What to do:**
@@ -91,7 +92,8 @@ real and still not support the verdict. For a verdict of *refuted*, the question
 show that the claim is false.
 
 **Words in this step:** *verdict*: *supported*, *refuted* or *doesn't say*. *evidence*: the sentences
-the agent quoted from Wikipedia. *the dataset's label*: HoVer's *supported* or *not supported*.
+the agent quoted from Wikipedia. *the dataset's label*: the label that HoVer, the public dataset
+these claims come from, gives each claim, *supported* or *not supported*.
 *entry*: one numbered line of a trace, a lookup or an answer.
 
 **What to do:**
@@ -140,8 +142,9 @@ labels made from the Wikipedia of 2017.
 HoVer labeled its claims from Wikipedia as it was in 2017; the agent reads it as it is today. So some
 of the agent's "wrong" answers may be right about today's Wikipedia.
 
-**Words in this step:** *the dataset's label*: HoVer's *supported* or *not supported*; *refuted* and
-*doesn't say* count as *not supported*. *evidence*: the sentences the agent quoted from Wikipedia.
+**Words in this step:** *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
+each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say* counts as
+*not supported*. *evidence*: the sentences the agent quoted from Wikipedia.
 *the closest case*: the claim that came nearest, and what kept it from being clear.
 
 **What to do:**

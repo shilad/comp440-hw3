@@ -15,7 +15,8 @@ rules the loop enforces that the model cannot override.
 **Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku,
 the small Claude model that the agent and both baselines call) picks the next lookup, reads what comes
 back, and decides when to answer. *lookup*: one call to `search`, `read` or `wikidata`; with `answer`,
-these are the agent's four tools.
+these are the agent's four tools. In the code, a *tool_use block* is the part of the model's reply that
+asks for a tool, and a *tool_result* is what the program sends back to the model.
 
 **What to do:**
 
@@ -95,8 +96,8 @@ uv run python lookup.py wikidata "<entity>" "<property>"
 
 `search` returns the top five page titles, each with a short snippet. `read` returns one section of a
 page, or with no section the opening paragraphs and the list of sections. `wikidata` returns one fact
-from Wikidata, Wikipedia's sister site, for an entity (a person, a place) and a property ("place of
-birth", "population"). Each lookup is added to `runs/part1/lookups.jsonl`, which Claude fills the table
+from Wikidata (wikidata.org, a separate site from Wikipedia that stores single facts), for an entity (a
+person, a place) and a property ("place of birth", "population"). Each lookup is added to `runs/part1/lookups.jsonl`, which Claude fills the table
 from. Claude fills the Claim column from when you told it you moved on to claim 2: check it. Your
 verdicts go in `WRITEUP.md`, so there is no `answer` call.
 
@@ -127,8 +128,9 @@ how to read its output.
 and whether it gets there for a good reason.
 
 **Words in this step:** *the development claims*: the 12 claims in `data/dev.jsonl`. *the number of
-articles*: how many Wikipedia articles a claim needs (2, 3 or 4). *the dataset's label*: HoVer's
-*supported* or *not supported*; *refuted* and *doesn't say* count as *not supported*. *trace*: the
+articles*: how many Wikipedia articles a claim needs (2, 3 or 4). *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
+each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say* counts as
+*not supported*. *trace*: the
 agent's lookups for one claim, in order, with what each returned. *entry*: one numbered line of a
 trace, a lookup or an answer.
 
@@ -247,8 +249,9 @@ predictions before you see any results.
 
 **Words in this step:** *the three versions*: the no-tools baseline (the model answers from memory), the
 one-search baseline (one search, one page, then an answer) and the agent. A version gets a claim right
-when its verdict matches *the dataset's label*: HoVer's *supported* or *not supported*, where *refuted*
-and *doesn't say* count as *not supported*.
+when its verdict matches *the dataset's label*: the label that HoVer, the public dataset these claims
+come from, gives each claim, *supported* or *not supported*. A verdict of *refuted* or *doesn't say*
+counts as *not supported*.
 
 **What to do:**
 
@@ -257,7 +260,8 @@ and *doesn't say* count as *not supported*.
 2. Open another terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
 3. Start the full run yourself in that tab, with the command under "What you'll see".
 4. Leave that tab open, your laptop awake and `instructions.md` alone until the run ends.
-5. Don't look at any results until your predictions are saved. If the run finishes first, don't look at its tab.
+5. Don't read any results until your predictions are saved. The run shows its results only when it ends,
+   as two tables; the progress lines before that only count claims. If it ends first, don't look at its tab.
 6. Fill in the predictions table under 1e in `WRITEUP.md`.
 7. Answer the question under the table.
 
@@ -267,7 +271,8 @@ and *doesn't say* count as *not supported*.
 uv run python evaluate.py data/eval.jsonl --out runs/part2
 ```
 
-It takes about 20 minutes and costs about 50 cents on your key. It runs the no-tools baseline on all 200
+It takes about 20 minutes and costs about 50 cents on your key, which is charged to my account for the
+course, not to you. It runs the no-tools baseline on all 200
 claims, then the one-search baseline, then the agent with your `instructions.md` from 1d. It prints a
 progress line every ten claims, ends with two tables, and is saved in `runs/part2`.
 
