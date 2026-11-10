@@ -89,7 +89,8 @@ table.grid tr.first th, table.grid tr.first td { border-top: 2px solid var(--lin
 table.grid .num { text-align: right; white-space: nowrap; }
 .pct { color: var(--muted); }
 table.claims { width: 100%; }
-table.claims td.claimcell { min-width: 320px; width: 42%; }
+table.claims td.claimcell { min-width: 260px; width: 36%; }
+table.claims thead th { white-space: normal; vertical-align: bottom; }
 td.claimcell a { color: var(--ink); text-decoration-color: var(--faint); }
 td.claimcell a:hover { color: var(--link); }
 td.claimcell a:visited { color: var(--muted); }
@@ -103,6 +104,10 @@ table.claims tbody tr:target { background: var(--you-bg); }
 .o.wrong .mk { color: var(--bad); }
 .o.notrun { color: var(--muted); font-style: italic; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.o.notread { color: var(--muted); }
+.tag { display: inline-block; margin-top: 4px; font-size: 12.5px; font-weight: 500; color: var(--warn); background: var(--warn-bg); padding: 1px 8px; border-radius: 999px; }
+.arts-head { margin: 8px 0 2px; }
+ul.arts { margin: 0 0 6px; padding-left: 22px; font-size: 14.5px; display: grid; gap: 2px; }
 
 /* Filters */
 form.filters { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 10px; margin: 10px 0; }

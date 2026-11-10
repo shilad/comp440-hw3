@@ -463,7 +463,9 @@ class Run:
             self.bad[method] = loaded[1]
             self.mtime = max(self.mtime, file_time(f))
             self.started = min(self.started, made_time(f))
-        self.started = self.started if self.rows else 0.0
+        if not self.rows:  # evaluate.py has written run.json and nothing else yet
+            self.started = made_time(path / "run.json")
+            self.mtime = file_time(path / "run.json")
         self.methods = sorted(self.rows, key=method_key)
         named = named_claims_file(repo, path)
         named_ids = claims.prefer(*named) if named else set()
@@ -508,8 +510,9 @@ class Run:
             self.file = claims.best_file(self.ids)
         self.position = {i: n for n, i in enumerate(self.ids)}
         # evaluate.py saves a fingerprint of the agent's files with each of the agent's results.
-        self.versions = sorted({str(r["agent_version"]) for r in self.rows.get("agent", {}).values()
-                                if r.get("agent_version")})
+        agent_rows = list(self.rows.get("agent", {}).values())
+        self.versions = sorted({str(r["agent_version"]) for r in agent_rows if r.get("agent_version")})
+        self.versions_complete = bool(agent_rows) and all(r.get("agent_version") for r in agent_rows)
 
     def group(self, i: str) -> str:
         item = self.items[i]
@@ -524,6 +527,13 @@ class Run:
         return self.file[1] if self.file else None
 
     def finished(self) -> bool:
+        """evaluate.py saves report.txt only when every claim has a saved result. A run made
+        before it did that (no run.json either) counts as finished when every method has every
+        claim of its claims file."""
+        if (self.path / "report.txt").is_file():
+            return True
+        if (self.path / "run.json").is_file() or not self.methods:
+            return False
         total = self.total() or len(self.ids)
         return all(len(self.rows[m]) >= total for m in self.methods)
 
@@ -564,7 +574,10 @@ def result_files(folder: Path, root_real: Path) -> list[Path]:
 
 
 def is_run(folder: Path, root_real: Path) -> bool:
-    return folder.is_dir() and bool(result_files(folder, root_real))
+    if not folder.is_dir():
+        return False
+    meta = folder / "run.json"
+    return bool(result_files(folder, root_real)) or (meta.is_file() and inside(meta, root_real))
 
 
 _RUNS: dict = {}
@@ -576,11 +589,11 @@ def get_run(repo: Path, path: Path, rel: str) -> Run | None:
     file in data/, has changed."""
     root_real = (repo / "runs").resolve()
     files = result_files(path, root_real)
-    if not files:
+    if not files and not is_run(path, root_real):
         return None
     data = sorted((repo / "data").glob("*.jsonl")) if (repo / "data").is_dir() else []
     named = named_claims_file(repo, path)
-    extra = [path / "run.json"] + ([named[0]] if named else [])
+    extra = [path / "run.json", path / "report.txt"] + ([named[0]] if named else [])
     sig = []
     for f in files + data + extra:
         try:
@@ -613,6 +626,11 @@ def stats(run: Run, method: str, ids=None) -> dict:
         g = groups.setdefault(run.group(i), [0, 0])
         g[0] += bool(rows_by_id[i]["correct"])
         g[1] += 1
+    labels: dict[str, list] = {}
+    if any(run.items[i].get("source") == "hover" for i in ids):
+        for label, name in LABEL_ROWS:
+            pick = [i for i in ids if run.items[i].get("source") == "hover" and run.items[i].get("label") == label]
+            labels[name] = [sum(bool(rows_by_id[i]["correct"]) for i in pick), len(pick)]
     d = n or 1
     failed = sum(r["failed"] for r in rows)
     max_steps = RULES.max_steps()
@@ -620,6 +638,7 @@ def stats(run: Run, method: str, ids=None) -> dict:
         "n": n,
         "correct": sum(bool(r["correct"]) for r in rows),
         "groups": groups,
+        "labels": labels,
         "steps": sum(r["steps"] for r in rows) / d,
         "tokens": sum(r["tokens"]["input"] + r["tokens"]["output"] for r in rows) / d,
         "seconds": sum(r["seconds"] for r in rows) / d,
@@ -633,6 +652,10 @@ def stats(run: Run, method: str, ids=None) -> dict:
         "no_verdict": sum(r["verdict"] is None for r in rows) - failed,
         "all_steps": sum(used_all_steps(r, max_steps) for r in rows) if method == "agent" else None,
     }
+
+
+# The rows evaluate.py's report prints under "All": the same count, split by the dataset's label.
+LABEL_ROWS = (("SUPPORTED", "HoVer, supported"), ("NOT_SUPPORTED", "HoVer, not supported"))
 
 
 def group_names(run: Run, ids=None) -> list[str]:
@@ -748,6 +771,62 @@ def quote_places(row: dict) -> list[dict]:
             across = bool(normalize(q)) and normalize(q) in joined
         places.append({"quote": q, "hits": hits, "across": across})
     return places
+
+
+# ------------------------------------------------------------------ the dataset's articles
+
+def title_key(title) -> str:
+    return " ".join(str(title).replace("_", " ").split()).casefold()
+
+
+def articles_read(item: dict, row: dict | None) -> list[tuple[str, int | None]]:
+    """Each article the dataset lists for a claim, with the number of the first trace entry in
+    which the agent read it (by the title it asked for, or the title Wikipedia gave back), or
+    None if it never did."""
+    arts = item.get("articles")
+    if not isinstance(arts, list):
+        return []
+    seen: dict[str, int] = {}
+    for n, call in enumerate(row["trace"] if row else []):
+        if call["tool"] != "read":
+            continue
+        page = page_of(call)
+        if page is None:
+            continue
+        for t in (call["input"].get("title"), page["title"]):
+            if t:
+                seen.setdefault(title_key(t), n + 1)
+    return [(str(a), seen.get(title_key(a))) for a in arts]
+
+
+# ------------------------------------------------------------------ the homework's order
+
+ORDER = ["runs/part0", "runs/part1/lookups.jsonl", "runs/part1", "runs/part1/before", "runs/part1/after",
+         "runs/part2", "runs/part3/before", "runs/part3/after", "runs/part3/after-eval"]
+COMPARISONS = [("runs/part1/before", "runs/part1/after", "1d"),
+               ("runs/part3/before", "runs/part3/after", "3d"),
+               ("runs/part2", "runs/part3/after-eval", "3d")]
+WHERE_FROM = {"runs/part0": "Steps 0b, 0c and 0d each save a check in runs/part0/.",
+              "runs/part1/lookups.jsonl": "Step 1b saves the lookups you make by hand in runs/part1/lookups.jsonl.",
+              "runs/part1/before": "Step 1c saves the run in runs/part1/before/.",
+              "runs/part1/after": "Step 1d saves the run in runs/part1/after/.",
+              "runs/part2": "Step 1e starts the run that fills runs/part2/.",
+              "runs/part3/before": "Step 3b saves the run in runs/part3/before/.",
+              "runs/part3/after": "Step 3d saves the run in runs/part3/after/.",
+              "runs/part3/after-eval": "Step 3d saves the run in runs/part3/after-eval/."}
+
+
+def part_of(rel: str) -> int | None:
+    m = re.match(r"runs/part(\d)(/|$)", rel)
+    return int(m.group(1)) if m else None
+
+
+def homework_order(rel: str):
+    """Sort key: the order the homework makes things in, then everything else by name."""
+    for n, known in enumerate(ORDER):
+        if rel == known:
+            return (0, n, rel)
+    return (1, part_of(rel) if part_of(rel) is not None else 9, rel)
 
 
 # ------------------------------------------------------------------ what a trace entry read

@@ -156,6 +156,11 @@ def test_numbers_equal_evaluate_report(repo):
             st = R.stats(run, m)
             got.append((st["correct"], st["n"]) if g == "All" else tuple(st["groups"][g]))
         assert got == expected, g
+    # The same count by the dataset's label, the rows evaluate.py prints under "All".
+    for _, name in R.LABEL_ROWS:
+        line = next(x for x in lines if x.startswith(name))
+        expected = [tuple(map(int, m)) for m in re.findall(r"(\d+)/(\d+)", line)]
+        assert [tuple(R.stats(run, m)["labels"][name]) for m in ["no-tools", "one-search", "agent"]] == expected
     # Averages per claim, printed to the same places.
     for m in ["no-tools", "one-search", "agent"]:
         line = next(x for x in lines if x.startswith(m) and "/" not in x)
@@ -178,8 +183,8 @@ def test_numbers_equal_evaluate_report(repo):
         st = R.stats(run, m)
         assert f"{st['correct']} of {st['n']}" in words
         assert f"${st['cost']:.4f}" in words
-    assert "Correct means only that the verdict matches the dataset's label" in words
-    assert words.count("Correct means only") == 1
+    assert "A ✓ means the verdict matched the dataset's label." in words
+    assert words.count("A ✓ means") == 1
     assert html.escape(printed.strip("\n"), quote=True) in page
 
 
@@ -208,24 +213,30 @@ def test_filters(repo):
     assert shown_ids(page) == ["h1", "h2", "h3", "h4", "h5"]
     assert "Showing 5 of 5 claims" in text_of(page)
 
-    page = get(repo, base + "&hops=2")[2]
+    page = get(repo, base + "&articles=2")[2]
     assert shown_ids(page) == ["h1", "h2"] and "Showing 2 of 5 claims" in text_of(page)
     assert shown_ids(get(repo, base + "&label=not+supported")[2]) == ["h2", "h4"]
     assert shown_ids(get(repo, base + "&q=paris+ALPHA")[2]) == ["h1"]
     assert shown_ids(get(repo, base + "&q=nothing+like+this")[2]) == []
     assert "No claims match these filters" in get(repo, base + "&q=zzz")[2]
     # agent: correct on h1, h2, h3; wrong on h4; error on h5 (counts as wrong)
-    assert shown_ids(get(repo, base + "&r_agent=correct")[2]) == ["h1", "h2", "h3"]
-    assert shown_ids(get(repo, base + "&r_agent=wrong")[2]) == ["h4", "h5"]
+    assert shown_ids(get(repo, base + "&r_agent=matched")[2]) == ["h1", "h2", "h3"]
+    assert shown_ids(get(repo, base + "&r_agent=unmatched")[2]) == ["h4", "h5"]
     assert shown_ids(get(repo, base + "&r_agent=error")[2]) == ["h5"]
     assert shown_ids(get(repo, base + "&r_no-tools=none")[2]) == ["h5"]
     assert shown_ids(get(repo, base + "&v_agent=supported")[2]) == ["h1", "h3", "h4"]
     assert shown_ids(get(repo, base + "&v_one-search=doesn%27t+say")[2]) == ["h2", "h4"]
-    assert shown_ids(get(repo, base + "&v_agent=supported&r_agent=wrong")[2]) == ["h4"]
-    assert shown_ids(get(repo, base + "&steps=1")[2]) == ["h3"]
+    assert shown_ids(get(repo, base + "&v_agent=supported&r_agent=unmatched")[2]) == ["h4"]
+    assert shown_ids(get(repo, base + "&v_agent=supported-or-refuted")[2]) == ["h1", "h2", "h3", "h4"]
+    assert shown_ids(get(repo, base + "&v_one-search=supported-or-refuted")[2]) == ["h1", "h3", "h5"]
+    assert shown_ids(get(repo, base + "&used_all=1")[2]) == ["h3"]
+    # Row numbers count the rows shown, from 1, so "the first ten rows" is well defined.
+    page = get(repo, base + "&v_agent=supported-or-refuted")[2]
+    assert re.findall(r'<tr id="row-[^"]+"><td class="num"[^>]*>(\d+)</td>', page) == ["1", "2", "3", "4"]
+    assert "Only claims where the agent used all 12 lookups" in text_of(page)
     # Sorting by the agent's cost and calls; claims it has no cost for go last.
     assert shown_ids(get(repo, base + "&sort=cost-high")[2]) == ["h3", "h4", "h2", "h1", "h5"]
-    assert shown_ids(get(repo, base + "&sort=calls-low")[2]) == ["h5", "h1", "h2", "h4", "h3"]
+    assert shown_ids(get(repo, base + "&sort=lookups-low")[2]) == ["h5", "h1", "h2", "h4", "h3"]
 
 
 def test_claim_page_prev_next_follow_the_filter(repo):
@@ -252,9 +263,9 @@ def test_half_finished_run(repo):
     words = text_of(page)
     assert status == 200
     assert "the agent has 2 of 5" in words
-    assert "Some claims have no result yet" in words
+    assert "This run has not finished." in words
     assert "1 line in agent.jsonl could not be read" in words
-    assert "2 of 2" in words  # both finished claims are correct
+    assert "2 of 2" in words  # both finished claims matched
     home = text_of(get(repo, "/results/")[2])
     assert "2 of 5" in home
 
@@ -262,8 +273,8 @@ def test_half_finished_run(repo):
 def test_failed_claim(repo):
     page = get(repo, "/results/run?dir=runs/part2")[2]
     words = text_of(page)
-    assert "1 claim stopped with an error" in words
-    assert "1 claim gave no verdict" in words
+    assert "1 claim that stopped with an error" in words
+    assert "1 claim with no verdict" in words
     row = re.search(r'<tr id="row-h5">.*?</tr>', page, re.S).group(0)
     assert "stopped with an error" in row and "✗" in row
     claim = text_of(get(repo, "/results/claim?dir=runs/part2&id=h5")[2])
@@ -289,7 +300,7 @@ def test_quote_found_and_not_found(repo):
     page = get(repo, "/results/claim?dir=runs/part2&id=h1")[2]
     words = text_of(page)
     assert re.search(r'<mark data-q="1"[^>]*>She was born in Paris and\s+lives in \u201cLyon\u201d today\.</mark>', page)
-    assert "Found in call 2 (read), highlighted below" in words
+    assert "Found in lookup 2 (read), highlighted below" in words
     assert "This quote appears in nothing the agent read in this check." in words
     assert 'href="https://en.wikipedia.org/wiki/Alpha_Person"' in page
     assert 'target="_blank"' in page and 'rel="noopener noreferrer"' in page
@@ -329,10 +340,10 @@ def test_single_check_and_lookups(repo):
                  {"tool": "read", "input": {"title": "Forrest Gump", "section": None}}])
     home = text_of(get(repo, "/results/")[2])
     assert "Alpha Person was born in Paris." in home
-    assert "1994 Best Picture" in home and "2 calls" in home
+    assert "1994 Best Picture" in home and "2 lookups" in home
     page = get(repo, "/results/check?file=runs/part0/agent-1794290701.json")[2]
     words = text_of(page)
-    assert "Label: supported" in words and "data/claims.jsonl" in words
+    assert "The dataset's label: supported" in words and "data/claims.jsonl" in words
     assert "✓" in page and "<mark" in page
     page = text_of(get(repo, "/results/check?file=runs/part0/no-tools-1794290600.json")[2])
     assert "no label to compare" in page
@@ -340,15 +351,15 @@ def test_single_check_and_lookups(repo):
 
 def test_empty_states(tmp_path):
     words = text_of(get(tmp_path, "/results/")[2])
-    assert "No runs yet." in words
+    assert "No runs yet. Your first one appears here after step 0b." in words
     (tmp_path / "runs" / "part0").mkdir(parents=True)
     (tmp_path / "runs" / "part0" / "agent-1.json").write_text(json.dumps(
         {"claim": "x", "verdict": "supported", "trace": [], "evidence": []}))
     words = text_of(get(tmp_path, "/results/")[2])
-    assert "No evaluation runs yet. You make the first one in Part 2." in words
-    assert "No lookups by hand yet." in words
+    assert "Step 1e starts the run that fills runs/part2/." in words
+    assert "Step 1b saves your lookups in runs/part1/lookups.jsonl" in words
     words = text_of(get(tmp_path, "/results/compare")[2])
-    assert "No evaluation runs yet" in words
+    assert "No runs yet. The first one you can compare is made in step 1c." in words
 
 
 # ------------------------------------------------------------------ two runs side by side
@@ -366,10 +377,10 @@ def test_compare_two_runs(repo):
     assert "A has 5 claims and B has 4 claims. This page compares the 4 claims both have." in words
     # A on the shared 4: h1, h2, h3 correct, h4 wrong -> 3 of 4. B: h1, h2, h4 correct -> 3 of 4.
     assert "3 of 4 (75.0%) 3 of 4 (75.0%) no change" in words
-    assert "wrong in A, correct in B: 1 correct in A, wrong in B: 1 verdict changed, correct in both: 1 " \
-           "verdict changed, wrong in both: 0" in words
+    assert "did not match in A, matched in B: 1 matched in A, did not match in B: 1 verdict changed, " \
+           "matched in both: 1 verdict changed, did not match in both: 0" in words
     assert len(re.findall(r">Open A and B<", page)) == 3
-    page = get(repo, "/results/compare?a=runs/part2&b=runs/part3/after-eval&kind=now-wrong")[2]
+    page = get(repo, "/results/compare?a=runs/part2&b=runs/part3/after-eval&kind=now-unmatched")[2]
     assert len(re.findall(r">Open A and B<", page)) == 1 and "Delta is a town" in page
     # One claim, both sides.
     page = get(repo, "/results/compare?a=runs/part2&b=runs/part3/after-eval&id=h3&m=agent")[2]
@@ -383,7 +394,8 @@ def test_compare_two_runs(repo):
 
 def test_compare_picker(repo):
     words = text_of(get(repo, "/results/compare?a=runs/part2")[2])
-    assert "Pick two evaluation runs" in words
+    assert "Pick two runs above" in words
+    assert "Step 3d: runs/part2 with runs/part3/after-eval" in words and "runs/part3/after-eval not made yet" in words
     assert get(repo, "/results/compare?a=runs/nothing&b=runs/part2")[0] == 404
 
 
@@ -437,7 +449,7 @@ def test_open_sends_each_path_to_its_page(repo):
     assert target("runs/part1") == "/results/#f-runs-part1"
     assert target("runs") == "/results/"
     assert target("runs/part3/after") is None
-    assert "Nothing is saved at runs/part3/after yet. It fills in when you reach that step in Part 3." in \
+    assert "Nothing is saved at runs/part3/after yet. Step 3d saves the run in runs/part3/after/." in \
         text_of(get(repo, "/results/open?path=runs/part3/after")[2])
     assert target("runs/part0/one-search-*.json") is None
 
@@ -450,7 +462,7 @@ def routes(repo):
         result("agent", "h1", "supported", steps=2, trace=AGENT_H1_TRACE,
                evidence=AGENT_H1_TRACE[2]["input"]["evidence"])))
     write_jsonl(repo / "runs" / "part3" / "after-eval" / "agent.jsonl", full_rows()["agent"][:3])
-    return ["/", "/run?dir=runs/part2", "/run?dir=runs/part2&r_agent=wrong&sort=cost-high",
+    return ["/", "/run?dir=runs/part2", "/run?dir=runs/part2&r_agent=unmatched&sort=cost-high",
             "/claim?dir=runs/part2&id=h1", "/claim?dir=runs/part2&id=h3&full=1",
             "/check?file=runs/part0/agent-1794290701.json", "/compare", "/compare?a=runs/part2",
             "/compare?a=runs/part2&b=runs/part3/after-eval",
@@ -587,6 +599,110 @@ def test_run_json_names_the_claims_file(repo, tmp_path_factory):
     assert get(repo, "/results/run?dir=runs/part2")[0] == 200
 
 
+def test_by_label_rows_on_the_page(repo):
+    page = get(repo, "/results/run?dir=runs/part2")[2]
+    words = text_of(page)
+    run = R.get_run(repo, repo / "runs" / "part2", "runs/part2")
+    cells = " ".join(f"{c} of {n}" for c, n in (R.stats(run, m)["labels"]["HoVer, supported"]
+                                                for m in run.methods))
+    assert "HoVer, supported" in words and "HoVer, not supported" in words
+    assert re.sub(r" \([^)]*\)", "", words.split("HoVer, supported", 1)[1]).strip().startswith(cells)
+    # A run of your own claims has no such rows, and says "your verdict".
+    write_jsonl(repo / "runs" / "part3" / "before" / "agent.jsonl",
+                [result("agent", "mine-1", "supported"), result("agent", "mine-2", "supported")])
+    words = text_of(get(repo, "/results/run?dir=runs/part3/before")[2])
+    assert "HoVer, supported" not in words
+    assert "matched your verdict" in words and "the dataset's label" not in words
+
+
+def test_finished_means_report_txt(repo):
+    folder = repo / "runs" / "part2"
+    words = text_of(get(repo, "/results/run?dir=runs/part2")[2])
+    assert "has not finished" not in words  # made before run.json: every claim has a result
+    (folder / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}))
+    words = text_of(get(repo, "/results/run?dir=runs/part2")[2])
+    assert "This run has not finished." in words and "no report.txt yet" in words
+    assert "not finished" in text_of(get(repo, "/results/")[2])
+    (folder / "report.txt").write_text("the two tables\n")
+    words = text_of(get(repo, "/results/run?dir=runs/part2")[2])
+    assert "has not finished" not in words
+    assert "not finished" not in text_of(get(repo, "/results/")[2])
+
+
+def test_a_run_just_started_and_a_run_emptied_by_fresh(repo):
+    folder = repo / "runs" / "part1" / "before"
+    folder.mkdir(parents=True)
+    (folder / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}))
+    status, _, page = get(repo, "/results/run?dir=runs/part1/before")
+    assert status == 200 and "No results saved yet" in page
+    assert "runs/part1/before" in text_of(get(repo, "/results/")[2])
+    (folder / "agent.jsonl").write_text("")  # evaluate.py opens the file before the first result
+    assert get(repo, "/results/run?dir=runs/part1/before")[0] == 200
+    # --fresh deletes the results and report.txt while a page may be open on them.
+    for f in (repo / "runs" / "part2").glob("*.jsonl"):
+        f.unlink()
+    (repo / "runs" / "part2" / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}))
+    for url in ("/results/run?dir=runs/part2", "/results/claim?dir=runs/part2&id=h1", "/results/",
+                "/results/compare?a=runs/part2&b=runs/part1/before"):
+        assert get(repo, url)[0] in (200, 404), url
+    assert get(repo, "/results/run?dir=runs/part2")[0] == 200
+
+
+def test_the_dataset_articles_and_which_the_agent_read(repo):
+    words = text_of(get(repo, "/results/claim?dir=runs/part2&id=h1")[2])
+    assert "The dataset lists these articles for this claim:" in words
+    assert re.search(r"Alpha Person \(opens in a new tab\) · read by the agent \( ?lookup 2 ?\)", words)
+    words = text_of(get(repo, "/results/claim?dir=runs/part2&id=h2")[2])
+    for title in ("Beta Writer", "Gamma (novel)"):
+        assert f"{title} (opens in a new tab) · not read by the agent" in words
+    write_jsonl(repo / "runs" / "part3" / "before" / "agent.jsonl", [result("agent", "mine-1", "supported")])
+    words = text_of(get(repo, "/results/claim?dir=runs/part3/before&id=mine-1")[2])
+    assert "The dataset lists" not in words and "Your verdict: supported" in words
+
+
+def test_home_lists_runs_in_the_homework_order(repo):
+    for rel in ("runs/part3/after-eval", "runs/part3/after", "runs/part3/before", "runs/part1/after",
+                "runs/part1/before", "runs/zzz"):
+        write_jsonl(repo.joinpath(*rel.split("/")) / "agent.jsonl", full_rows()["agent"][:1])
+    write_jsonl(repo / "runs" / "part1" / "lookups.jsonl", [{"tool": "search", "input": {"query": "q"}}])
+    page = get(repo, "/results/")[2]
+    found = re.findall(r'href="/results/run\?dir=([^"]+)"', page)
+    assert [x.replace("%2F", "/") for x in found] == [
+        "runs/part1/before", "runs/part1/after", "runs/part2", "runs/part3/before", "runs/part3/after",
+        "runs/part3/after-eval", "runs/zzz"]
+    words = text_of(page)
+    order = [words.index(t) for t in ("Part 0: Set up", "Part 1: How the agent works", "Your lookups by hand",
+                                      "Part 2: The agent against the baselines", "Part 3: Your own claims",
+                                      "Other runs")]
+    assert order == sorted(order)
+    assert "Steps 0b, 0c and 0d each save a check" in words  # Part 0 is empty
+    picker = get(repo, "/results/compare")[2]
+    assert picker.index(">runs/part1/before<") < picker.index(">runs/part2<") < picker.index(">runs/zzz<")
+
+
+def test_a_baseline_with_no_verdict_shows_its_reply(repo):
+    reply = '{"verdict": "doesn\'t say", "explanation": "The text says "Gamma" nowhere."}'
+    rows = full_rows()["one-search"]
+    rows[1] = result("one-search", "h2", None, steps=2, explanation=reply)
+    write_jsonl(repo / "runs" / "part2" / "one-search.jsonl", rows)
+    page = get(repo, "/results/claim?dir=runs/part2&id=h2")[2]
+    words = text_of(page)
+    assert "Verdict: ✗ did not match: no verdict" in words or "no verdict" in words
+    assert html.escape(reply, quote=True) in page
+    assert "stopped with an error" not in words
+
+
+def test_pages_use_the_homework_words(repo):
+    for route in routes(repo):
+        u = urlsplit(route)
+        page = app.handle("GET", u.path, parse_qs(u.query), repo)[2].decode()
+        page = re.sub(r"<pre.*?</pre>", " ", page, flags=re.S)  # what the agent read is its own text
+        words = text_of(page)
+        for bad in (r"\bhops?\b", r"\btool calls?\b", r"\bcorrect\b", r"\bwrong\b", r"\bmethods?\b",
+                    r"used all its steps"):
+            assert not re.search(bad, words, re.I), (route, bad)
+
+
 def test_report_txt_and_run_json_open_their_run(repo):
     (repo / "runs" / "part2" / "report.txt").write_text("tables")
     (repo / "runs" / "part2" / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}))
@@ -601,8 +717,13 @@ def test_compare_says_whether_the_agent_changed(repo):
     write_jsonl(repo / "runs" / "part2" / "agent.jsonl", with_version(full_rows()["agent"], "aaa"))
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", with_version(full_rows()["agent"], "aaa"))
     words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
-    assert "made from the same version of its files" in words
+    assert "A and B used the same version of the agent" in words
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", with_version(full_rows()["agent"], "bbb"))
     words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
-    assert "were different when A and B were made" in words
+    assert "same version" not in words and "version of the agent" not in words  # different: say nothing
     assert "No claim changed" in words
+    # One result without a version: nothing is said either.
+    rows = with_version(full_rows()["agent"], "aaa")
+    rows[0].pop("agent_version")
+    write_jsonl(repo / "runs" / "b" / "agent.jsonl", rows)
+    assert "same version" not in text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
