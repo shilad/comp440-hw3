@@ -22,7 +22,7 @@ files, never changes them, and makes no network calls. Reload a page to see new 
 |---|---|
 | **Your runs** | Everything in `runs/`, part by part: the single checks from Part 0, your lookups by hand from step 1b, and each run (when it was made, which versions, how many claims are done, how many verdicts matched the label). |
 | **One run** | The same accuracy table `evaluate.py` prints, by the number of articles a claim needs and by the dataset's label; cost per claim and in total; the claims with no verdict; then every claim in a table you can filter and sort. A run without `report.txt` is marked as not finished. |
-| **One claim** | The claim, the dataset's label, the articles the dataset lists for it (and which ones the agent read), and each version's verdict, explanation, quoted evidence, tokens, cost and time side by side. Below, the agent's trace one lookup at a time, with each quote highlighted where it appears in what the agent read. Previous and Next keep your filters. |
+| **One claim** | The claim, the dataset's label, the articles the dataset lists for it (and which ones the agent read), and each version's verdict, explanation, quoted evidence, tokens, cost and time side by side. Below, the agent's trace one entry at a time (an entry is a lookup or an answer), with each quote highlighted where it appears in what the agent read. Previous and Next keep your filters. |
 | **One check** | The same, for one file saved by `check.py`. |
 | **Compare two runs** | Two runs side by side (for example the agent before and after a change): accuracy and cost in each, the difference, and every claim whose verdict changed, with both traces. |
 
