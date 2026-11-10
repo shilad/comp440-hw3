@@ -7,6 +7,7 @@ runs/part1/loop-check.txt in a temporary folder, so none of them reads or leaves
 a runs/ folder in the repository."""
 
 import json
+import re
 import shutil
 import sys
 import time
@@ -133,10 +134,10 @@ def test_which_loop_follows_the_file(saved):
 
 # ---------- fair to loops written differently ----------
 
-# Two correct loops organised differently from the reference loop, and from each other.
-# The first asks the model in a helper function, stops through another, keeps a flag for
-# the reminder and for the limit, checks the limit for the whole turn, sends the reminder
-# as a text block, and also records rejected answers.
+# Correct loops organised differently from the reference loop, and from each other.
+# The first asks the model in a nested helper function, stops through another, keeps a flag
+# for the reminder and for the limit, checks the limit for the whole turn, and sends the
+# reminder as a text block.
 HELPERS = '''
 import anthropic
 
@@ -199,6 +200,7 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
             elif steps >= max_steps:
                 told_limit = True
                 content = OUT_OF_STEPS.format(n=max_steps)
+                trace.append({"tool": call.name, "input": call.input, "result": content})
             else:
                 content = lookup(call.name, call.input)
                 steps += 1
@@ -211,8 +213,7 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
 
 # The second turns the reply into dicts for the conversation, counts quiet replies, keeps
 # the results by call id and builds the user turn from them at the end, records the
-# cleaned answer in the trace, records nothing for a rejected answer or a refused lookup,
-# and runs a bounded number of turns.
+# cleaned answer in the trace, and runs a bounded number of turns.
 BY_ID = '''
 import anthropic
 
@@ -261,6 +262,7 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
                     return finish(claim, answer["verdict"], answer["evidence"],
                                   answer["explanation"], trace, tokens, steps)
                 rejected = rejected + 1
+                trace.append({"tool": "answer", "input": answer, "result": REJECTED + problem})
                 if rejected == MAX_REJECTED:
                     return finish(claim, None, [], REJECTED_TOO_OFTEN.format(n=rejected),
                                   trace, tokens, steps)
@@ -277,6 +279,7 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
             else:
                 warned_on = turn
                 sent[call.id] = OUT_OF_STEPS.format(n=max_steps)
+                trace.append({"tool": call.name, "input": call.input, "result": sent[call.id]})
         messages.append({"role": "user", "content": [
             {"type": "tool_result", "tool_use_id": call_id, "content": result}
             for call_id, result in sent.items()]})
@@ -284,9 +287,88 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
 '''
 
 
-@pytest.mark.parametrize("source", [HELPERS, BY_ID, broken(("for call in calls:",
-                                                            "for call in reversed(calls):"))],
-                         ids=["helpers", "by-id", "calls-in-reverse"])
+# The third asks the model through a helper function at the top of the file, which is given
+# the client, the system text and the conversation, and checks answers in another.
+MODULE_HELPERS = '''
+import anthropic
+
+from agent import (ACCEPTED, DECLINED, INSTRUCTIONS, MAX_REJECTED, MAX_STEPS, MODEL, NO_ANSWER,
+                   OUT_OF_STEPS, RAN_OUT, REJECTED, REJECTED_TOO_OFTEN, REMINDED, REMINDER,
+                   TOOLS, answer_problem, clean_answer, finish, run_tool)
+
+
+def ask(client, system, messages):
+    return client.messages.create(model=MODEL, max_tokens=16000, system=system, tools=TOOLS,
+                                  messages=messages)
+
+
+def checked(call, read_so_far):
+    answer = clean_answer(call.input)
+    return answer, answer_problem(answer, read_so_far)
+
+
+def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
+    client = client or anthropic.Anthropic()
+    system = INSTRUCTIONS.read_text()
+    messages = [{"role": "user", "content": f"Claim: {claim}"}]
+    trace, read_so_far = [], []
+    tokens = {"input": 0, "output": 0}
+    steps = 0
+    rejected = 0
+    warned = False
+    quiet = False
+
+    while True:
+        reply = ask(client, system, messages)
+        tokens["input"] += reply.usage.input_tokens
+        tokens["output"] += reply.usage.output_tokens
+        messages.append({"role": "assistant", "content": reply.content})
+        if reply.stop_reason == "refusal":
+            return finish(claim, None, [], DECLINED, trace, tokens, steps)
+        calls = [block for block in reply.content if block.type == "tool_use"]
+        if not calls:
+            if quiet:
+                return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)
+            quiet = True
+            trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})
+            messages.append({"role": "user", "content": REMINDER})
+            continue
+        quiet = False
+        warned_last_turn = warned
+        results = []
+        for call in calls:
+            if call.name == "answer":
+                answer, problem = checked(call, read_so_far)
+                if problem is None:
+                    trace.append({"tool": "answer", "input": call.input, "result": ACCEPTED})
+                    return finish(claim, answer["verdict"], answer["evidence"],
+                                  answer["explanation"], trace, tokens, steps)
+                rejected += 1
+                result = REJECTED + problem
+                trace.append({"tool": "answer", "input": call.input, "result": result})
+                if rejected >= MAX_REJECTED:
+                    return finish(claim, None, [], REJECTED_TOO_OFTEN.format(n=rejected),
+                                  trace, tokens, steps)
+            elif steps >= max_steps:
+                if warned_last_turn:
+                    return finish(claim, None, [], RAN_OUT, trace, tokens, steps)
+                warned = True
+                result = OUT_OF_STEPS.format(n=max_steps)
+                trace.append({"tool": call.name, "input": call.input, "result": result})
+            else:
+                result = lookup(call.name, call.input)
+                steps += 1
+                trace.append({"tool": call.name, "input": call.input, "result": result})
+                if call.name != "search":
+                    read_so_far.append(result)
+            results.append({"type": "tool_result", "tool_use_id": call.id, "content": result})
+        messages.append({"role": "user", "content": results})
+'''
+
+
+@pytest.mark.parametrize("source", [HELPERS, BY_ID, MODULE_HELPERS,
+                                    broken(("for call in calls:", "for call in reversed(calls):"))],
+                         ids=["nested-helpers", "by-id", "module-helpers", "calls-in-reverse"])
 def test_loops_written_differently_pass_every_rule(tmp_path, source):
     assert check_loop.check(a_loop(tmp_path, source)) == [None] * 6
 
@@ -300,6 +382,19 @@ def test_a_change_to_agent_py_in_part_3_does_not_fail_a_correct_loop(tmp_path, m
     monkeypatch.setattr(agent, name, value)
     assert check_loop.check(a_loop(tmp_path, REFERENCE)) == [None] * 6
     assert check_loop.check(a_loop(tmp_path, BY_ID)) == [None] * 6
+
+
+def renamed(source, *names):
+    for name in names:
+        source = re.sub(rf"\b{name}\b", f"my_{name}", source)
+    return source
+
+
+def test_a_complete_loop_with_other_names_for_the_set_up_variables_passes(tmp_path):
+    # The check looks inside run_agent() only for a loop that does not stop yet.
+    source = renamed(REFERENCE, "tokens", "steps", "trace", "read_so_far")
+    assert "my_steps += 1" in source and "max_steps" in source
+    assert check_loop.check(a_loop(tmp_path, source)) == [None] * 6
 
 
 def test_an_error_about_the_client_names_the_scripted_model(tmp_path):
@@ -328,11 +423,50 @@ FIRST_THREE = REFERENCE[:REFERENCE.index("    while True:")] + '''    while True
 
 
 def test_rules_1_to_3_can_pass_before_the_loop_can_stop(tmp_path):
-    problems = check_loop.check(a_loop(tmp_path, FIRST_THREE))
-    assert problems[:3] == [None] * 3
-    assert all(problems[3:])
-    assert problems[3].endswith("gave an answer that quotes the page it had read, and your loop "
-                                "called lookup() for it")
+    assert shown(a_loop(tmp_path, FIRST_THREE)) == [
+        "ok         1. Ask the model",
+        "ok         2. Run its lookups",
+        "ok         3. Send the results back",
+        "NOT YET    4. Check the answer: the model's second reply gave an answer that quotes the "
+        "page it had read, and your loop called lookup() for it.",
+        "NOT YET    5. Enforce the limit: the model's third reply asked for a third search with "
+        "the limit of 2 lookups reached, and your loop ran it.",
+        "NOT YET    6. Stop when the model stops: the model's first reply had text and no tool "
+        "call, and the next request your loop sent did not end with one user turn holding "
+        "REMINDER ('Please finish by calling answer().').",
+    ]
+
+
+# A half-written loop does not stop, so rules 1 and 2 look inside run_agent() for it.
+HALF_BROKEN = {
+    "no tokens": (1, [('        tokens["input"] += response.usage.input_tokens\n'
+                       '        tokens["output"] += response.usage.output_tokens\n', "")],
+                  "the model's first reply used 1,211 input and 37 output tokens, and tokens "
+                  "held {'input': 0, 'output': 0} when your loop asked the model again"),
+    "steps not counted": (2, [("            steps += 1\n", "")],
+                          "after the model's first reply, your loop had run one lookup, and "
+                          "steps held 0 when it asked the model again"),
+    "search kept": (2, [('if call.name != "search":', "if True:")],
+                    "the model's first reply asked for a search, and what the search returned "
+                    "was in read_so_far when your loop asked the model again"),
+    "steps renamed": (2, [], check_loop.NOT_FOUND.format(name="steps")),
+    "tokens renamed": (1, [], check_loop.NOT_FOUND.format(name="tokens")),
+}
+
+
+@pytest.mark.parametrize("name", HALF_BROKEN)
+def test_a_half_written_loop_is_checked_from_inside(tmp_path, name):
+    rule, edits, problem = HALF_BROKEN[name]
+    source = FIRST_THREE
+    for old, new in edits:
+        assert source.count(old) == 1, old
+        source = source.replace(old, new)
+    if name.endswith("renamed"):
+        source = renamed(source, name.split()[0])
+    problems = check_loop.check(a_loop(tmp_path, source))
+    assert problems[:rule - 1] == [None] * (rule - 1)
+    assert problems[rule - 1] == problem
+    assert problems.count(problem) == 1      # said once, on the first rule that needed it
 
 
 # ---------- one broken loop per rule, and what each line says ----------
@@ -344,11 +478,20 @@ REFUSAL = ('        if response.stop_reason == "refusal":\n'
            '            return finish(claim, None, [], DECLINED, trace, tokens, steps)\n')
 BROKEN = {
     "no tokens": (1, [(TOKENS, "")],
-                  ["the model's first reply used 1,211 input and 37 output tokens",
-                   "tokens held {'input': 0, 'output': 0}"]),
+                  ["the result your loop returned had tokens {'input': 0, 'output': 0}",
+                   "where its three replies used 4,266 input and 132 output tokens"]),
     "no assistant turn": (1, [('        messages.append({"role": "assistant", '
                                '"content": response.content})\n', "")],
-                          ["asked for a search", "as the assistant's turn"]),
+                          ["asked for a search", "did not have that reply in the conversation "
+                           "as the assistant's turn"]),
+    "reply added twice": (1, [('        messages.append({"role": "assistant", "content": response.content})\n',
+                               '        messages.append({"role": "assistant", "content": response.content})\n' * 2)],
+                          ["the model's first reply asked for a search, and the next request your "
+                           "loop sent had two assistant turns after the conversation so far"]),
+    "text block dropped": (1, [('"content": response.content}',
+                                '"content": [b for b in response.content if b.type == "tool_use"]}')],
+                           ["the model's first reply asked for a search", "had that reply as the "
+                            "assistant's turn, but with some of its blocks missing or changed"]),
     "no system text": (1, [("system=system, ", "")], ["system text"]),
     "wrong model": (1, [("model=MODEL,", "model='claude-opus-5-5',")],
                     ["named the model 'claude-opus-5-5'"]),
@@ -358,19 +501,41 @@ BROKEN = {
                                        (REFUSAL, REFUSAL + TOKENS)],
                                    ['was a refusal (stop_reason "refusal")', "had tokens"]),
     "steps not counted": (2, [("                steps += 1\n", "")],
-                          ["had run one lookup, and steps held 0"]),
+                          ["the model asked for four lookups before its answer, and the result "
+                           "your loop returned had steps 0"]),
     "search kept": (2, [('if call.name != "search":', "if True:")],
-                    ["asked for a search", "what the search returned was in read_so_far"]),
+                    ["the model's first reply asked for a search, and what the search returned "
+                     "was in read_so_far when your loop checked the answer"]),
     "read not kept": (2, [("                    read_so_far.append(result)\n",
                            "                    pass\n")],
-                      ["asked for a read", "what the read returned was not in read_so_far"]),
+                      ["the model's second reply asked for a read, and what the read returned "
+                       "was not in read_so_far when your loop checked the answer"]),
     "lookup not in the trace": (2, [('            trace.append({"tool": call.name, "input": '
                                      'call.input, "result": result})\n', "")],
-                                ["the trace had no entry for the search"]),
+                                ["the model's first reply asked for a search, and the trace your "
+                                 "loop returned had no entry for the search"]),
+    "only the first call": (2, [("for call in calls:", "for call in calls[:1]:")],
+                            ["the model's third reply asked for a wikidata lookup and a read, and "
+                             "your loop had not called lookup() for the read"]),
     "results not sent": (3, [('        messages.append({"role": "user", "content": results})\n', "")],
                          ["asked for a search and a read", "no user turn of results"]),
     "wrong id": (3, [('"tool_use_id": call.id', '"tool_use_id": calls[0].id')],
                  ["held two results with the search call's id"]),
+    "a result as a list": (3, [('"tool_use_id": call.id, "content": result}',
+                                '"tool_use_id": call.id, "content": [{"type": "text", "text": result}]}')],
+                           ["the result with the search call's id held a list rather than a string"]),
+    "a refused lookup gets no result": (3, [("                warned = True\n",
+                                             "                warned = True\n                continue\n")],
+                                        ["the model's third reply asked for a third search, and the "
+                                         "next request your loop sent held no result with the search "
+                                         "call's id"]),
+    "a rejected answer gets no result": (3, [
+        ('            results.append({"type": "tool_result", "tool_use_id": call.id, "content": result})\n',
+         '            if call.name != "answer":\n'
+         '                results.append({"type": "tool_result", "tool_use_id": call.id, '
+         '"content": result})\n')],
+        ["the model's second reply gave an answer with a quote that is in nothing it had read, and "
+         "the next request your loop sent held no result with the answer call's id"]),
     "a turn per result": (3, [('            results.append({"type": "tool_result", '
                                '"tool_use_id": call.id, "content": result})\n',
                                '            messages.append({"role": "user", "content": [{"type": '
@@ -390,6 +555,29 @@ BROKEN = {
                                'return finish(claim, answer["verdict"], [],')],
                           ["gave an answer that quotes the page it had read",
                            "had the evidence [], not ['directed by Robert Zemeckis']"]),
+    "lookups only in the trace": (4, [
+        ('                    trace.append({"tool": "answer", "input": call.input, "result": ACCEPTED})\n', ""),
+        ('                    trace.append({"tool": "answer", "input": call.input, "result": result})\n', ""),
+        ('            trace.append({"tool": call.name, "input": call.input, "result": result})\n', ""),
+        ("                result = lookup(call.name, call.input)\n",
+         "                result = lookup(call.name, call.input)\n"
+         '                trace.append({"tool": call.name, "input": call.input, "result": result})\n')],
+        ["the model's second reply gave an answer that quotes the page it had read, and the trace "
+         "your loop returned has no entry for it with the result ACCEPTED"]),
+    "a rejected answer not in the trace": (4, [
+        ('            trace.append({"tool": call.name, "input": call.input, "result": result})\n',
+         '            if call.name != "answer":\n'
+         '                trace.append({"tool": call.name, "input": call.input, "result": result})\n')],
+        ["the model's second reply gave an answer with a quote that is in nothing it had read, and "
+         "the trace your loop returned has no entry for it with what was sent back"]),
+    "a refused lookup not in the trace": (5, [
+        ("                result = OUT_OF_STEPS.format(n=max_steps)\n                warned = True\n",
+         "                warned = True\n"
+         '                results.append({"type": "tool_result", "tool_use_id": call.id,\n'
+         '                                "content": OUT_OF_STEPS.format(n=max_steps)})\n'
+         "                continue\n")],
+        ["the model's third reply asked for a third search with the limit of 2 lookups reached, "
+         "and the trace your loop returned has no entry for it with what was sent back"]),
     "the limit is MAX_STEPS": (5, [("elif steps >= max_steps:", "elif steps >= MAX_STEPS:")],
                                ["asked for a third search with the limit of 2 lookups reached",
                                 "your loop ran it"]),
