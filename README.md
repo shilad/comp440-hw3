@@ -119,9 +119,9 @@ You used all of these in earlier homeworks:
 
 Everything is due 8:00am Tuesday, November 24.
 
-I expect this homework to take a little over 7 hours in all, in four sittings: about 50 minutes for Part
-0, a little under 3 hours for Part 1, about an hour and a half for Part 2, and a little over 2 hours for
-Part 3. On top of that, the two long runs take about 20 and about 10 minutes, while you do other things.
+I expect this homework to take about 6 hours in all, in four sittings: about 50 minutes for Part 0,
+about 2 hours and 35 minutes for Part 1, about 50 minutes for Part 2, and about 1 hour and 50 minutes for
+Part 3. On top of that, the full run in Part 1 takes about 20 minutes, while you do other things.
 
 ## Words this homework uses
 

@@ -4,7 +4,7 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you read the full run you started in 1e: how often each version matched the dataset's
 label, what each one cost, and whether the agent's evidence holds up when you check it yourself. It
-should take about 1 hour and 35 minutes.
+should take about 50 minutes.
 
 ## 2a. Compare accuracy
 

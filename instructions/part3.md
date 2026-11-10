@@ -4,8 +4,7 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you test the agent on a topic you know better than most people. You write your own claims,
 run the agent on them, sort out why it fails, make one change, and write up what you found. It should
-take about 2 hours and 10 minutes, including a second run on the 200 evaluation claims of about 10
-minutes.
+take about 1 hour and 50 minutes.
 
 ## 3a. Pick a topic and write your claims
 
