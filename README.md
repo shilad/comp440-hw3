@@ -73,8 +73,9 @@ You used all of these in earlier homeworks:
   full instructions, from the pages in `instructions/`.
 - Each step has its own Claude session: a Claude Code session that is your tutor and lab assistant for
   that step. The homework page shows the command that starts it, with a **Copy** button. Open a new
-  terminal tab, go into the homework's folder, paste the command and press Enter. When you come back to
-  a step later, the page shows the command that takes you back to the same conversation.
+  terminal tab, go into the homework's folder, paste the command and press Enter. When you finish a
+  step, type `/exit` to close its session; you can use the same tab for the next step. When you come
+  back to a step later, the page shows the command that takes you back to the same conversation.
 - Claude Code will sometimes ask your permission before it runs a command. Read the command. If it is
   what you asked for, say yes.
 - You decide what happens. Claude does nothing until you ask, and each step's instructions say what to

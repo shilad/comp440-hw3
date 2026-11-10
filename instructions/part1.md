@@ -268,8 +268,8 @@ and answer:
 **You're done when:** The homework page ticks 1e. It does that when the run has started (the file
 `runs/part2/no-tools.jsonl` exists), every cell of the table's three rows is filled, and the answer has
 text after the `>`. The run doesn't need to have finished. With 1e ticked, every step of Part 1 is done,
-so the page commits your work as `Part 1 done` and pushes it to your fork. This is a good place to stop
-for the day.
+so the page commits your work as `Part 1 done` and pushes it to your fork. Once the run has ended, this
+is a good place to stop for the day.
 
 **If something goes wrong:** If the run stops, because you closed the tab, your laptop slept or
 Wikipedia refused requests for too long, run the same command again in a terminal tab in the homework's

@@ -147,8 +147,8 @@ Wikipedia.
 5. To see an older version of a page, open the page on Wikipedia, choose "View history", and pick a
    version from 2017.
 6. Find at least two such claims, and fill in a row of the table for each.
-7. Stop after ten of the agent's wrong answers if you have found fewer than two by then. Write up what
-   you found, and use a row for the closest case you found, saying so in it.
+7. Stop if you have read ten of the agent's wrong answers and found fewer than two. Use a row of the
+   table for the closest case you found, and say so in that row.
 8. Answer the question under the table.
 
 **What to write:** Under `## 2d. Find where Wikipedia has changed` in `WRITEUP.md`, fill in the table

@@ -19,7 +19,7 @@ says. Then:
 2. Copy the command the homework page shows for 0a, paste it into that tab and press Enter. It starts
    this step's Claude session: Claude Code, as your tutor and lab assistant for this step.
 3. Say yes when Claude Code asks whether you trust this folder.
-4. Open `WRITEUP.md` in your editor, type your name after `Name:` near the top, on the same line, and
+4. Open `WRITEUP.md` in your editor, type your name after `Name:` at the top, on the same line, and
    save the file.
 5. In your editor, create a new file named `.env` in the homework's folder, and copy everything in
    `.env.example` into it.
@@ -126,9 +126,8 @@ The claim for Part 0, which the homework page also shows beside this step's goal
 
    The line numbered 1 is the search: what it searched for, and under it a short version of the
    results. The line numbered 2 is the page it read, and under it a short version of what came back.
-   Then come the verdict (*supported*, *refuted* or
-   *doesn't say*), the model's explanation, and a line with the lookups, tokens, cost and time. The
-   result is saved as `runs/part0/one-search-<number>.json`.
+   Then come the verdict (*supported*, *refuted* or *doesn't say*), the model's explanation, and a line
+   with the lookups, tokens, cost and time. The result is saved as `runs/part0/one-search-<number>.json`.
 5. Ask Claude to show you the whole page text it read, from that file, if the short version isn't
    enough to decide whether the page settles the claim.
 

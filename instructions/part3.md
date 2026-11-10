@@ -124,8 +124,9 @@ The labels:
    claims table to the claims where the agent's verdict did not match yours.
 4. Open each of those claims and read its trace one lookup at a time.
 5. Give each one label from the list above. For each, fill in a row of the table under 3c: the claim's
-   number from your 3a table, your label, and the line of the trace that shows it. Use the empty row for
-   the first claim and add a row for each of the others.
+   number from your 3a table, your label, and the line of the trace that shows it (the lookup's number
+   and a few words of what it shows). Use the empty row for the first claim and add a row for each of
+   the others.
 6. Ask Claude to show you its labels and to add them to the last column of the table, "Claude's
    label". Claude will not say which of you is right.
 7. Answer the two questions.
