@@ -23,17 +23,23 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
 ## What it does by itself
 
 - **Ticks steps.** A step is complete when every slot it names in `WRITEUP.md` is filled and every
-  file it names exists, read fresh every time. Steps open in order.
+  file it names exists, read fresh every time, however the file got there (a run in the
+  student's own terminal counts). Steps open in order. A checkpoint is ticked by its own file or
+  answers, or by Claude through the `page` skill: never by a later checkpoint, and never just
+  because the step is complete.
 - **Commits each part.** When every step of Part N is complete, the page writes `TRANSCRIPT.md`
   and `record/`, then commits `Part N done`: everything in the repository that isn't git-ignored
   (`git add -A`), so `instructions.md`, the student's claims, every result under `runs/` and any
   change to the starter code go in. `.gitignore` keeps out `.env`, `.cache/` (Wikipedia's
   answers), `.venv/`, `.workbench/`, `__pycache__/`, `.pytest_cache/`, `.DS_Store` and
   `.claude/settings.local.json`.
-- **Commits later changes.** If an answer of a committed part changes, or one of its step files
-  is added or changed, the page commits `Part N updated` once nothing has changed for 30 seconds,
-  so a student who is still typing gets one commit, not many. An answer in a part that isn't
-  committed yet waits for that part's own commit.
+- **Commits later changes.** If an answer of a committed part changes, one of its step files is
+  added or changed, or one of its steps' conversations grows, the page commits `Part N updated`
+  once the files have been still for 30 seconds and those conversations for 2 minutes, so a
+  commit never cuts a conversation off and a student who is still typing gets one commit, not
+  many. An answer in a part that isn't committed yet waits for that part's own commit. Once the
+  last part is committed, any other change (extra credit at the end of `WRITEUP.md`, a change to
+  the code) is committed the same way, as `Part 3 updated`; `uv.lock` alone is not a change.
 - **Pushes.** With `push = true` in `steps.toml`, every commit the page makes is pushed to
   `origin` (`git push origin HEAD`). A push never asks for a login and never blocks anything. If
   it fails, the commit stays on the laptop, the page says in one sentence that the work is

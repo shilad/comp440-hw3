@@ -202,7 +202,7 @@ function counts(s, st, rec) {
       <div><span class="q">${esc(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
   const rows = rec.checkpoints.filter((c) => !s.setup || c.auto).flatMap((c) => c.slots.length
     ? c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),
-        x.filled ? trim(x.answer, 400) : `Not written yet. Type it in WRITEUP.md, under ${s.label}.`, x.filled))
+        x.filled ? trim(x.answer, 400) : (x.todo || `Not written yet. Type it in WRITEUP.md, under ${s.label}.`), x.filled))
     : [row(c.done, c.text, c.files.join(", "), false)]);
   if (!rows.length && st.manual) rows.push(row(st.complete, "You have done what the step asks. Claude ticks it.", "", false));
   return rows.length ? `<span class="label">What counts</span>${rows.join("")}` : "";
@@ -264,7 +264,8 @@ function recordList(s, rec) {
   const detail = detailSteps.has(s.id);
   const items = detail ? recordDetail(rec) : recordSummary(rec);
   const now = rec.now;
-  if (now.question) items.push(line("ring", `Now: <strong class="ink">${esc(now.question)}</strong> ${esc(now.how)}`));
+  if (now.plain) items.push(line("ring", `Now: <strong class="ink">${esc(now.plain)}</strong>`));
+  else if (now.question) items.push(line("ring", `Now: <strong class="ink">${esc(now.question)}</strong> ${esc(now.how)}`));
   else if (now.todo) items.push(line("ring", `Still to reach: ${ink(now.todo)}.`));
   else items.push(line("tick", "Step done."));
   const c = rec.counts, n = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`;
@@ -298,7 +299,7 @@ function resultsLink(ss) {
 function command(label, cmd, flags) {
   return `<div class="cmd"><span class="label">${label}</span>
     <div class="cmd-row"><code title="${esc(cmd)}">${esc(cmd)}</code><button class="copy" data-copy="${esc(cmd)}" type="button">Copy</button></div>
-    <span class="small">Paste it into a terminal in your homework folder.</span>
+    <span class="small">Paste this into a terminal in your homework folder, not into a Claude chat. If the last step's Claude is still open in that terminal, type /exit first.</span>
     ${flags ? `<span class="small">If Claude says the model is not available, delete <code>${esc(flags)}</code> from the command and run it again.</span>` : ""}</div>`;
 }
 

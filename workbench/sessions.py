@@ -332,8 +332,7 @@ class StepSession:
                 covered.update(keys)
                 ok = all(present(repo, pat) for pat in c.files) and all(filled(slots.get(k)) for k in keys)
                 item["files"] = [f for f in found if not self.hub.secret(f)][-2:]   # never a link to .env
-                item["slots"] = [{"question": k.split(" / ")[-1], "answer": slots.get(k, ""),
-                                  "filled": filled(slots.get(k))} for k in keys]
+                item["slots"] = [self.slot(k, slots) for k in keys]
                 wp = repo / a.writeup
                 when = max([(repo / f).stat().st_mtime for f in found]
                            + ([wp.stat().st_mtime] if keys and wp.exists() else []), default=None)
@@ -343,17 +342,15 @@ class StepSession:
             cps.append(item)
             done_at.append(t)
         reached = list(done_at)                  # when each was reached, as far as anything shows
-        for i in range(len(cps) - 2, -1, -1):    # a later checkpoint ticked ticks the ones before it
-            if done_at[i] is None and done_at[i + 1] is not None:
-                done_at[i] = done_at[i + 1]
         for i, item in enumerate(cps):
-            item["done"] = done_at[i] is not None or st["complete"]
+            # Only its own file or answers, or Claude's tick, ticks a checkpoint: never a later
+            # checkpoint, and never the step being complete (a typed name is not a set-up check).
+            item["done"] = done_at[i] is not None
         extra = [k for k in step_keys(s, slots) if k not in covered]   # answers no checkpoint names
         if extra:
             cps.append({"n": None, "text": "Your answers in " + a.writeup, "auto": True, "files": [],
                         "done": all(filled(slots.get(k)) for k in extra),
-                        "slots": [{"question": k.split(" / ")[-1], "answer": slots.get(k, ""),
-                                   "filled": filled(slots.get(k))} for k in extra]})
+                        "slots": [self.slot(k, slots) for k in extra]})
 
         entries = []
         for e in self.events:
@@ -390,7 +387,7 @@ class StepSession:
         for i, item in enumerate(cps[:len(reached)]):
             if reached[i] is None:
                 continue
-            text = "Your answers are in " + a.writeup if item["slots"] else item["text"]
+            text = item["text"]
             before = [x for x in entries if x["t"] <= reached[i] + 2]
             if before:
                 target = max(before, key=lambda x: x["t"])
@@ -401,13 +398,26 @@ class StepSession:
         entries.sort(key=lambda x: x["t"])
         open_q = next((x for c in cps for x in c["slots"] if not x["filled"]), None)
         todo = next((c["text"] for c in cps if not c["done"]), None)
-        now = ({"question": open_q["question"], "how": f"Write your answer in {a.writeup}, under {label}, in your editor."}
-               if open_q else {"todo": todo} if todo and not st["complete"] else {"done": True})
+        if open_q and open_q["plain"]:     # the name at the top, not a question under the step
+            now = {"plain": f"type your {open_q['question'].lower()} after {open_q['question']}: at the top "
+                            f"of {a.writeup}, in your editor."}
+        elif open_q:
+            now = {"question": open_q["question"], "how": f"Write your answer in {a.writeup}, under {label}, in your editor."}
+        else:
+            now = {"todo": todo} if todo and not st["complete"] else {"done": True}
         shown = entries if last is None else entries[-last:]
         return {"checkpoints": cps, "summary": summary, "entries": shown,
                 "earlier": len(entries) - len(shown), "now": now,
                 "counts": {"messages": sum(x["kind"] in ("asked", "expected") for x in entries),
                            "commands": sum(x["kind"] == "ran" for x in entries)}}
+
+    def slot(self, k: str, slots: dict[str, str]) -> dict:
+        """One answer slot as the page shows it: its question, the answer, and where to type it."""
+        plain = " / " not in k                  # Name: at the top of the write-up
+        where = (f"Not written yet. Type it after {k}: at the top of {self.hub.assignment.writeup}." if plain else
+                 f"Not written yet. Type it in {self.hub.assignment.writeup}, under {self.hub.assignment.label(self.step)}.")
+        return {"question": k.split(" / ")[-1], "answer": slots.get(k, ""), "filled": filled(slots.get(k)),
+                "plain": plain, "todo": where}
 
     def summary(self, cps: list[dict], reached: list, entries: list[dict]) -> list[dict]:
         """The record at the level the page shows by default: the checkpoints reached, what the
@@ -420,7 +430,7 @@ class StepSession:
         for i, item in enumerate(cps[:len(reached)]):
             if reached[i] is None:
                 continue
-            text = "Your answers are in " + self.hub.assignment.writeup if item["slots"] else item["text"]
+            text = item["text"]
             near = [x for x in results if abs(reached[i] - x["t"]) <= 5]   # reached by that result
             if near:
                 near[-1].setdefault("reached", []).append(text)
@@ -488,6 +498,18 @@ class Hub:
             self.sessions[s.id] = old.get(s.id) or StepSession(self, s)
             self.sessions[s.id].step, self.sessions[s.id].seen = s, None
         self.write_guard()
+
+    def convo_size(self, step_id: str) -> int:
+        f = self.sessions[step_id].transcript() if step_id in self.sessions else None
+        return f.stat().st_size if f else 0
+
+    def remember_convos(self) -> None:
+        """How long each step's conversation was when the page last committed, so it can tell
+        when a committed part's conversation has grown since."""
+        sizes = {sid: self.convo_size(sid) for sid in self.sessions}
+        with self.state_lock:
+            self.state["saved_convos"] = sizes
+            self.save_state()
 
     def secret(self, rel: str) -> bool:
         """A file the page never shows or links to, such as .env."""

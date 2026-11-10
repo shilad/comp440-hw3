@@ -353,6 +353,30 @@ def test_every_step_of_the_real_homework_has_a_command_and_a_prompt(tmp_path):
     assert json.loads(json.dumps(app.assignment()))["steps"]
 
 
+def test_a_checkpoint_is_ticked_only_by_its_own_file_answers_or_claude(tmp_path):
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    finish_part0(h.student)                                 # 0b complete: its file and answers
+    rec = app.hub.sessions["0b"].record()
+    assert [c["done"] for c in rec["checkpoints"]] == [False, True, True]   # no prediction was ticked
+    assert sorted(x["text"] for x in rec["summary"] if x["kind"] == "reached") == \
+        ["You've seen the model answer", "Your answers"]     # each line says its checkpoint
+    app.hub.record("0b", "checkpoint", n=1, text="You said what you expect before it ran")
+    assert [c["done"] for c in app.hub.sessions["0b"].record()["checkpoints"]] == [True, True, True]
+
+
+def test_the_name_has_its_own_plain_now_line(tmp_path):
+    h = homework(tmp_path, {"steps.toml": STEPS.replace('slots = ["Name"]', 'slots = ["Name"]\ncheckpoints = [{ text = "Your name", slots = ["Name"] }]')})
+    app = server.App(h.student)
+    rec = app.hub.sessions["0a"].record()
+    assert rec["now"] == {"plain": "type your name after Name: at the top of WRITEUP.md, in your editor."}
+    slot = rec["checkpoints"][0]["slots"][0]
+    assert slot["todo"] == "Not written yet. Type it after Name: at the top of WRITEUP.md."
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert "Paste this into a terminal in your homework folder, not into a Claude chat. If the last step's " \
+           "Claude is still open in that terminal, type /exit first." in js
+
+
 # -- saving the student's work -------------------------------------------------------------------
 
 def finish_part0(repo):
@@ -457,6 +481,54 @@ def test_a_change_to_a_committed_part_is_committed_as_an_update(tmp_path, monkey
     assert subjects(h.student)[0] == "Part 0 updated" and subjects(h.student).count("Part 0 updated") == 1
 
 
+def test_a_committed_parts_conversation_that_grew_is_saved_once_it_is_quiet(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "SETTLE", 0)
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    sid = app.hub.session_id("0b")
+    chained_session(h.student, sid)
+    finish_part0(h.student)
+    app.commit_finished_parts()
+    assert subjects(h.student)[0] == "Part 0 done"
+    f = next(Path(transcript.projects()).glob(f"*/{sid}.jsonl"))
+    with open(f, "a") as out:                               # the student and Claude go on talking
+        out.write(json.dumps({"type": "user", "uuid": "late-1", "sessionId": sid, "cwd": str(h.student),
+                              "timestamp": "2026-11-10T19:30:00.000Z",
+                              "message": {"role": "user", "content": "One last question about the trace."}}) + "\n")
+    app.commit_changes()
+    assert subjects(h.student)[0] == "Part 0 done"         # still talking: not yet
+    monkeypatch.setattr(server, "CONVO_SETTLE", 0)          # ...and now quiet for long enough
+    app.commit_changes()
+    assert subjects(h.student)[0] == "Part 0 updated"
+    assert "One last question about the trace." in git(h.student, "show", "HEAD:TRANSCRIPT.md")
+    app.commit_changes()
+    assert subjects(h.student).count("Part 0 updated") == 1
+
+
+def test_after_the_last_part_extra_credit_and_code_changes_are_saved(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "SETTLE", 0)
+    h = homework(tmp_path, {"agent.py": "print(1)\n", "uv.lock": "version = 1\n"})
+    app = server.App(h.student)
+    finish_part0(h.student)
+    (h.student / "WRITEUP.md").write_text(FILLED.replace("each turn?\n\n>", "each turn?\n\n> The messages."))
+    app.commit_finished_parts()
+    assert subjects(h.student)[:2] == ["Part 1 done", "Part 0 done"]
+    (h.student / "uv.lock").write_text("version = 1\n# rewritten by a newer uv\n")
+    app.commit_changes()
+    assert subjects(h.student)[0] == "Part 1 done"          # uv.lock alone is no change
+    (h.student / "WRITEUP.md").write_text((h.student / "WRITEUP.md").read_text() + "\n# Extra credit\n\nI tried two pages.\n")
+    (h.student / "agent.py").write_text("print(2)\n")
+    app.commit_changes()
+    assert subjects(h.student)[0] == "Part 1 updated"
+    shipped = git(h.student, "show", "--name-only", "--format=", "HEAD").split()
+    assert "WRITEUP.md" in shipped and "agent.py" in shipped and "uv.lock" not in shipped
+    (h.student / "notes.txt").write_text("ANTHROPIC_API_KEY=" + FAKE_KEY + "\n")
+    app.commit_changes()                                    # left out, and not tried again and again
+    first = subjects(h.student)
+    app.commit_changes()
+    assert subjects(h.student) == first and "key" in app.notices
+
+
 def test_a_file_holding_a_key_is_never_committed(tmp_path):
     h = homework(tmp_path, {"notes.txt": "nothing yet\n"})
     app = server.App(h.student)
@@ -469,8 +541,11 @@ def test_a_file_holding_a_key_is_never_committed(tmp_path):
     assert "notes.txt" in app.notices["key"]["text"] and "Remove the key from it" in app.notices["key"]["text"]
     (h.student / "notes.txt").write_text("nothing here now\n")         # fixed: the next commit takes it
     (h.student / "WRITEUP.md").write_text(FILLED.replace("it guessed", "it guessed, I think"))
-    server.SETTLE = 0
-    app.commit_changes()
+    server.SETTLE, settle = 0, server.SETTLE
+    try:
+        app.commit_changes()
+    finally:
+        server.SETTLE = settle
     assert "notes.txt" in git(h.student, "show", "--name-only", "--format=", "HEAD")
     assert "key" not in app.notices
 
