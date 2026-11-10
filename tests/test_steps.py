@@ -36,7 +36,7 @@ LOOKUP = ["Bash(uv run python lookup.py:*)"]
 
 # id: (part, section heading without "## ", files, allow, minutes)
 EXPECTED = {
-    "0a": (0, "0a. Get your copy running", [".env"],
+    "0a": (0, "0a. Get your copy running", [".env", "runs/part0/setup-check.txt"],
            ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"], 20),
     "0b": (0, "0b. Ask the model with no tools", ["runs/part0/no-tools-*.json"], CHECK, 8),
     "0c": (0, "0c. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 8),

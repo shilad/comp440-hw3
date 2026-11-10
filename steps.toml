@@ -247,7 +247,9 @@ a command, say in one line what it does, so they can decide.
 This session is for one step, and it has only that step's instructions. If the student asks for
 something that belongs to another step, say which step it is and that it has its own session on
 the homework page. Work done here for another step would be done without that step's
-instructions.
+instructions. If the student pastes a command that starts with `claude -n` or `claude --resume`
+into this chat, it is the command for a step's own session: tell them to type /exit, then paste
+it at the terminal's prompt. Do not run it yourself.
 
 ## The API key and .env
 
@@ -303,7 +305,7 @@ section = "0a. Get your copy running"
 minutes = 20
 setup = true
 slots = ["Name"]
-files = [".env"]
+files = [".env", "runs/part0/setup-check.txt"]
 allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"]
 summary = "Get your copy of the homework running, with your name in WRITEUP.md and your key in .env."
 goal = "Nothing yet. This step gets the homework running on your laptop."
@@ -311,7 +313,7 @@ checkpoints = [
   "Start this step's Claude session with the command on this page, and answer Claude Code's question about trusting the folder",
   { text = "Type your name after Name: at the top of WRITEUP.md", slots = ["Name"] },
   { text = "In your editor, copy .env.example to .env and fill in your API key and your Macalester email", files = [".env"] },
-  "Ask Claude to run the set-up check, until it says everything is ready",
+  { text = "Ask Claude to run the set-up check, until it says everything is ready", files = ["runs/part0/setup-check.txt"] },
 ]
 brief = '''
 This is the set-up step, so you may take the student through its actions in order. Before this
@@ -336,7 +338,9 @@ page. The actions, in order:
    search; the Claude API accepted the key. It reads .env itself and reports only whether each
    line is filled in, so it never shows the key or the email. It costs a small fraction of a
    cent. Each NOT READY line says what to fix; the student fixes it in their editor, and you run
-   the check again when they ask. Tick checkpoint 4 when the output ends "Everything is ready."
+   the check again when they ask. Checkpoint 4 ticks itself: when every line is ok, the check
+   saves the lines it printed in runs/part0/setup-check.txt (nothing from .env), and a later
+   check that fails removes that file again.
 
 If `uv` is not found, `uv --version` shows whether it is installed. If packages are missing,
 `uv sync` installs them. If the student asks whether the code itself works, you may run the
@@ -1097,7 +1101,8 @@ to 3a, add harder claims, and run 3b's command again. Copying new claims into
 data/my-claims.jsonl is 3a's work, in 3a's session: if they ask you to do it here, say so, and why
 (copying them means reading WRITEUP.md, which you must not open before you have given your
 labels). New claims go at the end with new numbers; a reworded claim keeps its old saved result.
-The command can be run here:
+The step's page sends them to 3b's session to run 3b's command again. If they ask you to run it
+here instead, you may:
 
     uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
 
