@@ -66,7 +66,7 @@ counts text in and charges by, about three quarters of a word.
 2. Read the second table of the report from your full run, in the block under 2a in `WRITEUP.md`: the
    average lookups, tokens, seconds and cost in dollars per claim, for each version.
 3. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-4. Filter the claims table to the claims where the agent used all 12 lookups.
+4. Use the claims table's filter for claims where the agent used all 12 lookups.
 5. If there are any, open one and read its trace one lookup at a time. A trace is the list of the
    agent's lookups for one claim, in order, with what each returned.
 6. Answer the three questions.
@@ -97,10 +97,11 @@ or *doesn't say* counts as *not supported*.
 1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
    homework page shows for 2c. Claude is your Claude Code session, your tutor and lab assistant.
 2. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-3. Filter the claims table to the claims where the agent's verdict is *supported* or *refuted*, leaving
-   out *doesn't say*.
-4. Take the first ten rows, in the order the table shows them. I ask for the first ten so that nobody,
-   you or Claude, chooses which claims get checked.
+3. Leave the claims table's filters and order as they are, so the claims are in the order of the claims
+   file.
+4. Going down the table, take the first ten claims where the agent's verdict is *supported* or
+   *refuted*. Skip any where it said *doesn't say* or gave no verdict. I ask for the first ten so that
+   nobody, you or Claude, chooses which claims get checked.
 5. Open the first claim. Read each sentence the agent quoted where it is highlighted in what the agent
    read, and decide whether it supports the agent's verdict.
 6. Open the live Wikipedia page from the claim's page whenever you're unsure.
@@ -119,7 +120,7 @@ uv run python lookup.py --no-log read "<page title>" "<section>"
 **What to write:** Under `## 2c. Check the evidence yourself` in `WRITEUP.md`, fill in the table and
 answer:
 
-- The first ten claims in the claims table of your Part 2 run, filtered to the agent's verdicts of *supported* and *refuted*.
+- The first ten claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 - Of the ten, how many matched the dataset's label, and how many of those rest on evidence you accept?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
@@ -142,7 +143,8 @@ Wikipedia.
 1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
    homework page shows for 2d. Claude is your Claude Code session, your tutor and lab assistant.
 2. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-3. Filter the claims table to the claims where the agent's verdict did not match the dataset's label.
+3. Filter the claims table to the claims where the agent's result is wrong: its verdict did not match
+   the dataset's label.
 4. Open these claims one at a time. For each, decide whether the agent's evidence is sound and today's
    Wikipedia page disagrees with the dataset's label.
 5. To see an older version of a page, open the page on Wikipedia, choose "View history", and pick a

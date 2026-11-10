@@ -145,8 +145,8 @@ articles to check: that is a claim's number of articles. The dataset's label is 
 5. Open **Results** at the top of the homework page, then open the run `runs/part1/before`.
 6. Choose six claims to read closely: two that need 2 articles, two that need 3, and two that need 4.
    For each number of articles, choose one the agent got right and one it got wrong, where there is
-   one. The claims table can be filtered by the number of articles and by whether the agent matched the
-   label.
+   one. The claims table can be filtered by the number of articles a claim needs and by the agent's
+   result (correct or wrong).
 7. Open each of the six claims and read its trace one lookup at a time. A trace is the list of the
    agent's lookups for one claim, in order, with what each returned. Each sentence the agent quoted is
    highlighted where it appears in what the agent read.
@@ -199,10 +199,11 @@ use them. The development claims are the 12 claims in `data/dev.jsonl`.
 
 5. Open **Results** at the top of the homework page, choose "Compare two runs", and compare
    `runs/part1/before` with `runs/part1/after`.
-6. Open the claims whose verdict or lookups changed, and read their traces before and after. A trace is
-   the list of the agent's lookups for one claim, in order, with what each returned. The model does not
-   give the same answer every time, so 12 claims are too few to prove a change helped. Read the traces,
-   not only the score.
+6. Read the claims whose verdict changed, with their traces before and after side by side. Then open a
+   few claims whose verdict stayed the same, in each run, to see whether their lookups changed. A trace
+   is the list of the agent's lookups for one claim, in order, with what each returned. The model does
+   not give the same answer every time, so 12 claims are too few to prove a change helped. Read the
+   traces, not only the score.
 
 **What to write:** Under `## 1d. Write the agent's instructions` in `WRITEUP.md`, answer:
 

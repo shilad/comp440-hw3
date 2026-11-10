@@ -179,8 +179,9 @@ The claim for Part 0, which the homework page also shows beside this step's goal
    *refuted* or *doesn't say*), its evidence (the sentences it quoted from Wikipedia), its explanation,
    and a line with the lookups, tokens, cost and time. The result is saved as
    `runs/part0/agent-<number>.json`.
-5. Open **Results** at the top of the homework page, open your Part 0 run, then open the claim. The
-   results viewer shows the agent's trace one lookup at a time, with each lookup's full result.
+5. Open **Results** at the top of the homework page, then open this agent check from the list of your
+   runs and checks. The results viewer shows the agent's trace one lookup at a time, with each lookup's
+   full result.
 
 **What to write:** Under `## 0d. Run the agent and read its trace` in `WRITEUP.md`, answer:
 

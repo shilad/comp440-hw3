@@ -167,7 +167,7 @@ Did the agent ever use all 12 lookups? If so, pick one such claim and say what i
 
 ## 2c. Check the evidence yourself
 
-The first ten claims in the claims table of your Part 2 run, filtered to the agent's verdicts of *supported* and *refuted*.
+The first ten claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 
 | # | Claim (first few words) | Agent's verdict | Does the quoted evidence support that verdict? | Why or why not |
 |---|---|---|---|---|
