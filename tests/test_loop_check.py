@@ -510,7 +510,9 @@ def test_rules_1_to_3_can_pass_before_the_loop_can_stop(tmp_path):
         "NOT YET    4. Check the answer: the model's second reply gave an answer that quotes the "
         "page it had read, and your loop called lookup() for it.",
         "NOT YET    5. Enforce the limit: the model's third reply asked for a third search with "
-        "the limit of 2 lookups reached, and your loop ran it.",
+        "the limit of 2 lookups reached, and your loop ran it: it had run 2 lookups before that "
+        "one, and max_steps was 2; in another made-up check the model asked for 6 searches, and "
+        "your loop ran all 6 and never sent back OUT_OF_STEPS.",
         "NOT YET    6. Stop when the model stops: the model's first reply had text and no tool "
         "call, and the next request your loop sent did not end with one user turn holding "
         "REMINDER ('Please finish by calling answer().').",
@@ -660,12 +662,29 @@ BROKEN = {
          "and the trace your loop returned has no entry for it with what was sent back"]),
     "the limit is MAX_STEPS": (5, [("elif steps >= max_steps:", "elif steps >= MAX_STEPS:")],
                                ["asked for a third search with the limit of 2 lookups reached",
-                                "your loop ran it"]),
+                                "your loop ran it: it had run 2 lookups before that one, and "
+                                "max_steps was 2", "your loop ran all 6 and never sent back "
+                                "OUT_OF_STEPS"]),
     "stops at once": (5, [("if warned_before:", "if True:")],
-                      ["instead of sending back OUT_OF_STEPS the first time"]),
+                      ["your loop returned a result instead of sending back OUT_OF_STEPS: it had "
+                       "run 2 lookups, max_steps was 2, and the result it returned had steps 2"]),
+    # A limit reached one lookup late, and one reached one lookup early: the numbers in the
+    # sentence tell them apart from a limit that is never checked.
+    "the limit checked one late": (5, [("elif steps >= max_steps:", "elif steps > max_steps:")],
+                                   ["your loop ran it: it had run 2 lookups before that one, and "
+                                    "max_steps was 2; in another made-up check the model asked "
+                                    "for 6 searches, and your loop first sent back OUT_OF_STEPS "
+                                    "when it had run 3 lookups"]),
+    "the limit checked one early": (5, [("elif steps >= max_steps:",
+                                         "elif steps >= max_steps - 1:")],
+                                    ["the model's second reply asked for a second search, and your "
+                                     "loop sent back OUT_OF_STEPS instead of running it, though it "
+                                     "had run 1 lookup before that one and max_steps was 2"]),
     "never stops at the limit": (5, [("if warned_before:", "if False:")],
                                  ["asked for a fourth search after OUT_OF_STEPS had been sent back",
-                                  "asked the model again instead of stopping"]),
+                                  "asked the model again instead of stopping: it had run 2 "
+                                  "lookups, max_steps was 2, and for that search it sent back "
+                                  "OUT_OF_STEPS again"]),
     "no reminder": (6, [('            trace.append({"tool": "(reminder)"',
                          '            return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)\n'
                          '            trace.append({"tool": "(reminder)"')],
