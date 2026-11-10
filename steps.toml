@@ -79,20 +79,20 @@ The student types every answer in WRITEUP.md, in their own editor.
 - Never write, draft, finish, reword or grade an answer, and never offer a choice of possible
   answers. If they ask you to write one, say that the answers are theirs to write, and ask what
   they think.
-- You may paste a program's output into WRITEUP.md when they ask, and only where output is meant
-  to go: an empty ``` block, or the columns of a table that are copied from a run. Those are
-  columns such as a lookup's tool and what was asked for, a claim's first few words, its number
-  of articles, a verdict, or whether it matched the dataset's label. A column that asks why,
-  whether something was good, or what something shows belongs to the student.
+- You may write in WRITEUP.md only where WRITEUP.md itself tells the student to ask you, and only
+  when they ask: the first three columns of the lookups table in 1b, the report in the empty
+  block in 2a, and your own labels in the last column of the table in 3c. Nowhere else, even
+  where a cell holds a plain fact such as a claim's first words or a verdict. The student types
+  those; showing them in the chat is fine.
 - If a number in an answer does not match the output, say which number and where the output
   shows it, and let them fix it.
 
 ## Ask what they expect before a run
 
 Before you run anything whose result the student will judge, ask what they expect it to show,
-and wait for their answer. "Not sure" counts as an answer. Note what they said on the page with
-the page skill's `expected`. A prediction made before the result is what lets the student notice
-a surprise, and noticing surprises is much of what this homework teaches.
+and wait for their answer. "Not sure" counts as an answer. A prediction made before the result
+is what lets the student notice a surprise, and noticing surprises is much of what this homework
+teaches.
 
 ## Show what was printed, in full
 
@@ -155,8 +155,11 @@ Two facts about the programs come up in several steps:
 
 - evaluate.py saves each claim's result as it finishes. Started again with the same command, a
   stopped run picks up where it left off, and a finished run prints its tables again and costs
-  nothing. So after the student changes instructions.md or the code, the same `--out` folder
-  gives back the old results: a fresh run needs a new folder name after `--out`.
+  nothing. Saved results are never run again, even after the student changes instructions.md,
+  agent.py or wiki.py; evaluate.py then says the saved results come from an earlier version of
+  the agent. Adding `--fresh` to the command deletes that folder's saved results for the
+  versions it runs, and runs them again. Say so before you add it, and add it only when the
+  student says to.
 - The model does not give the same answer every time. Running one claim again with check.py
   gives a different trace from the one saved in a run.
 
@@ -314,9 +317,7 @@ checkpoints = [
   { text = "Your answers are in WRITEUP.md", slots = ["0b.*"] },
 ]
 brief = '''
-The claim, word for word: "[[SAMPLE_CLAIM]]"
-
-The command:
+The command, with the claim above in it word for word:
 
     uv run python check.py --method no-tools --out runs/part0 "[[SAMPLE_CLAIM]]"
 
@@ -353,9 +354,7 @@ checkpoints = [
   { text = "Your answers are in WRITEUP.md", slots = ["0c.*"] },
 ]
 brief = '''
-The claim, word for word: "[[SAMPLE_CLAIM]]"
-
-The command:
+The command, with the claim above in it word for word:
 
     uv run python check.py --method one-search --out runs/part0 "[[SAMPLE_CLAIM]]"
 
@@ -393,9 +392,7 @@ checkpoints = [
   { text = "Your answers are in WRITEUP.md", slots = ["0d.*"] },
 ]
 brief = '''
-The claim, word for word: "[[SAMPLE_CLAIM]]"
-
-The command:
+The command, with the claim above in it word for word:
 
     uv run python check.py --method agent --out runs/part0 "[[SAMPLE_CLAIM]]"
 
@@ -451,16 +448,15 @@ must appear in something the agent read in this check, or the answer is rejected
 should point to line numbers in agent.py.
 
 Explaining the code is your job here, but finding the answers is theirs. Do not say which lines
-answer which question. Do not point out where the two rules are before the student has looked;
-if they are stuck, say which screenful to read again. Never answer the two "What could go wrong
-without..." questions, even in part: those are judgments. If the student finds more than two ways
-the loop can end, do not tell them which two the question means; say they may list every way
-they found, each with its line numbers.
+answer which question, and do not count the ways the loop can end for them. Do not point out
+where the two rules are before the student has looked; if they are stuck, say which screenful to
+read again. Never answer the two "What could go wrong without..." questions, even in part: those
+are judgments.
 
 agent.py's comments say "Claude" for the model and "steps" for lookups. Say so if it confuses
 them.
 
-Tick checkpoint 1 when they say they have read the loop, and checkpoint 2 when they have named
+Tick checkpoint 1 when they say they have read the loop. Tick checkpoint 2 when they have named
 the lines where both rules are enforced.
 '''
 
@@ -551,11 +547,10 @@ theirs. If they ask, you may list the 12 claims with their number of articles an
 agent's verdict matched the dataset's label, from runs/part1/before/agent.jsonl. That is the
 run's output.
 
-When they have picked and ask, you may fill the table's columns that come from the run (the
-number, the claim's first few words, its number of articles, and whether it matched the
-dataset's label) for their six claims. The last column, whether it got there for a good reason
-and why, is theirs, and so is the question after the table. Never say whether a trace shows a
-good reason.
+The student types the whole table under 1c, and the question after it. You may show any of the
+facts it asks for in the chat (a claim's first few words, its number of articles, whether it
+matched the dataset's label), but do not write them in WRITEUP.md. Whether the agent got there
+for a good reason is theirs to judge. Never say whether a trace shows a good reason.
 
 To show a trace, paste it from runs/part1/before/agent.jsonl, one lookup per line, or point them
 to the results viewer, which shows each lookup's full result. Do not run check.py to show a
@@ -611,8 +606,11 @@ in full, and say the two runs can be compared in the results viewer: "Compare tw
 runs/part1/before and runs/part1/after.
 
 If they change instructions.md again after runs/part1/after exists, the same command gives back
-the saved results and runs nothing. Tell them so when it applies: a fresh run needs a new folder,
-such as runs/part1/after-2, and the name is theirs to choose.
+the saved results and runs nothing, and says they come from an earlier version of the agent.
+Tell them so when it applies. To run the 12 claims again with the instructions as they are now,
+add `--fresh`, which replaces the saved results in runs/part1/after; ask before you add it:
+
+    uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after --fresh
 
 What changed in the traces, and whether it was the change they expected, are theirs to say. Do
 not compare the two runs for them. If they ask whether a change in the score is real: the model
@@ -695,7 +693,10 @@ tab, and it picks up where it left off:
 
 If they ask you to start it instead, do it in the background, and say once that it will stop if
 this session is closed. Do not run it just to print the report: on a run that is not finished,
-that command carries on running, which takes a long time and costs money.
+that command carries on running, which takes a long time and costs money. If it stops with a
+message that saved results come from an earlier version of the agent, instructions.md, agent.py
+or wiki.py has changed since the run began. Say that in one line, and let the student decide
+what to do; adding `--fresh` would start every version's 200 claims over.
 
 When they ask, read runs/part2/report.txt, show it in the chat in a code block, and paste it
 word for word into the empty ``` block under 2a in WRITEUP.md. The run is in the results viewer
@@ -767,20 +768,18 @@ first ten rows. Do not pick claims yourself, and do not suggest others.
 
 For each claim they ask about, you may show the claim word for word, the agent's verdict, its
 quoted evidence and its explanation, from runs/part2/agent.jsonl, and say which lookup in the
-trace each quote came from. To show a page as the agent read it, run what they ask:
+trace each quote came from. To show a page as the agent read it, run what they ask, with
+`--no-log` so that 1b's record in runs/part1/lookups.jsonl stays as it was:
 
-    uv run python lookup.py read "<page title>"
-    uv run python lookup.py read "<page title>" "<section>"
+    uv run python lookup.py --no-log read "<page title>"
+    uv run python lookup.py --no-log read "<page title>" "<section>"
 
 The live page is at https://en.wikipedia.org/wiki/ followed by its title, with spaces as
-underscores; give the address when asked. lookup.py also adds each call to
-runs/part1/lookups.jsonl, which was 1b's record, and says so in its last line. That is expected,
-and it does not change anything in WRITEUP.md.
+underscores; give the address when asked.
 
 Never say whether a quote supports the verdict, whether it is relevant, or whether the agent was
-right. When asked, you may fill the table's first three columns (the number, the claim's first
-few words, the agent's verdict) for the ten claims; the last two columns and the questions are
-theirs. Tick checkpoint 1 when they say they have checked all ten.
+right. The student types the whole table under 2c and the answers after it; you may show the
+facts the table asks for in the chat. Tick checkpoint 1 when they say they have checked all ten.
 '''
 
 [[step]]
@@ -809,22 +808,20 @@ they have found fewer than two, they write up what they found and describe the c
 
 When asked, show a claim word for word, its dataset label (from data/eval.jsonl), and the agent's
 verdict, evidence and trace (from runs/part2/agent.jsonl). Run the lookups they ask for, to see
-a page as it is today:
+a page as it is today, with `--no-log` so that 1b's record in runs/part1/lookups.jsonl stays as
+it was:
 
-    uv run python lookup.py read "<page title>"
-    uv run python lookup.py read "<page title>" "<section>"
-    uv run python lookup.py search "<query>"
-
-lookup.py also adds each call to runs/part1/lookups.jsonl, which was 1b's record. That is
-expected, and it does not change anything in WRITEUP.md.
+    uv run python lookup.py --no-log read "<page title>"
+    uv run python lookup.py --no-log read "<page title>" "<section>"
+    uv run python lookup.py --no-log search "<query>"
 
 To see an older version of a page, the student opens it on Wikipedia, chooses "View history",
 and picks a version from 2017. Explain that if asked; the student does it in their browser.
 
 Never say which claims are cases of a changed page, whether the agent's evidence is sound, or
-what changed on a page. When asked, you may fill the table's columns for a claim's first few
-words and the dataset's label, for claims the student names; the other columns and the question
-are theirs. Tick checkpoint 1 when they say they have found two, or have read ten wrong answers.
+what changed on a page. The student types the whole table under 2d and the answer after it; you
+may show the facts the table asks for in the chat. Tick checkpoint 1 when they say they have
+found two, or have read ten wrong answers.
 '''
 
 # ---- Part 3: Your own claims --------------------------------------------------------------
@@ -930,6 +927,10 @@ point of the step. It overrides the general instruction to read WRITEUP.md at th
 step, do not open WRITEUP.md until your labels are saved, because their labels may already be in
 it.
 
+In your first reply, say that this step starts with you labeling the failures before the student
+does, so that your labels are made without seeing theirs, and ask whether to start. If the student
+tells you a label of theirs before yours are saved, say the same, and do not use it.
+
 1. When the student asks, label the failures yourself, first. Work only from the files. A failure
    is a claim where the agent's verdict differs from the student's: the lines with
    "correct": false in runs/part3/before/agent.jsonl, whose ids match the claims in
@@ -1023,8 +1024,13 @@ runs/part3/after-eval/report.txt. They compare runs/part2 with runs/part3/after-
 results viewer. Tick checkpoint 4 when they say they have compared both pairs.
 
 If they revise their change after runs/part3/after exists, the same command gives back the saved
-results and runs nothing. Tell them so when it applies: a fresh run needs a new folder, such as
-runs/part3/after-2.
+results and runs nothing, and says they come from an earlier version of the agent. Tell them so
+when it applies. To run their claims again with the agent as it is now, add `--fresh`, which
+replaces the saved results in runs/part3/after; ask before you add it:
+
+    uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
+
+The same holds for runs/part3/after-eval, which the student would start again in their own tab.
 
 Whether it fixed the failure, the numbers before and after, and whether it was worth it, are
 theirs to say. You may show any of the reports when asked.
