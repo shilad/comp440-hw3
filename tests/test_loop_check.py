@@ -103,17 +103,38 @@ def test_use_reference_records_reference(saved, capsys):
     assert agent.which_loop() == "reference"
 
 
-def test_a_failing_check_removes_a_yours_file_but_keeps_reference(tmp_path, monkeypatch, saved):
+def test_a_failing_check_rewrites_a_yours_file_as_reference(tmp_path, monkeypatch, saved, capsys):
     a_loop(tmp_path, REFERENCE, monkeypatch)
     assert check_loop.main([]) == 0 and agent.which_loop() == "yours"
-    # A later change breaks the loop: the copy goes back to the reference loop.
+    capsys.readouterr()
+    # A later change breaks the loop: the copy goes back on the reference loop, and the file
+    # stays, so the homework page still counts step 1a as done.
     a_loop(tmp_path, broken(("                steps += 1\n", "")), monkeypatch)
     assert check_loop.main([]) == 1
-    assert not saved.exists() and agent.which_loop() == "reference"
-    # A student who chose the reference loop keeps that record when a check fails.
-    check_loop.main(["--use-reference"])
+    printed = capsys.readouterr().out.splitlines()
+    assert printed[6:] == ["", check_loop.FAILED, check_loop.BACK_ON_REFERENCE]
+    assert saved.read_text().splitlines() == ["reference", check_loop.FELL_BACK] + printed[:6]
+    assert agent.which_loop() == "reference"
+    # Once it says "reference", a failing check leaves the file as it is.
+    before = saved.read_text()
     assert check_loop.main([]) == 1
-    assert saved.read_text().startswith("reference\n")
+    assert check_loop.BACK_ON_REFERENCE not in capsys.readouterr().out
+    assert saved.read_text() == before
+    # So does it for a student who chose the reference loop.
+    check_loop.main(["--use-reference"])
+    chosen = saved.read_text()
+    assert check_loop.main([]) == 1
+    assert saved.read_text() == chosen
+    # And passing again puts the copy back on the student's loop.
+    a_loop(tmp_path, REFERENCE, monkeypatch)
+    assert check_loop.main([]) == 0 and agent.which_loop() == "yours"
+
+
+def test_a_failing_check_makes_no_file_when_there_was_none(tmp_path, monkeypatch, saved, capsys):
+    a_loop(tmp_path, broken(("                steps += 1\n", "")), monkeypatch)
+    assert check_loop.main([]) == 1
+    assert not saved.exists() and not saved.parent.exists()
+    assert check_loop.BACK_ON_REFERENCE not in capsys.readouterr().out
 
 
 def test_which_loop_follows_the_file(saved):
