@@ -686,6 +686,25 @@ def test_an_update_to_a_tracked_never_read_file_merges(tmp_path):
     assert subjects(h.student)[0] == "Part 0 updated" and "key" not in app.notices
 
 
+def test_the_guard_gives_each_kind_of_file_its_own_reason(tmp_path):
+    h = homework(tmp_path, {"steps.toml": COURSE_FILE})
+    guard = server.App(h.student).hub.dir / "guard.py"
+
+    def reason(path):
+        event = {"tool_name": "Read", "tool_input": {"file_path": str(h.student / path)}, "session_id": "s"}
+        out = subprocess.run([sys.executable, str(guard), "pre"], input=json.dumps(event),
+                             capture_output=True, text=True).stdout
+        decision = json.loads(out)["hookSpecificOutput"]       # what Claude Code shows the step's Claude
+        assert decision["permissionDecision"] == "deny"
+        return decision["permissionDecisionReason"]
+
+    assert reason(".env") == ("Never read, print or edit .env: it holds the student's own key. Ask them to "
+                              "edit it themselves in their editor.")
+    for f in ("reference_loop.py", "tests/test_loop_check.py"):
+        assert reason(f) == (f"Never open {f}: it holds a finished version of what the student writes "
+                             "themselves in this homework. Do not look for its contents anywhere else either.")
+
+
 def test_the_guard_refuses_a_course_file_by_every_named_route(tmp_path):
     h = homework(tmp_path, {"steps.toml": COURSE_FILE})
     app = server.App(h.student)
