@@ -44,7 +44,7 @@ You used all of these in earlier homeworks:
 - A text editor. You type every answer in it.
 - Your API key. I sent you your own API key by Slack direct message. The agent calls the Claude API
   directly, not through your Claude Code account, so it needs this key. Doing the whole homework once
-  costs about a dollar on your key. That is charged to my account for the course, not to you.
+  costs less than a dollar on your key. That is charged to my account for the course, not to you.
 
 ## Getting started
 
@@ -105,9 +105,8 @@ You used all of these in earlier homeworks:
   page's own record of each step. If you change
   an answer after that, it commits the change too. I read `TRANSCRIPT.md` when I grade, so start every Claude session in the homework's folder. Don't edit
   `TRANSCRIPT.md` yourself: the page writes it again before each commit.
-- The two long runs, in steps 1e and 3d, take about 20 minutes and about 10 minutes. You start them
-  yourself, in a terminal tab of their own, because a run started by Claude stops if you
-  close that Claude session.
+- The one long run, in step 1e, takes about 20 minutes. You start it yourself, in a terminal tab of
+  its own, because a run started by Claude stops if you close that Claude session.
 
 ## The parts
 

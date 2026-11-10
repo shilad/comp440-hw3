@@ -53,7 +53,7 @@ EXPECTED = {
            ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"], 30),
     "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),
     "3c": (3, "3c. Sort the failures", [], EVALUATE, 25),
-    "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt", "runs/part3/after-eval/report.txt"],
+    "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt"],
            EVALUATE + CHECK + ["Edit(instructions.md)"], 20),
     "3e": (3, "3e. Write it up", [], [], 30),
 }
@@ -250,12 +250,11 @@ def test_no_brief_reruns_the_long_runs_with_fresh(a):
 
 
 def test_long_runs_are_shown_as_run_yourself():
-    """1e and 3d's long runs are the student's own, shown on the page as a second command box.
+    """1e's long run is the student's own, shown on the page as a second command box.
     Read from the file itself, since a page version without the key ignores it."""
     import tomllib
     steps = {s["id"]: s for s in tomllib.loads(STEPS.read_text(encoding="utf-8"))["step"]}
-    want = {"1e": "uv run python evaluate.py data/eval.jsonl --out runs/part2",
-            "3d": "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval"}
+    want = {"1e": "uv run python evaluate.py data/eval.jsonl --out runs/part2"}
     for step_id, s in steps.items():
         if step_id in want:
             run = s.get("run_yourself") or {}

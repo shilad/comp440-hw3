@@ -241,10 +241,6 @@ Did it fix the failure you aimed at? Give how many of your claims the agent matc
 
 >
 
-What did the change do on the 200 evaluation claims? Was it worth it?
-
->
-
 ## 3e. Write it up
 
 ### Write-up
