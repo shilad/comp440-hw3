@@ -805,6 +805,37 @@ def test_the_after_eval_run_appears_only_if_the_homework_has_it(repo):
     assert "Step 3d: runs/part2 with runs/part3/after-eval" in text_of(get(repo, "/results/compare")[2])
 
 
+def test_a_version_of_the_agent_includes_its_loop(repo):
+    files = "instructions.md, agent.py, wiki.py and the loop (my_loop.py or reference_loop.py)"
+    rows = [dict(r, agent_version="aaa") for r in full_rows()["agent"]]
+    write_jsonl(repo / "runs" / "part2" / "agent.jsonl", rows)
+    write_jsonl(repo / "runs" / "b" / "agent.jsonl", rows)
+    def said(url):  # text_of puts a space inside "(<code>my_loop.py</code>": take it out
+        return text_of(get(repo, url)[2]).replace("( ", "(").replace(" )", ")")
+    words = said("/results/compare?a=runs/part2&b=runs/b")
+    assert f"A and B used the same version of the agent: the same {files}." in words
+    rows[0]["agent_version"] = "bbb"  # one result made with another loop
+    write_jsonl(repo / "runs" / "b" / "agent.jsonl", rows)
+    words = said("/results/run?dir=runs/b")
+    assert f"made by 2 different versions of the agent: different {files}." in words
+
+
+def test_the_loop_check_file_is_not_a_run(repo):
+    # Step 1a saves runs/part1/loop-check.txt: a small text file, not a run and not a check.
+    (repo / "runs" / "part1").mkdir()
+    (repo / "runs" / "part1" / "loop-check.txt").write_text("yours\nok         1. Ask the model\n")
+    status, _, page = get(repo, "/results/")
+    words = text_of(page)
+    assert status == 200 and "loop-check" not in words and "could not be read" not in words
+    assert "Step 1b saves your lookups" in words  # Part 1 still reads as empty
+    assert R.walk_runs(repo)[0] == ["runs/part2"] and R.walk_runs(repo)[1] == []
+    status, _, page = get(repo, "/results/open?path=runs/part1/loop-check.txt")
+    assert status == 200 and 'url=/results/#part-1"' in page
+    write_jsonl(repo / "runs" / "part1" / "lookups.jsonl", [{"tool": "search", "input": {"query": "q"}}])
+    words = text_of(get(repo, "/results/")[2])
+    assert "1 lookup" in words and "loop-check" not in words
+
+
 def test_report_txt_and_run_json_open_their_run(repo):
     (repo / "runs" / "part2" / "report.txt").write_text("tables")
     (repo / "runs" / "part2" / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}))
