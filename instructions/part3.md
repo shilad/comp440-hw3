@@ -12,38 +12,37 @@ minutes.
 **What you're finding out:** Nothing yet. You build your own set of test claims, on a topic you know
 better than most people.
 
-A claim is one sentence that is either true or false. A verdict is the answer to a claim: *supported*,
+**Words in this step:** *claim*: one sentence that is either true or false. *verdict*: *supported*,
 *refuted* or *doesn't say*. Your verdict is what is true as far as you know, from the source you would
-trust, not what you think Wikipedia says. The agent, the program in `agent.py`, will check your claims
-against Wikipedia in 3b.
+trust, not what you think Wikipedia says.
 
 **What to do:**
 
-1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
-   homework page shows for 3a. Claude is your Claude Code session, your tutor and lab assistant.
-2. Pick a topic you know well and that Wikipedia covers at least a little: your hometown, a band, a
-   sport, a game, a field you've studied, Macalester. Something you could fact-check yourself without
-   looking much up.
+1. Start this step's Claude session with the command the homework page shows for 3a.
+2. Pick a topic you know well and that Wikipedia covers at least a little.
 3. Type your topic, and why you know it well, under 3a in `WRITEUP.md`.
-4. Write **at least eight** claims about it in the table under 3a. Include:
-   - some that are true and some that are false;
-   - at least two that need two or more Wikipedia articles to check;
-   - at least two where you think Wikipedia doesn't say, or says something wrong.
-5. For each claim, type your verdict and the source you would trust for it. Spell the verdict exactly
-   `supported`, `refuted` or `doesn't say`, because the program compares the agent's verdict with yours
-   word for word.
-6. Ask Claude to copy your table into `data/my-claims.jsonl`, so the agent can run on your claims, with
-   `mine-1` as the id of the claim in row 1, `mine-2` for row 2, and so on. Each line of the file looks
-   like this:
+4. Write **at least eight** claims about it in the table under 3a, with the mix listed below.
+5. Type your verdict for each, spelled exactly `supported`, `refuted` or `doesn't say`.
+6. Type the source you would trust for each.
+7. Ask Claude to copy your table into `data/my-claims.jsonl`, with ids `mine-1`, `mine-2` and so on.
+8. Open `data/my-claims.jsonl` and check that it has one line for each claim in your table.
 
-   ```
-   {"id": "mine-1", "claim": "...", "source": "mine", "label": "supported"}
-   ```
+Topics that work: your hometown, a band, a sport, a game, a field you've studied, Macalester. Something
+you could fact-check yourself without looking much up. Your claims must include:
 
-7. Check that the file has one line for each claim in your table.
+- some that are true and some that are false;
+- at least two that need two or more Wikipedia articles to check;
+- at least two where you think Wikipedia doesn't say, or says something wrong.
 
-Claude will not suggest a topic or a claim, because they are yours, but it will tell you if your claims
-are missing part of the mix in action 4.
+**What you'll see:** Each line of `data/my-claims.jsonl` looks like this, with the claim's row number in
+its id and your verdict as its label:
+
+```
+{"id": "mine-1", "claim": "...", "source": "mine", "label": "supported"}
+```
+
+The program compares the agent's verdict with yours word for word, so the spelling of your verdict
+matters.
 
 **What to write:** Under `## 3a. Pick a topic and write your claims` in `WRITEUP.md`, answer and fill in
 the table:
@@ -55,37 +54,38 @@ the table:
 topic answer has text after the `>`, and every numbered row of the table has every cell filled.
 
 **Hint:** False claims are most interesting when they are close to true. Change one fact (a year, a
-place, a name) rather than inventing something absurd.
+place, a name) rather than inventing something absurd. Claude will not suggest a topic or a claim,
+because they are yours, but it will tell you if your claims are missing part of the mix.
 
 ## 3b. Run the agent on your claims
 
 **What you're finding out:** Where the agent and the one-search baseline agree with your own verdicts
 on your claims.
 
-The agent is the program in `agent.py`: a loop in which the model (Claude Haiku, the small Claude model
-that the agent and both baselines call) picks the next lookup, reads what comes back, and decides when
-to answer. The one-search baseline is a simpler method it is compared with: one search, one page, then
-an answer. Your claims are the ones in `data/my-claims.jsonl`, with your verdicts (*supported*,
-*refuted* or *doesn't say*).
+**Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku,
+the small Claude model that the agent and both baselines call) picks the next lookup, reads what comes
+back, and decides when to answer. *the one-search baseline*: one search, one page, then an answer.
 
 **What to do:**
 
-1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
-   homework page shows for 3b. Claude is your Claude Code session, your tutor and lab assistant.
-2. Ask Claude to run the one-search baseline and the agent on your claims. It takes about 3 minutes and
-   costs a few cents on your key. Claude runs this command:
-
-   ```
-   uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
-   ```
-
+1. Start this step's Claude session with the command the homework page shows for 3b.
+2. Ask Claude to run the one-search baseline and the agent on your claims.
 3. Tell Claude what you expect, when it asks.
-4. Read the two tables the run prints at the end. The first shows on how many of your claims each
-   version's verdict matched yours. A verdict matches only when it is the same word as yours: your
-   claims keep all three verdicts, so *refuted* and *doesn't say* are different answers here.
+4. Read the two tables the run prints at the end.
 5. Open **Results** at the top of the homework page, then open the run `runs/part3/before`.
 6. Open the claims where a version disagreed with you, and read what it did.
 7. Answer the two questions.
+
+**What you'll see:** Claude runs this command. It takes about 3 minutes and costs a few cents on your
+key:
+
+```
+uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
+```
+
+The first table shows on how many of your claims each version's verdict matched yours. A verdict
+matches only when it is the same word as yours: your claims keep all three verdicts, so *refuted* and
+*doesn't say* are different answers here. The run is saved in `runs/part3/before`.
 
 **What to write:** Under `## 3b. Run the agent on your claims` in `WRITEUP.md`, answer:
 
@@ -100,10 +100,8 @@ exists (the run saves it when it finishes) and both answers have text after the 
 **What you're finding out:** Why the agent fails on your claims, and whether Claude reads the same
 failures the same way you do.
 
-The agent is the program in `agent.py`: a loop in which the model (Claude Haiku) picks the next lookup,
-reads what comes back, and decides when to answer. A failure here is a claim where the agent's verdict
-differs from yours. A trace is the list of the agent's lookups for one claim, in order, with what each
-returned. Claude is your Claude Code session, your tutor and lab assistant.
+**Words in this step:** *failure*: a claim where the agent's verdict differs from yours. *trace*: the
+agent's lookups for one claim, in order, with what each returned.
 
 The labels:
 
@@ -114,35 +112,23 @@ The labels:
 - *Wikipedia is missing or wrong*: the agent did fine, and Wikipedia let it down;
 - a label of your own, if none of these fits.
 
-**What to do:** Do these in this order. You label first, and Claude labels without seeing yours, so
-that neither set of labels can steer the other.
+**What to do:** Do these in this order. You label first, and Claude labels without seeing yours, so that
+neither set of labels can steer the other.
 
-1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
-   homework page shows for 3c.
-2. Open **Results** at the top of the homework page, open the run `runs/part3/before`, and in the
-   claims table's filters set the agent's Result to "did not match (any reason)". The table then shows
-   the claims where the agent's verdict differs from yours.
-3. Open each of those claims and read its trace one lookup at a time.
-4. Give each one label from the list above. For each, fill in a row of the table under 3c: the claim's
-   number from your 3a table, your label, and the line of the trace that shows it (the lookup's number
-   and a few words of what it shows). Use the empty row for the first claim and add a row for each of
-   the others. Don't tell Claude your labels.
-5. Ask Claude to label the same claims. Claude reads their traces and gives its labels in the chat,
-   without opening `WRITEUP.md`, so it has not seen yours.
-6. Ask Claude to add its labels to the last column of the table, "Claude's label", or type them in
-   yourself. Claude will not say which of you is right.
-7. Answer the two questions.
+1. Start this step's Claude session with the command the homework page shows for 3c.
+2. Open **Results** at the top of the homework page, then open the run `runs/part3/before`.
+3. In the claims table's filters, set the agent's Result to "did not match (any reason)".
+4. Open each of those claims and read its trace one lookup at a time.
+5. Give each one label from the list above, without telling Claude.
+6. Fill in a row of the table under 3c for each: claim number, your label, and the trace line.
+7. Ask Claude to label the same claims.
+8. Ask Claude to add its labels to the last column, "Claude's label", or type them in yourself.
+9. Answer the two questions.
 
-If the agent disagreed with you on fewer than three claims, there isn't enough to sort. Go back to your
-3a table and add harder claims, ask Claude to add them to `data/my-claims.jsonl`, and ask Claude to run
-3b's command again. Add new claims rather than rewording old ones: a run keeps its saved result for each
-claim number, so a reworded claim would not be checked again. The command checks only the new claims:
-
-```
-uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
-```
-
-Then start again from action 2.
+**What you'll see:** The filter leaves only your failures in the table. For "the line of the trace that
+shows it", give the lookup's number and a few words of what it shows. When you ask, Claude reads the
+same traces and gives its labels in the chat without opening `WRITEUP.md`, so it has not seen yours.
+Claude will not say which of you is right.
 
 **What to write:** Under `## 3c. Sort the failures` in `WRITEUP.md`, fill in the table and answer:
 
@@ -153,56 +139,63 @@ Then start again from action 2.
 **You're done when:** The homework page ticks 3c. It does that when every row of the table has every
 cell filled, Claude's labels included, and both answers have text after the `>`.
 
+**If something goes wrong:** If the agent disagreed with you on fewer than three claims, there isn't
+enough to sort. Go back to your 3a table and add harder claims, then ask Claude to add them to
+`data/my-claims.jsonl` and to run 3b's command again. Add new claims rather than rewording old ones: a
+run keeps its saved result for each claim number, so a reworded claim would not be checked again. The
+command checks only the new claims:
+
+```
+uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
+```
+
+Then start again from action 2.
+
 ## 3d. Make one change
 
 **What you're finding out:** Whether one change aimed at your most common failure fixes it, and what
 it does on the 200 evaluation claims.
 
-The agent is the program in `agent.py`: a loop in which the model (Claude Haiku) picks the next lookup,
-reads what comes back, and decides when to answer. A lookup is one call to `search`, `read` or
-`wikidata`. The evaluation claims are the 200 claims in `data/eval.jsonl`, the ones your full run in 1e
-checked, saved in `runs/part2`.
+**Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku)
+picks the next lookup, reads what comes back, and decides when to answer. *the evaluation claims*: the
+200 claims in `data/eval.jsonl`, which your full run in 1e checked and saved in `runs/part2`.
 
 **What to do:**
 
-1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
-   homework page shows for 3d. Claude is your Claude Code session, your tutor and lab assistant.
-2. Decide on **one** change aimed at your most common failure from 3c. It can be to `instructions.md`,
-   to a tool (for example, what `search` returns, in `wiki.py`), or to the limit of 12 lookups (in
-   `agent.py`).
-3. Make the change in your editor, or tell Claude exactly what to change. Claude makes exactly the
-   change you describe and shows you what changed. It will not propose a change, because choosing it is
-   the point of this step.
-4. Ask Claude to run the agent on your claims again, with the change. Claude runs this command:
+1. Start this step's Claude session with the command the homework page shows for 3d.
+2. Decide on **one** change aimed at your most common failure from 3c (see the Hint for what it can be).
+3. Make the change in your editor, or tell Claude exactly what to change.
+4. Ask Claude to run the agent on your claims again, with the change.
+5. If you adjust your change after seeing the results, ask Claude to run that again with `--fresh`.
+6. Settle on your change before the next action, because the long run uses the agent as it is then.
+7. Open a new terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
+8. Start the agent on the 200 evaluation claims yourself, in that tab.
+9. Leave that tab open, your laptop awake and `instructions.md` alone until the run ends.
+10. Open **Results** at the top of the homework page, choose "Compare two runs", and compare
+    `runs/part3/before` with `runs/part3/after`.
+11. When the long run has finished, compare `runs/part2` with `runs/part3/after-eval` the same way.
+12. Answer the three questions.
 
-   ```
-   uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after
-   ```
+**What you'll see:** When you ask, Claude makes exactly the change you describe and shows you what
+changed. For your claims, Claude runs:
 
-5. If you adjust your change after seeing these results, ask Claude to run the same command with
-   `--fresh` at the end. Without `--fresh`, a run never checks a claim again once its result is saved,
-   and `--fresh` replaces this folder's saved results with a new run:
+```
+uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after
+```
 
-   ```
-   uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
-   ```
+A run never checks a claim again once its result is saved, so after you adjust your change, Claude runs
+the same command with `--fresh`, which replaces this folder's saved results with a new run:
 
-   Settle on your change before the next action, because the long run uses the agent as it is then.
-6. Open a new terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
-7. Start the agent on the 200 evaluation claims again yourself, in that tab:
+```
+uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
+```
 
-   ```
-   uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval
-   ```
+In your own tab, you run the agent on the 200 evaluation claims. It takes about 10 minutes and costs
+about 35 cents on your key, and ends with two tables:
 
-   It takes about 10 minutes and costs about 35 cents on your key. Start it in your
-   own tab, because a run started by Claude stops if you close that Claude session. Leave the tab open,
-   your laptop awake and `instructions.md` alone until it ends with two tables, since the agent reads
-   `instructions.md` again for every claim.
-8. Open **Results** at the top of the homework page, choose "Compare two runs", and compare
-   `runs/part3/before` with `runs/part3/after`.
-9. When the long run has finished, compare `runs/part2` with `runs/part3/after-eval` the same way.
-10. Answer the three questions.
+```
+uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval
+```
 
 **What to write:** Under `## 3d. Make one change` in `WRITEUP.md`, answer:
 
@@ -220,28 +213,27 @@ answers have text after the `>`.
   only the rest.
 - One of this step's two runs stops at once and says its folder has saved results from an earlier
   version of your agent: you changed `instructions.md`, `agent.py` or `wiki.py` after that run started.
-  To start that run over with the agent as it is now, add `--fresh` to the end of the same
-  command.
+  To start that run over with the agent as it is now, add `--fresh` to the end of the same command.
+
+**Hint:** The change can be to `instructions.md`, to a tool (for example, what `search` returns, in
+`wiki.py`), or to the limit of 12 lookups (in `agent.py`). Claude will not propose a change, because
+choosing it is the point of this step. Start the long run in your own tab, because a run started by
+Claude stops if you close that Claude session, and leave `instructions.md` alone while it runs, because
+the agent reads it again for every claim.
 
 ## 3e. Write it up
 
 **What you're finding out:** This is where you say what you learned.
 
-The agent is the program in `agent.py`: a loop in which the model (Claude Haiku) picks the next lookup,
-reads what comes back, and decides when to answer. The one-search baseline is a simpler method it is
-compared with: one search, one page, then an answer.
+**Words in this step:** *the agent*: the program in `agent.py`, which picks its own lookups. *the
+one-search baseline*: one search, one page, then an answer.
 
 **What to do:**
 
-1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
-   homework page shows for 3e. Claude is your Claude Code session, your tutor and lab assistant.
+1. Start this step's Claude session with the command the homework page shows for 3e.
 2. Answer the three questions under `### Write-up` in 3e, using your own numbers and examples.
 3. Answer the question under `### How I used AI`.
-4. Ask Claude to show you any of your own numbers or results you want to use. Claude will not write or
-   suggest a sentence, because the write-up is yours.
-
-Each answer can be as long as you need. Keep each one in a single block with no blank line inside it,
-since a blank line ends the answer. To start a new paragraph, put a line with just `>` between the two.
+4. Ask Claude to show you any of your own numbers or results you want to use.
 
 **What to write:** Under `## 3e. Write it up` in `WRITEUP.md`, answer, under `### Write-up`:
 
@@ -256,6 +248,10 @@ and under `### How I used AI`:
 **You're done when:** The homework page ticks 3e. It does that when all four answers have text after the
 `>`. With 3e ticked, every step of Part 3 is done, so the page commits your work as `Part 3 done` and
 pushes it to your fork. Then submit, as the Submitting section of the README says.
+
+**Hint:** Each answer can be as long as you need. Keep each one in a single block with no blank line
+inside it, since a blank line ends the answer. To start a new paragraph, put a line with just `>`
+between the two. Claude will not write or suggest a sentence, because the write-up is yours.
 
 ## What I look for
 

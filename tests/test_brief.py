@@ -45,8 +45,21 @@ PARTS = {
 }
 ALL_STEPS = [step for _, _, steps in PARTS.values() for step in steps]
 
-# Each step's section of a page has these labels, in this order.
-LABELS = ["**What you're finding out:**", "**What to do:**", "**What to write:**", "**You're done when:**"]
+# Each step's section of a page uses these labels, in this order. The four marked True are required;
+# the others appear only where a step needs them.
+LABELS = [
+    ("**What you're finding out:**", True),
+    ("**Words in this step:**", False),
+    ("**What to do:**", True),
+    ("**What you'll see:**", False),
+    ("**What to write:**", True),
+    ("**You're done when:**", True),
+    ("**If something goes wrong:**", False),
+    ("**Hint:**", False),
+]
+
+# How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
+SLOTS = 49
 
 # The files whose words students read, which must hold no placeholder when the homework ships.
 OWNED = ["README.md", "WRITEUP.md", ".env.example"] + [page for _, page, _ in PARTS.values()]
@@ -142,11 +155,20 @@ def test_every_writeup_question_is_in_the_steps_page_word_for_word(step):
 
 
 @pytest.mark.parametrize("step", ALL_STEPS)
-def test_every_step_section_has_the_four_labels_in_order(step):
+def test_every_step_section_has_its_labels_once_and_in_order(step):
     page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
-    places = [page.find(label) for label in LABELS]
-    assert -1 not in places, f"{step} is missing {[l for l, p in zip(LABELS, places) if p == -1]}"
+    missing = [label for label, required in LABELS if required and label not in page]
+    assert not missing, f"{step} is missing {missing}"
+    twice = [label for label, _ in LABELS if page.count(label) > 1]
+    assert not twice, f"{step} has these labels more than once: {twice}"
+    places = [page.find(label) for label, _ in LABELS if label in page]
     assert places == sorted(places), f"{step}: the labels are out of order"
+
+
+def test_writeup_has_one_slot_per_answer():
+    text = WRITEUP.read_text(encoding="utf-8")
+    asked = sum(len(questions(body)) for body in sections(text).values())
+    assert asked + 1 == SLOTS, f"WRITEUP.md has {asked} answers plus Name, not {SLOTS}"
 
 
 @pytest.mark.parametrize("name", OWNED)
