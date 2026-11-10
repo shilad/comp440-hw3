@@ -58,6 +58,20 @@ LABELS = [
     ("**Hint:**", False),
 ]
 
+# Steps that are not an investigation open with "What this step is for:" instead of "What you're
+# finding out:". It takes the first label's place, so it is required in these four and nowhere else.
+FIRST_LABEL = "**What you're finding out:**"
+STEP_IS_FOR = "**What this step is for:**"
+STEP_IS_FOR_STEPS = {"0a", "1e", "3a", "3e"}
+
+
+def labels_for(step):
+    """The label list for one step, with its own first label."""
+    if step[:2] in STEP_IS_FOR_STEPS:
+        return [(STEP_IS_FOR if label == FIRST_LABEL else label, required) for label, required in LABELS]
+    return LABELS
+
+
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
 SLOTS = 49
 
@@ -157,11 +171,14 @@ def test_every_writeup_question_is_in_the_steps_page_word_for_word(step):
 @pytest.mark.parametrize("step", ALL_STEPS)
 def test_every_step_section_has_its_labels_once_and_in_order(step):
     page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
-    missing = [label for label, required in LABELS if required and label not in page]
+    labels = labels_for(step)
+    missing = [label for label, required in labels if required and label not in page]
     assert not missing, f"{step} is missing {missing}"
-    twice = [label for label, _ in LABELS if page.count(label) > 1]
+    other = STEP_IS_FOR if labels is LABELS else FIRST_LABEL
+    assert other not in page, f"{step} should not use {other}"
+    twice = [label for label, _ in labels if page.count(label) > 1]
     assert not twice, f"{step} has these labels more than once: {twice}"
-    places = [page.find(label) for label, _ in LABELS if label in page]
+    places = [page.find(label) for label, _ in labels if label in page]
     assert places == sorted(places), f"{step}: the labels are out of order"
 
 
