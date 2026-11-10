@@ -192,19 +192,6 @@ Is accuracy alone a good measure of this agent? Why or why not?
 
 >
 
-## 2d. Find where Wikipedia has changed
-
-Two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
-
-| # | Claim (first few words) | The dataset's label | What today's Wikipedia says | What changed on the page, if you can tell |
-|---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-
-What does this tell you about using a fixed dataset to judge a system that reads a live source?
-
->
-
 # Part 3: Your own claims
 
 ## 3a. Pick a topic and write your claims

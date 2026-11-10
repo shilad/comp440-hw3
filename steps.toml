@@ -965,60 +965,6 @@ you may show the
 facts the table asks for in the chat. Tick checkpoint 1 when they say they have checked all ten.
 '''
 
-[[step]]
-id = "2d"
-part = 2
-title = "Find where Wikipedia has changed"
-page = "instructions/part2.md"
-section = "2d. Find where Wikipedia has changed"
-minutes = 30
-slots = ["2d.*"]
-allow = ["Bash(uv run python lookup.py:*)"]
-summary = "Find claims where today's Wikipedia disagrees with the dataset's label."
-goal = "What it means to judge a system that reads today's Wikipedia against labels made from the Wikipedia of 2017."
-checkpoints = [
-  "You have found two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label, or the closest cases after reading ten",
-  { text = "Your table and answer are in WRITEUP.md", slots = ["2d.*"] },
-]
-brief = '''
-HoVer's labels were made from Wikipedia as it was in 2017. The agent reads today's Wikipedia.
-Pages change, so an answer scored as wrong can be one where the quoted evidence supports the
-verdict on today's page. That is the one judgment in this step, and its one phrase: say "the
-quoted evidence supports the verdict", not "accept", "sound" or "settles".
-
-In the results viewer, on the page for runs/part2, the student clicks "Clear the filters", sets
-"Result" in "The agent" box to "does not match the dataset's label (any reason)", and looks for
-claims where the agent's quoted evidence supports its verdict and today's page disagrees with
-the dataset's label. A claim's page shows "The
-dataset's label" at the top, and "The dataset lists these articles for this claim:" and "Pages it
-read, live on Wikipedia today:" link to today's pages. They need two. The rule when they find
-fewer: if they have read ten of the agent's wrong answers and found fewer than two, they fill
-each remaining row of the table with the closest case they found (the claim that came nearest,
-and what kept it from being clear), and say in that row that it is not a clear case. The page ticks
-2d only when both numbered rows are full. Confirm that rule when
-asked; never pick a case for them, and never say which case is closest.
-
-When asked, show a claim word for word, its dataset label (from data/eval.jsonl), and the agent's
-verdict, evidence and trace (from runs/part2/agent.jsonl). Run the lookups they ask for, to see
-a page as it is today, with `--no-log` so that 1b's record in runs/part1/lookups.jsonl stays as
-it was:
-
-    uv run python lookup.py --no-log read "<page title>"
-    uv run python lookup.py --no-log read "<page title>" "<section>"
-    uv run python lookup.py --no-log search "<query>"
-
-To see a page as it was in 2017, the student opens it on Wikipedia, chooses "View history",
-opens "Filter revisions", sets "To date" to 31 December 2017 and presses "Show revisions"; the
-first row is the page as it was at the end of 2017. The results viewer cannot show old versions.
-Explain that if asked; the student does it in their browser.
-
-Never say which claims are cases of a changed page, whether the quoted evidence supports the
-verdict, or what changed on a page. The student types the whole table under 2d and the answer after
-it; you
-may show the facts the table asks for in the chat. Tick checkpoint 1 when they say they have
-found two, or have read ten wrong answers and filled the rows with the closest cases.
-'''
-
 # ---- Part 3: Your own claims --------------------------------------------------------------
 
 [[step]]

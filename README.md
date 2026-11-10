@@ -115,7 +115,7 @@ You used all of these in earlier homeworks:
 |---|---|---|
 | [Part 0: Set up](instructions/part0.md) | Get your copy running, then check one claim three ways: the model alone, one search, and the agent | 10% |
 | [Part 1: How the agent works](instructions/part1.md) | Write the agent's loop, check two claims yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 25% |
-| [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy and cost by how many articles a claim needs, check the agent's evidence yourself, and find where Wikipedia has changed | 35% |
+| [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy and cost by how many articles a claim needs, and check the agent's evidence yourself | 35% |
 | [Part 3: Your own claims](instructions/part3.md) | Write claims about a topic you know, sort the agent's failures, make one change, and write up what you found | 30% |
 
 Everything is due 8:00am Tuesday, November 24.
@@ -225,10 +225,18 @@ your own judgment. Ask questions in `#comp440-f26` on Slack. Follow the class's
 
 ## Extra credit
 
-Give the agent a fifth tool that reads one other well-known public site, for example a government
-statistics site or an encyclopedia other than Wikipedia. Tell me which site before you start. Do it
-only after Part 3 is done, because it changes the agent. Then run the agent on your own claims again.
-When do the two sources disagree, and how should the agent decide which to believe?
+Either of these earns extra credit, and you may do both.
+
+**Find where Wikipedia has changed.** Find claims where the agent's quoted evidence supports its
+verdict and today's Wikipedia disagrees with the dataset's label, which was made from the Wikipedia of
+2017. The instructions are at the end of [Part 2's page](instructions/part2.md), under "Extra credit:
+find where Wikipedia has changed". Do it any time after Part 2.
+
+**Give the agent a fifth tool.** Give the agent a fifth tool that reads one other well-known public
+site, for example a government statistics site or an encyclopedia other than Wikipedia. Tell me which
+site before you start. Do it only after Part 3 is done, because it changes the agent. Then run the agent
+on your own claims again. When do the two sources disagree, and how should the agent decide which to
+believe?
 
 Write what you found under a heading `## Extra credit` at the end of `WRITEUP.md`. Keep the homework
 page running while you work on it: once Part 3 is done, the page commits and pushes any further change

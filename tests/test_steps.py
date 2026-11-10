@@ -2,7 +2,7 @@
 
 Offline: no network, no key. Run with `uv run pytest -q`.
 
-The step list is fixed: 18 steps, 0a to 3e, each with the sections, answers, files and commands
+The step list is fixed: the steps from 0a to 3e, each with the sections, answers, files and commands
 below. These tests catch a step that drifts from that list, a heading that the pages or
 WRITEUP.md do not have, a command a step's Claude session is told to run but may not run without
 asking, a word students should not see, and a placeholder that was never filled in.
@@ -49,7 +49,6 @@ EXPECTED = {
     "2a": (2, "2a. Compare accuracy", ["runs/part2/report.txt"], EVALUATE, 18),
     "2b": (2, "2b. Compare cost", [], EVALUATE, 12),
     "2c": (2, "2c. Check the evidence yourself", [], LOOKUP, 35),
-    "2d": (2, "2d. Find where Wikipedia has changed", [], LOOKUP, 30),
     "3a": (3, "3a. Pick a topic and write your claims", ["data/my-claims.jsonl"],
            ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"], 30),
     "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),
