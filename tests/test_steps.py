@@ -266,6 +266,32 @@ def test_long_runs_are_shown_as_run_yourself():
             assert "run_yourself" not in s, step_id
 
 
+def test_only_1e_hides_its_results():
+    import tomllib
+    steps = {s["id"]: s for s in tomllib.loads(STEPS.read_text(encoding="utf-8"))["step"]}
+    assert steps["1e"].get("hide_results") is True
+    assert not [i for i, s in steps.items() if i != "1e" and "hide_results" in s]
+
+
+# Steps whose goal differs from the page's first line on purpose, with the reason.
+GOAL_DIFFERS = {"0b": "the goal names the three versions (orchestrator, Round 2, 0b-2); the page does not yet"}
+
+
+def test_goals_say_what_the_pages_say(a):
+    """The homework page shows a step's goal and, folded below, its page section; both open on the
+    same sentence, so they must be the same words."""
+    differ = []
+    for s in a.steps:
+        if s.id in GOAL_DIFFERS:
+            continue
+        section = stepmod.body(s, a, REPO)
+        first = " ".join(section.strip().split("\n\n")[0].split())
+        first = re.sub(r"^\*\*(What you're finding out|What this step is for):\*\*\s*", "", first)
+        if first != s.goal:
+            differ.append(f"{s.id}:\n  page: {first}\n  goal: {s.goal}")
+    assert not differ, "\n".join(differ)
+
+
 def test_a_numbered_line_of_a_trace_is_an_entry():
     text = STEPS.read_text(encoding="utf-8")
     for old in ("Found in lookup", "one lookup per turn", "one lookup at a time", "wouldn't say \"doesn't say\"",

@@ -350,7 +350,7 @@ slots = ["Name"]
 files = [".env", "runs/part0/setup-check.txt"]
 allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"]
 summary = "Get your copy of the homework running, with your name in WRITEUP.md and your key in .env."
-goal = "This step gets the homework running on your laptop."
+goal = "Getting the homework running on your laptop, so the later steps can reach Wikipedia and the Claude API."
 checkpoints = [
   { text = "In a terminal tab of your own, in the homework's folder, run cp .env.example .env; then open .env in your editor, fill in your API key and your Macalester email, and save", files = [".env"] },
   { text = "Type your name after Name: at the top of WRITEUP.md, and save", slots = ["Name"] },
@@ -452,7 +452,7 @@ slots = ["0c.*"]
 files = ["runs/part0/one-search-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See what one Wikipedia search adds, and whether it lands on a page that settles the claim."
-goal = "What one Wikipedia search adds, and whether that search lands on a page that settles the claim."
+goal = "What one Wikipedia search adds, and whether it lands on a page that settles the claim."
 checkpoints = [
   "You said which page you would want it to read",
   { text = "The one-search baseline's answer is saved in runs/part0/", files = ["runs/part0/one-search-*.json"] },
@@ -588,7 +588,7 @@ slots = ["1b.*"]
 files = ["runs/part1/lookups.jsonl"]
 allow = ["Bash(uv run python lookup.py:*)"]
 summary = "Check two claims yourself, using only the agent's four tools."
-goal = "What the agent's job is like, by doing it yourself with only its four tools, before you watch the agent do it."
+goal = "What the agent's job is like, by doing it yourself with only its four tools, before you watch it."
 checkpoints = [
   { text = "Your first lookup is saved in runs/part1/lookups.jsonl", files = ["runs/part1/lookups.jsonl"] },
   "You have a verdict on the first claim",
@@ -667,7 +667,7 @@ slots = ["1c.*"]
 files = ["runs/part1/before/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
 summary = "Run the agent on the 12 development claims and read six of its traces closely."
-goal = "Whether the agent reaches the dataset's label, and whether it gets there for a good reason."
+goal = "Whether the agent reaches the dataset's label on the 12 development claims, and whether it gets there for a good reason."
 checkpoints = [
   { text = "The agent's run on the 12 development claims is saved", files = ["runs/part1/before/report.txt"] },
   "You have read six traces closely in the results viewer: two each for 2, 3 and 4 articles, one of them claim 2 from 1b",
@@ -736,7 +736,8 @@ checkpoints = [
 brief = '''
 instructions.md is what the model is told before every claim: run_agent() reads it at the start
 of each check, so whatever the file says when a run starts is what the agent follows. It starts
-with three sentences that only say what the tools are.
+with three sentences that name the job, the four tools and how to finish, and say nothing about
+how to look things up.
 
 The student writes their own instructions in instructions.md, in their editor. At a minimum the
 step asks theirs to say how to break a claim into the pieces that have to be checked, when to use
@@ -792,8 +793,10 @@ slots = ["1e.*"]
 files = ["runs/part2/no-tools.jsonl"]
 allow = ["Bash(uv run python evaluate.py:*)"]
 run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --out runs/part2", note = "About 20 minutes and about 50 cents on your key. Leave that tab open and your laptop awake until it ends with two tables. Fill in your predictions while it runs, and don't look at its results before they are saved." }
+# Show no link to the results while the run goes: predictions come first.
+hide_results = true
 summary = "Start the full run in your own terminal tab, and write your predictions while it runs."
-goal = "You commit to predictions before you see any results, so that later you can tell where you were surprised."
+goal = "Starting the run on the 200 evaluation claims, and writing down your predictions before you see any results."
 checkpoints = [
   { text = "The full run has started", files = ["runs/part2/no-tools.jsonl"] },
   { text = "Your predictions and answer are in WRITEUP.md", slots = ["1e.*"] },
@@ -841,7 +844,7 @@ slots = ["2a.*"]
 files = ["runs/part2/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)"]
 summary = "See how often each version matched the dataset's label, and compare that with your predictions."
-goal = "How often each version matched the dataset's label, by number of articles, and how that compares with your predictions."
+goal = "How often each of the three versions matched the dataset's label on the 200 evaluation claims, and how that compares with your predictions from 1e."
 checkpoints = [
   { text = "The full run is finished", files = ["runs/part2/report.txt"] },
   "You have opened the run in the results viewer",
@@ -924,7 +927,7 @@ minutes = 35
 slots = ["2c.*"]
 allow = ["Bash(uv run python lookup.py:*)"]
 summary = "Check whether the agent's quoted evidence really supports its verdicts, for ten claims."
-goal = "Whether the agent's quoted evidence really supports its verdicts, and so whether accuracy alone is a fair measure of it."
+goal = "Whether the agent's quoted evidence really supports its verdicts, and so whether accuracy alone is a fair measure of the agent."
 checkpoints = [
   "You have checked the quoted evidence for the first ten claims where the agent answered \"supported\" or \"refuted\"",
   { text = "Your table and answers are in WRITEUP.md", slots = ["2c.*"] },
@@ -935,8 +938,9 @@ one judgment in this step, and its one phrase: say "the quoted evidence supports
 not "accept", "sound" or "settles". A quote can be real and still not support the verdict. For a
 verdict of *refuted*, the question is whether the quotes show that the claim is false.
 
-Which ten claims is fixed by a rule, so that every student gets the same ten: in the results
-viewer, on the page for runs/part2, click "Clear the filters", then set "Verdict" in "The agent"
+Which ten claims is fixed by a rule, so that nobody chooses them (they differ between students,
+because they depend on each student's own agent's verdicts): in the results viewer, on the page for
+runs/part2, click "Clear the filters", then set "Verdict" in "The agent"
 box to "supported or refuted", and leave "Order" at "Order of the claims file". Rows 1 to 10 of
 the claims table are the ten. Do not pick claims yourself, and do not suggest others. If they ask
 which ten, give them that rule.
@@ -1025,7 +1029,7 @@ slots = ["3a.*"]
 files = ["data/my-claims.jsonl"]
 allow = ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"]
 summary = "Write at least eight claims of your own, on a topic you know well."
-goal = "You build a set of claims on a topic you know better than most people, to test the agent on."
+goal = "Building your own set of test claims, on a topic you know better than most people."
 checkpoints = [
   { text = "Your topic and at least eight claims are in WRITEUP.md", slots = ["3a.*"] },
   { text = "Your claims are copied into data/my-claims.jsonl", files = ["data/my-claims.jsonl"] },
@@ -1158,7 +1162,8 @@ The labels, word for word as the step's page gives them:
 - *stopped too early*: it answered before checking every piece of the claim;
 - *misread*: it read the right page and drew the wrong conclusion;
 - *forced a verdict*: it answered *supported* or *refuted* when Wikipedia does not settle the claim;
-- *Wikipedia is missing or wrong*: the agent did what it should, and Wikipedia lacks the fact or has it
+- *Wikipedia is missing or wrong*: the agent did what it should, and Wikipedia lacks the fact or
+  has it
   wrong;
 - a label of your own, if none of these fits. (That holds for your labels too.)
 
@@ -1188,7 +1193,7 @@ files = ["runs/part3/after/report.txt", "runs/part3/after-eval/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Edit(instructions.md)"]
 run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval", note = "About 10 minutes and about 35 cents. Start it once you have settled on your change, and leave instructions.md alone until it ends." }
 summary = "Make one change aimed at the most common failure, and measure what it does."
-goal = "Whether one change aimed at the most common failure fixes it, and what it does on the 200 evaluation claims."
+goal = "Whether one change aimed at your most common failure fixes it, and what it does on the 200 evaluation claims."
 checkpoints = [
   "You have made one change",
   { text = "The agent has run again on your claims", files = ["runs/part3/after/report.txt"] },
@@ -1206,7 +1211,8 @@ the code something they name lives.
 They make the change in their editor, or tell you exactly what to change. Make exactly that
 change and nothing else, then show the diff with `git diff`. If what they describe is not exact
 ("make it stop later"), ask for the exact change; do not fill it in. An edit to any file other
-than instructions.md makes Claude Code ask the student first. Tick checkpoint 1 once the change
+than instructions.md and WRITEUP.md makes Claude Code ask the student first. Tick checkpoint 1 once
+the change
 is made.
 
 The first run after the change, on their own claims, when they ask and after asking what they
@@ -1251,7 +1257,7 @@ section = "3e. Write it up"
 minutes = 30
 slots = ["3e.*"]
 summary = "Say what the agent's loop adds, what it costs, and what your topic showed you about Wikipedia."
-goal = "What you learned: what the agent's loop adds over one search, what it costs, and what your topic showed you about Wikipedia as a source."
+goal = "Saying what you learned, in your own words."
 checkpoints = [
   { text = "Your write-up and how you used AI are in WRITEUP.md", slots = ["3e.*"] },
 ]
