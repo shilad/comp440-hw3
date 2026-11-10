@@ -300,7 +300,8 @@ def test_quote_found_and_not_found(repo):
     page = get(repo, "/results/claim?dir=runs/part2&id=h1")[2]
     words = text_of(page)
     assert re.search(r'<mark data-q="1"[^>]*>She was born in Paris and\s+lives in \u201cLyon\u201d today\.</mark>', page)
-    assert "Found in lookup 2 (read), highlighted below" in words
+    assert "Found in entry 2 of the trace (read), highlighted below" in words
+    assert "Its trace, one entry at a time" in words
     assert "This quote appears in nothing the agent read in this check." in words
     assert 'href="https://en.wikipedia.org/wiki/Alpha_Person"' in page
     assert 'target="_blank"' in page and 'rel="noopener noreferrer"' in page
@@ -654,7 +655,7 @@ def test_a_run_just_started_and_a_run_emptied_by_fresh(repo):
 def test_the_dataset_articles_and_which_the_agent_read(repo):
     words = text_of(get(repo, "/results/claim?dir=runs/part2&id=h1")[2])
     assert "The dataset lists these articles for this claim:" in words
-    assert re.search(r"Alpha Person \(opens in a new tab\) · read by the agent \( ?lookup 2 ?\)", words)
+    assert re.search(r"Alpha Person \(opens in a new tab\) · read by the agent \( ?entry 2 ?\)", words)
     words = text_of(get(repo, "/results/claim?dir=runs/part2&id=h2")[2])
     for title in ("Beta Writer", "Gamma (novel)"):
         assert f"{title} (opens in a new tab) · not read by the agent" in words
@@ -733,6 +734,30 @@ def test_marks_are_said_in_words(repo):
     write_jsonl(repo / "runs" / "part3" / "before" / "agent.jsonl", [result("agent", "mine-1", "refuted")])
     words = text_of(get(repo, "/results/claim?dir=runs/part3/before&id=mine-1")[2])
     assert "Verdict: ✗ refuted · does not match your verdict" in words
+
+
+def test_numbers_into_a_trace_are_entries_and_counts_are_lookups(repo):
+    # A trace with an answer the loop sent back: the read after it is entry 4 but the third lookup.
+    trace = [{"tool": "search", "input": {"query": "Alpha"}, "result": "1. Alpha Person: a painter"},
+             {"tool": "read", "input": {"title": "Beta Writer"}, "result": "Page: Beta Writer\n\nNothing here."},
+             {"tool": "answer", "input": {"verdict": "supported", "evidence": ["x"], "explanation": "e"},
+              "result": "Answer rejected. These quotes are not in anything you read in this check: x"},
+             {"tool": "read", "input": {"title": "Alpha Person"}, "result": PARIS},
+             {"tool": "answer", "input": {"verdict": "supported", "evidence": ["She was born in Paris"],
+                                          "explanation": "e"}, "result": "accepted"}]
+    rows = full_rows()["agent"]
+    rows[0] = result("agent", "h1", "supported", steps=3, trace=trace, evidence=["She was born in Paris"])
+    write_jsonl(repo / "runs" / "part2" / "agent.jsonl", rows)
+    page = get(repo, "/results/claim?dir=runs/part2&id=h1")[2]
+    words = text_of(page)
+    assert "Found in entry 4 of the trace (read), highlighted below" in words
+    assert re.search(r"Alpha Person \(opens in a new tab\) · read by the agent \( ?entry 4 ?\)", words)
+    assert "5 entries: 3 lookups" in words and "2 answers." in words
+    assert 'id="call-agent-4"' in page and re.search(r'href="#call-agent-4">entry 4</a>', page)
+    for route in routes(repo):
+        u = urlsplit(route)
+        body = app.handle("GET", u.path, parse_qs(u.query), repo)[2].decode()
+        assert not re.search(r"\blookup \d", text_of(body)), route  # a number into a trace is an entry
 
 
 def test_report_txt_and_run_json_open_their_run(repo):

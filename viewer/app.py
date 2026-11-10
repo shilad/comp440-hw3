@@ -840,7 +840,7 @@ def articles_html(item: dict, reads: list) -> str:
             who = f"the agent in {name}" if name else "the agent"
             if n:
                 anchor_id = f"#call-{(name.lower() + '-') if name else ''}agent-{n}"
-                bits.append(f'<span class="o">read by {who} ({a(anchor_id, f"lookup {n}")})</span>')
+                bits.append(f'<span class="o">read by {who} ({a(anchor_id, f"entry {n}")})</span>')
             else:
                 bits.append(f'<span class="o notread">not read by {who}</span>')
         out.append(f'<li>{a(wiki_url(str(title)), e(title), new_tab=True)}'
@@ -878,7 +878,7 @@ def result_card(method: str, row: dict | None, note: str = "", anchor_for: str =
                f'<div><dt>Cost</dt><dd>{dollars(row["cost_usd"])}</dd></div>'
                f'<div><dt>Time</dt><dd>{row["seconds"]:.1f} seconds</dd></div></dl>')
     if row["trace"]:
-        out.append(f'<p class="small">{a("#trace-" + anchor_for, "Its trace, one lookup at a time")}</p>')
+        out.append(f'<p class="small">{a("#trace-" + anchor_for, "Its trace, one entry at a time")}</p>')
     out.append('</article>')
     return "".join(out)
 
@@ -892,7 +892,8 @@ def quote_where(row: dict, place: dict, n: int, who: str) -> str:
     bits = []
     for hit in place["hits"]:
         call = row["trace"][hit["call"]]
-        where = a(f"#call-{who}-{hit['call'] + 1}", f"lookup {hit['call'] + 1} ({e(call['tool'])})")
+        # A trace's numbered lines are entries (a lookup or an answer); "Lookups" counts only lookups.
+        where = a(f"#call-{who}-{hit['call'] + 1}", f"entry {hit['call'] + 1}") + f" of the trace ({e(call['tool'])})"
         page = R.page_of(call)
         extra = ""
         if page and page["kind"] == "wikipedia":
