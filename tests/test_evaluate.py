@@ -120,3 +120,16 @@ def test_a_run_with_a_failed_claim_has_no_report(monkeypatch, tmp_path, capsys):
     assert "run the same command again" in capsys.readouterr().out
     assert not (out_dir / "report.txt").exists()
     assert len((out_dir / "agent.jsonl").read_text().splitlines()) == 11
+
+
+def test_lookup_with_no_log_prints_but_does_not_add_to_the_record(monkeypatch, tmp_path, capsys):
+    import lookup
+    monkeypatch.setattr(lookup, "load_dotenv", lambda: None)  # leave your own .env alone
+    monkeypatch.setattr(lookup, "LOG", tmp_path / "lookups.jsonl")
+    monkeypatch.setattr(wiki, "read", lambda title, section=None: f"Page: {title}")
+    monkeypatch.setattr(sys, "argv", ["lookup.py", "--no-log", "read", "Saint Paul, Minnesota"])
+    lookup.main()
+    printed = capsys.readouterr().out
+    assert "Page: Saint Paul, Minnesota" in printed
+    assert "lookups.jsonl" not in printed
+    assert not (tmp_path / "lookups.jsonl").exists()
