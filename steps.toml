@@ -243,10 +243,9 @@ Facts about the programs that come up in several steps:
   1d and 3d are meant to be run again after a change, and their briefs give the `--fresh` commands
   whole. When you see the note, say in one sentence what it means and ask whether they want to run
   again with `--fresh`; the choice is theirs.
-- Never add `--fresh` to a command for runs/part2 or runs/part3/after-eval, and never rename or
-  delete a run folder, unless the student asks for exactly that after you have told them what it
-  costs: runs/part2 again is about 20 minutes and about 50 cents of their key, and
-  runs/part3/after-eval again is about 10 minutes and about 35 cents.
+- Never add `--fresh` to a command for runs/part2, and never rename or delete a run folder,
+  unless the student asks for exactly that after you have told them what it costs: runs/part2
+  again is about 20 minutes and about 50 cents of their key.
 - The agent reads instructions.md again for every claim, so the student must not change it while
   a run is going. Say so if they mention editing it during a run.
 - The model does not give the same answer every time. Running one claim again with check.py
@@ -265,12 +264,11 @@ Facts about the programs that come up in several steps:
 
 ## Long runs
 
-Two runs are long: the full run in 1e (about 20 minutes, about 50 cents), and the agent's second
-run on the evaluation claims in 3d (about 10 minutes, about 35 cents). The student's own
-instructions can make the agent slower and dearer, so always say "about". The student starts each
-one in a terminal tab of their own, because a run started from this session stops if this
-session is closed. If they ask you to start one anyway, do it in the background, and say once
-that it will stop if this session is closed.
+One run is long: the full run in 1e (about 20 minutes, about 50 cents). The student's own
+instructions can make the agent slower and dearer, so always say "about". The student starts it
+in a terminal tab of their own, because a run started from this session stops if this session is
+closed. If they ask you to start it anyway, do it in the background, and say once that it will
+stop if this session is closed.
 
 ## When Claude Code asks the student
 
@@ -785,15 +783,15 @@ part = 1
 title = "Watch the agent work"
 page = "instructions/part1.md"
 section = "1c. Watch the agent work"
-minutes = 25
+minutes = 15
 slots = ["1c.*"]
 files = ["runs/part1/before/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
-summary = "Run the agent on the 12 development claims and read six of its traces closely."
+summary = "Run the agent on the 12 development claims and read three of its traces closely."
 goal = "Whether the agent reaches the dataset's label on the 12 development claims, and whether it gets there for a good reason."
 checkpoints = [
   { text = "The agent's run on the 12 development claims is saved", files = ["runs/part1/before/report.txt"] },
-  "You have read six traces closely in the results viewer: two each for 2, 3 and 4 articles, one of them claim 2 from 1b",
+  "You have read three traces closely in the results viewer: one each for 2, 3 and 4 articles, the one for 3 being claim 2 from 1b",
   { text = "Your table and answer are in WRITEUP.md", slots = ["1c.*"] },
 ]
 brief = '''
@@ -813,9 +811,9 @@ saved in runs/part1/before/report.txt. On that run's page, the claims table's fi
 "does not match the dataset's label (any reason)"); "Claim contains" finds a claim by its words.
 Give these labels when they ask how to find claims.
 
-The student picks six claims to read closely: two each that need 2, 3 and 4 articles, and for
-each number one the agent got right and one it got wrong, where there is one. One of the six must
-be the second claim they checked by hand in 1b, "Vic & Anthony's Steakhouse is located at the
+The student picks three claims to read closely: one each that needs 2, 3 and 4 articles, with at
+least one the agent got wrong, where there is one. The one that needs 3 must be the second claim
+they checked by hand in 1b, "Vic & Anthony's Steakhouse is located at the
 American casino that was combined with the California Club. The casino is owned by Landry's,
 Inc.", so they can set the agent's lookups beside their own. Say that once, after the run, without
 saying how the agent did on that claim. The rest of the picking is theirs. To see the 12 claims
@@ -837,7 +835,7 @@ data/dev.jsonl also lists, for each claim, the articles the dataset's authors us
 them up: they bear on the judgment the student is making. If the student asks what the file
 holds, show them.
 
-Tick checkpoint 2 when they say they have read their six traces.
+Tick checkpoint 2 when they say they have read their three traces.
 '''
 
 [[step]]
@@ -846,7 +844,7 @@ part = 1
 title = "Write the agent's instructions"
 page = "instructions/part1.md"
 section = "1d. Write the agent's instructions"
-minutes = 35
+minutes = 28
 slots = ["1d.*"]
 files = ["runs/part1/after/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
@@ -874,18 +872,18 @@ file reaches the model.
 When they say they have written their instructions, check that the file has changed with
 `git diff --stat -- instructions.md`, and tick checkpoint 1.
 
-The first run after they write their instructions, on the 12 development claims (about a
-minute, about 2 cents):
+The step has one round: the student writes their instructions once, and you run the agent once
+after that, on the 12 development claims (about a minute, about 2 cents):
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after
 
-Each later run, after another change to instructions.md, is the same command with `--fresh` at
-the end. It forgets the saved results in runs/part1/after and runs the 12 claims again with the
-instructions as they are now:
+Do not invite them to revise and run again. If they do change instructions.md after the run and
+ask to run it again, it is the same command with `--fresh` at the end. It forgets the saved
+results in runs/part1/after and runs the 12 claims again with the instructions as they are now:
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after --fresh
 
-Before each run, ask what they expect to change in the traces. When it finishes, paste the output
+Before a run, ask what they expect to change in the traces. When it finishes, paste the output
 in full, and say the two runs can be compared in the results viewer: "Compare two runs", then
 the link "Step 1d: runs/part1/before with runs/part1/after". That page shows "Accuracy" (columns
 "A", "B", "B minus A") and "Claims that changed", where "Open A and B" puts both traces side by
@@ -1047,27 +1045,27 @@ part = 2
 title = "Check the evidence yourself"
 page = "instructions/part2.md"
 section = "2c. Check the evidence yourself"
-minutes = 35
+minutes = 20
 slots = ["2c.*"]
 allow = ["Bash(uv run python lookup.py:*)"]
-summary = "Check whether the agent's quoted evidence really supports its verdicts, for ten claims."
+summary = "Check whether the agent's quoted evidence really supports its verdicts, for five claims."
 goal = "Whether the agent's quoted evidence really supports its verdicts, and so whether accuracy alone is a fair measure of the agent."
 checkpoints = [
-  "You have checked the quoted evidence for the first ten claims where the agent answered \"supported\" or \"refuted\"",
+  "You have checked the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\"",
   { text = "Your table and answers are in WRITEUP.md", slots = ["2c.*"] },
 ]
 brief = '''
-The student checks, for ten claims, whether the quoted evidence supports the verdict. That is the
+The student checks, for five claims, whether the quoted evidence supports the verdict. That is the
 one judgment in this step, and its one phrase: say "the quoted evidence supports the verdict",
 not "accept", "sound" or "settles". A quote can be real and still not support the verdict. For a
 verdict of *refuted*, the question is whether the quotes show that the claim is false.
 
-Which ten claims is fixed by a rule, so that nobody chooses them (they differ between students,
+Which five claims is fixed by a rule, so that nobody chooses them (they differ between students,
 because they depend on each student's own agent's verdicts): in the results viewer, on the page for
 runs/part2, click "Clear the filters", then set "Verdict" in "The agent"
-box to "supported or refuted", and leave "Order" at "Order of the claims file". Rows 1 to 10 of
-the claims table are the ten. Do not pick claims yourself, and do not suggest others. If they ask
-which ten, give them that rule.
+box to "supported or refuted", and leave "Order" at "Order of the claims file". Rows 1 to 5 of
+the claims table are the five. Do not pick claims yourself, and do not suggest others. If they ask
+which five, give them that rule.
 
 On a claim's page, under "Quoted evidence", each quote says "Found in entry N of the trace
 (read), highlighted below"; "entry N" jumps to it in the trace, and "open the live page" opens
@@ -1082,61 +1080,8 @@ stays as it was:
 
 Never say whether the quoted evidence supports the verdict, whether a quote is relevant, or
 whether the agent was right. The student types the whole table under 2c and the answers after it;
-you may show the facts the table asks for in the chat. Tick checkpoint 1 when they say they have
-checked all ten.
-'''
-
-[[step]]
-id = "2d"
-part = 2
-title = "Find where Wikipedia has changed"
-page = "instructions/part2.md"
-section = "2d. Find where Wikipedia has changed"
-minutes = 30
-slots = ["2d.*"]
-allow = ["Bash(uv run python lookup.py:*)"]
-summary = "Find claims where today's Wikipedia disagrees with the dataset's label."
-goal = "What it means to judge a system that reads today's Wikipedia against labels made from the Wikipedia of 2017."
-checkpoints = [
-  "You have found two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label, or the closest cases after reading ten",
-  { text = "Your table and answer are in WRITEUP.md", slots = ["2d.*"] },
-]
-brief = '''
-HoVer's labels were made from Wikipedia as it was in 2017. The agent reads today's Wikipedia.
-Pages change, so an answer scored as wrong can be one where the quoted evidence supports the
-verdict on today's page. That is the one judgment in this step, and its one phrase: say "the
-quoted evidence supports the verdict", not "accept", "sound" or "settles".
-
-In the results viewer, on the page for runs/part2, the student clicks "Clear the filters", sets
-"Result" in "The agent" box to "does not match the dataset's label (any reason)", and looks for
-claims where the agent's quoted evidence supports its verdict and today's page disagrees with
-the dataset's label. A claim's page shows "The
-dataset's label" at the top, and "The dataset lists these articles for this claim:" and "Pages it
-read, live on Wikipedia today:" link to today's pages. They need two. The rule when they find
-fewer: if they have read ten of the agent's wrong answers and found fewer than two, they fill
-each remaining row of the table with the closest case they found (the claim that came nearest,
-and what kept it from being clear), and say in that row that it is not a clear case. The page ticks
-2d only when both numbered rows are full. Confirm that rule when
-asked; never pick a case for them, and never say which case is closest.
-
-When asked, show a claim word for word, its dataset label (from data/eval.jsonl), and the agent's
-verdict, evidence and trace (from runs/part2/agent.jsonl). Run the lookups they ask for, to see
-a page as it is today, with `--no-log` so that 1b's record in runs/part1/lookups.jsonl stays as
-it was:
-
-    uv run python lookup.py --no-log read "<page title>"
-    uv run python lookup.py --no-log read "<page title>" "<section>"
-    uv run python lookup.py --no-log search "<query>"
-
-To see a page as it was in 2017, the student opens it on Wikipedia, chooses "View history",
-opens "Filter revisions", sets "To date" to 31 December 2017 and presses "Show revisions"; the
-first row is the page as it was at the end of 2017. The results viewer cannot show old versions.
-Explain that if asked; the student does it in their browser.
-
-Never say which claims are cases of a changed page, whether the quoted evidence supports the
-verdict, or what changed on a page. The student types the whole table under 2d and the answer after
-it; you may show the facts the table asks for in the chat. Tick checkpoint 1 when they say they have
-found two, or have read ten wrong answers and filled the rows with the closest cases.
+you may show the facts the table asks for in the chat. Tick checkpoint 1 when they say they
+have checked all five.
 '''
 
 # ---- Part 3: Your own claims --------------------------------------------------------------
@@ -1310,16 +1255,14 @@ page = "instructions/part3.md"
 section = "3d. Make one change"
 minutes = 20
 slots = ["3d.*"]
-files = ["runs/part3/after/report.txt", "runs/part3/after-eval/report.txt"]
+files = ["runs/part3/after/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Edit(instructions.md)", "Bash(uv run python check_loop.py)"]
-run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval", note = "About 10 minutes and about 35 cents. Start it once you have settled on your change, and leave instructions.md alone until it ends." }
 summary = "Make one change aimed at the most common failure, and measure what it does."
-goal = "Whether one change aimed at your most common failure fixes it, and what it does on the 200 evaluation claims."
+goal = "Whether one change aimed at your most common failure fixes it, on your own claims."
 checkpoints = [
   "You have made one change",
   { text = "The agent has run again on your claims", files = ["runs/part3/after/report.txt"] },
-  { text = "The agent has run again on the 200 evaluation claims", files = ["runs/part3/after-eval/report.txt"] },
-  "You have compared both pairs of runs in the results viewer",
+  "You have compared the two runs in the results viewer",
   { text = "Your answers are in WRITEUP.md", slots = ["3d.*"] },
 ]
 brief = '''
@@ -1352,26 +1295,16 @@ If they then revise their change and want to run their claims again, it is the s
     uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
 
 Paste the output in full, and say they can compare runs/part3/before with runs/part3/after in the
-results viewer. If the output ends with a note that the saved results were made by an earlier
+results viewer: "Compare two runs", then the link "Step 3d: runs/part3/before with
+runs/part3/after". If the output ends with a note that the saved results were made by an earlier
 version of the agent, nothing was run: say in one sentence that the results shown come from the
 agent as it was before their latest change, and ask whether they want to run again with
 `--fresh`. The choice is theirs. Never run runs/part3/before again: it is what they compare with.
+They must not change instructions.md while a run is going, because the agent reads it again for
+every claim. Tick checkpoint 3 when they say they have compared the two runs.
 
-Then the student starts the agent on the 200 evaluation claims again, in their own terminal tab:
-
-    uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval
-
-It takes about 10 minutes and costs about 35 cents; their change can make it slower and dearer,
-so say "about". If they ask how to start it, give them that command. If they ask you to start it
-instead, do it in the background, and say once that it will stop if this session is closed. They
-must not change instructions.md, agent.py, wiki.py or my_loop.py while it runs. When it finishes it
-saves runs/part3/after-eval/report.txt. They compare runs/part2 with runs/part3/after-eval in the
-results viewer. Tick checkpoint 4 when they say they have compared both pairs. Never add `--fresh`
-to the after-eval command, and never rename or delete a run folder, unless the student asks for
-exactly that after you have said what it costs.
-
-Whether it fixed the failure, the numbers before and after, and whether it was worth it, are
-theirs to say. You may show any of the reports when asked.
+Whether it fixed the failure, and the numbers before and after, are theirs to say. You may show
+either report when asked.
 '''
 
 [[step]]
@@ -1380,7 +1313,7 @@ part = 3
 title = "Write it up"
 page = "instructions/part3.md"
 section = "3e. Write it up"
-minutes = 30
+minutes = 23
 slots = ["3e.*"]
 summary = "Say what the agent's loop adds, what it costs, and what your topic showed you about Wikipedia."
 goal = "Saying what you learned, in your own words."
@@ -1389,14 +1322,14 @@ checkpoints = [
 ]
 brief = '''
 Nothing runs in this step. The write-up is the student's. Its questions ask what the agent's loop
-adds over one search, using their numbers from Part 2 and their claims from Part 3; what the
-agent costs, and when they would not use an agent for a job like this; what their topic showed
+adds over one search, what it costs, and when they would not use an agent for a job like this,
+using their numbers from Part 2 and their claims from Part 3; what their topic showed
 them about Wikipedia as a source, and why it was thin or wrong where it was; and how they used AI
 in this homework, what they checked themselves, and one decision they made on their own.
 
 When they ask, show their own numbers and words: runs/part2/report.txt,
-runs/part3/before/report.txt, runs/part3/after/report.txt, runs/part3/after-eval/report.txt, and
-their earlier answers in WRITEUP.md. Never write, suggest, outline or improve a sentence of the
+runs/part3/before/report.txt, runs/part3/after/report.txt, and their earlier answers in
+WRITEUP.md. Never write, suggest, outline or improve a sentence of the
 write-up, and never suggest what to say about how they used AI. If they ask you to read a draft
 and comment on it, say that the write-up is theirs. You may point out a number that does not
 match a report.

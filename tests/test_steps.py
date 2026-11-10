@@ -2,7 +2,7 @@
 
 Offline: no network, no key. Run with `uv run pytest -q`.
 
-The step list is fixed: 18 steps, 0a to 3e, each with the sections, answers, files and commands
+The step list is fixed: the steps from 0a to 3e, each with the sections, answers, files and commands
 below. These tests catch a step that drifts from that list, a heading that the pages or
 WRITEUP.md do not have, a command a step's Claude session is told to run but may not run without
 asking, a word students should not see, and a placeholder that was never filled in.
@@ -45,20 +45,19 @@ EXPECTED = {
     "0d": (0, "0d. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 12),
     "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 70),
     "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 25),
-    "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 25),
-    "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 35),
+    "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 15),
+    "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 28),
     "1e": (1, "1e. Start the full run, and predict", ["runs/part2/no-tools.jsonl"], EVALUATE, 15),
     "2a": (2, "2a. Compare accuracy", ["runs/part2/report.txt"], EVALUATE, 18),
     "2b": (2, "2b. Compare cost", [], EVALUATE, 12),
-    "2c": (2, "2c. Check the evidence yourself", [], LOOKUP, 35),
-    "2d": (2, "2d. Find where Wikipedia has changed", [], LOOKUP, 30),
+    "2c": (2, "2c. Check the evidence yourself", [], LOOKUP, 20),
     "3a": (3, "3a. Pick a topic and write your claims", ["data/my-claims.jsonl"],
            ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"], 30),
     "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),
     "3c": (3, "3c. Sort the failures", [], EVALUATE, 25),
-    "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt", "runs/part3/after-eval/report.txt"],
+    "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt"],
            EVALUATE + CHECK + ["Edit(instructions.md)", "Bash(uv run python check_loop.py)"], 20),
-    "3e": (3, "3e. Write it up", [], [], 30),
+    "3e": (3, "3e. Write it up", [], [], 23),
 }
 
 SAMPLE_CLAIM = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
@@ -253,12 +252,11 @@ def test_no_brief_reruns_the_long_runs_with_fresh(a):
 
 
 def test_long_runs_are_shown_as_run_yourself():
-    """1e and 3d's long runs are the student's own, shown on the page as a second command box.
+    """1e's long run is the student's own, shown on the page as a second command box.
     Read from the file itself, since a page version without the key ignores it."""
     import tomllib
     steps = {s["id"]: s for s in tomllib.loads(STEPS.read_text(encoding="utf-8"))["step"]}
-    want = {"1e": "uv run python evaluate.py data/eval.jsonl --out runs/part2",
-            "3d": "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval"}
+    want = {"1e": "uv run python evaluate.py data/eval.jsonl --out runs/part2"}
     for step_id, s in steps.items():
         if step_id in want:
             run = s.get("run_yourself") or {}

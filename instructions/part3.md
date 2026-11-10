@@ -4,8 +4,7 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you test the agent on a topic you know better than most people. You write your own claims,
 run the agent on them, sort out why it fails, make one change, and write up what you found. It should
-take about 2 hours and 10 minutes, including a second run on the 200 evaluation claims of about 10
-minutes.
+take about 1 hour and 50 minutes.
 
 ## 3a. Pick a topic and write your claims
 
@@ -158,11 +157,8 @@ uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out 
 
 ## 3d. Make one change
 
-**What you're finding out:** Whether one change aimed at your most common failure fixes it, and what
-it does on the 200 evaluation claims.
-
-**Words in this step:** *the evaluation claims*: the 200 claims in `data/eval.jsonl`, which your full
-run in 1e checked and saved in `runs/part2`.
+**What you're finding out:** Whether one change aimed at your most common failure fixes it, on your own
+claims.
 
 **What to do:**
 
@@ -172,15 +168,9 @@ run in 1e checked and saved in `runs/part2`.
 3. Make the change in your editor, or tell Claude exactly what to change.
 4. Ask Claude to run the agent on your claims again, with the change.
 5. If you adjust your change after seeing the results, ask Claude to run that again with `--fresh`.
-6. Settle on your change before the next action, because the long run uses the agent as it is then.
-7. Open a new terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
-8. Start the agent on the 200 evaluation claims yourself, in that tab.
-9. Leave that tab open, your laptop awake and `instructions.md` alone until the run ends.
-10. Open **Results** at the top of the homework page, click "Compare two runs", then "Step 3d:
-    runs/part3/before with runs/part3/after".
-11. When the long run has finished, go back to "Compare two runs" and click "Step 3d: runs/part2 with
-    runs/part3/after-eval".
-12. Answer the three questions.
+6. Open **Results** at the top of the homework page, click "Compare two runs", then "Step 3d:
+   runs/part3/before with runs/part3/after".
+7. Answer the two questions.
 
 **What you'll see:** Claude makes exactly the change you describe and shows you what changed. For your
 claims, Claude runs the first command below; after you adjust your change, the second, whose `--fresh`
@@ -191,34 +181,25 @@ uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/
 uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
 ```
 
-In your own tab you run this. It takes about 10 minutes, costs about 35 cents and ends with two tables:
-
-```
-uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval
-```
-
 **What to write:** In `WRITEUP.md`, under 3d:
 
 - What did you change, and why did you expect it to help?
 - Did it fix the failure you aimed at? Give how many of your claims the agent matched before and after, and say whether the claims you gave that label now match.
-- What did the change do on the 200 evaluation claims? Was it worth it?
 
-**You're done when:** The homework page ticks 3d: `runs/part3/after/report.txt` and
-`runs/part3/after-eval/report.txt` exist, and the three answers have text after the `>`.
+**You're done when:** The homework page ticks 3d: `runs/part3/after/report.txt` exists, and the two
+answers have text after the `>`.
 
 **If something goes wrong:**
 
-- A run stops partway: run the same command again. It keeps every claim it already finished.
-- One of this step's two runs stops at once and says its folder has saved results from an earlier
-  version of your agent: you changed `instructions.md`, `agent.py`, `wiki.py` or your loop after that run
-  started.
-  Add `--fresh` to the end of the same command to start that run over with the agent as it is now.
+- The run stops partway: run the same command again. It keeps every claim it already finished.
+- The run stops at once and says its folder has saved results from an earlier version of your agent:
+  you changed `instructions.md`, `agent.py`, `wiki.py` or your loop after the run started. Add `--fresh`
+  to the end of the same command to start the run over with the agent as it is now.
 
 **Hint:** The change can be to `instructions.md`, to a tool (for example, what `search` returns, in
 `wiki.py`), to the limit of 12 lookups (in `agent.py`), or to your loop, in `my_loop.py` (run
 `uv run python check_loop.py` again after changing it). Claude will not propose a change, because
-choosing it is the point of this step. Start the long run in your own tab, because a run started by
-Claude stops if you close that Claude session; leave `instructions.md` alone while it runs, because the
+choosing it is the point of this step. Leave `instructions.md` alone while a run is going, because the
 agent reads it again for every claim.
 
 ## 3e. Write it up
@@ -229,21 +210,20 @@ agent reads it again for every claim.
 
 1. Start this step's Claude session with the command the homework page shows for 3e, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Answer the three questions under `### Write-up` in 3e, using your own numbers and examples.
+2. Answer the two questions under `### Write-up` in 3e, using your own numbers and examples.
 3. Answer the question under `### How I used AI`.
 4. Ask Claude to show you any of your own numbers or results you want to use.
 
 **What to write:** In `WRITEUP.md`, under 3e, answer under `### Write-up`:
 
-- What does the agent's loop add over one search? Use your numbers from Part 2 and your claims from Part 3.
-- What does the agent cost, and when would you not use an agent for a job like this?
+- What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and your claims from Part 3.
 - What did your topic show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
 
 and under `### How I used AI`:
 
 - How did you use AI in this homework, what did you check yourself, and what is one decision you made on your own?
 
-**You're done when:** The homework page ticks 3e: all four answers have text after the `>`. That
+**You're done when:** The homework page ticks 3e: all three answers have text after the `>`. That
 finishes Part 3, so the page commits your work as `Part 3 done` and pushes it to your fork. Then submit,
 as the Submitting section of the README says.
 
@@ -258,7 +238,7 @@ Part 3 is 30% of the homework. At a minimum I am looking for the following:
 - Your claims: 20% - At least eight in 3a, with the mix asked for, each with your verdict and a source.
 - Failure labels: 30% - Each label in 3c is backed by the line of the trace that shows it, and you
   explain where you and Claude disagreed.
-- Your change: 20% - Your 3d change targets your most common failure, and you report its effect on both
-  your claims and the 200 evaluation claims.
+- Your change: 20% - Your 3d change targets your most common failure, and you report its effect on
+  your claims.
 - Write-up: 30% - Your 3e answers use your own numbers and examples, and the Wikipedia answer goes
   beyond "it was missing" to why.

@@ -790,8 +790,10 @@ def test_the_after_eval_run_appears_only_if_the_homework_has_it(repo):
     def pages():
         return " ".join(text_of(get(repo, url)[2]) for url in (
             "/results/", "/results/compare", "/results/open?path=runs/part3/after-eval"))
-    # Today's step list names the run: the comparison and the hint are there.
-    (repo / "steps.toml").write_text((Path(__file__).parent.parent / "steps.toml").read_text())
+    # A step list that names the run (the homework's own does unless 3d's second run was cut): the
+    # comparison and the hint are there.
+    (repo / "steps.toml").write_text(
+        '[[step]]\nid = "3d"\nfiles = ["runs/part3/after/report.txt", "runs/part3/after-eval/report.txt"]\n')
     words = pages()
     assert "Step 3d: runs/part2 with runs/part3/after-eval" in words
     assert "Step 3d saves the run in runs/part3/after-eval/." in words

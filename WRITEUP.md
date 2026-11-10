@@ -93,16 +93,13 @@ Did you have to back up and try something else? What happened?
 
 ## 1c. Watch the agent work
 
-The six traces you read closely: two claims each that need 2, 3 and 4 articles. For each number of articles, one the agent got right and one it got wrong, where there is one. One of the six must be claim 2 from 1b.
+The three traces you read closely: one claim each that needs 2, 3 and 4 articles, with claim 2 from 1b as the one that needs 3. At least one is a claim the agent got wrong, where there is one.
 
 | # | Claim (first few words) | Articles | Did it match the dataset's label? | Did it get there for a good reason? Why or why not |
 |---|---|---|---|---|
 | 1 | | | | |
 | 2 | | | | |
 | 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
-| 6 | | | | |
 
 Which trace did you find most interesting, and what did the agent do well or badly in it?
 
@@ -169,7 +166,7 @@ Did the agent ever use all 12 lookups? If so, pick one such claim and say what i
 
 ## 2c. Check the evidence yourself
 
-The first ten claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
+The first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 
 | # | Claim (first few words) | Agent's verdict | Matched the dataset's label? | Does the quoted evidence support that verdict? | Why or why not |
 |---|---|---|---|---|---|
@@ -178,30 +175,12 @@ The first ten claims in your Part 2 run, in the order of the claims file, where 
 | 3 | | | | | |
 | 4 | | | | | |
 | 5 | | | | | |
-| 6 | | | | | |
-| 7 | | | | | |
-| 8 | | | | | |
-| 9 | | | | | |
-| 10 | | | | | |
 
-Of the ten, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
+Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 
 >
 
 Is accuracy alone a good measure of this agent? Why or why not?
-
->
-
-## 2d. Find where Wikipedia has changed
-
-Two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
-
-| # | Claim (first few words) | The dataset's label | What today's Wikipedia says | What changed on the page, if you can tell |
-|---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-
-What does this tell you about using a fixed dataset to judge a system that reads a live source?
 
 >
 
@@ -262,19 +241,11 @@ Did it fix the failure you aimed at? Give how many of your claims the agent matc
 
 >
 
-What did the change do on the 200 evaluation claims? Was it worth it?
-
->
-
 ## 3e. Write it up
 
 ### Write-up
 
-What does the agent's loop add over one search? Use your numbers from Part 2 and your claims from Part 3.
-
->
-
-What does the agent cost, and when would you not use an agent for a job like this?
+What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and your claims from Part 3.
 
 >
 

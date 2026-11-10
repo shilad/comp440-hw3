@@ -33,7 +33,6 @@ PARTS = {
         "2a. Compare accuracy",
         "2b. Compare cost",
         "2c. Check the evidence yourself",
-        "2d. Find where Wikipedia has changed",
     ]),
     3: ("Your own claims", "instructions/part3.md", [
         "3a. Pick a topic and write your claims",
@@ -73,7 +72,7 @@ def labels_for(step):
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
-SLOTS = 48
+SLOTS = 44
 
 # The files whose words students read, which must hold no placeholder when the homework ships.
 OWNED = ["README.md", "WRITEUP.md", ".env.example"] + [page for _, page, _ in PARTS.values()]

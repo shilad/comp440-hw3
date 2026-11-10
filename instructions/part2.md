@@ -3,8 +3,8 @@
 Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you read the full run you started in 1e: how often each version matched the dataset's
-label, what each one cost, whether the agent's evidence holds up when you check it yourself, and where
-Wikipedia has changed since the dataset was made. It should take about 1 hour and 35 minutes.
+label, what each one cost, and whether the agent's evidence holds up when you check it yourself. It
+should take about 50 minutes.
 
 ## 2a. Compare accuracy
 
@@ -103,15 +103,15 @@ these claims come from, gives each claim, *supported* or *not supported*.
 2. Open **Results** at the top of the homework page, then "runs/part2".
 3. Click "Clear the filters" under the claims filters.
 4. Set "Verdict" in "The agent" box to "supported or refuted"; leave "Order" at "Order of the claims file".
-5. Take rows 1 to 10.
+5. Take rows 1 to 5.
 6. Click row 1. Under "Quoted evidence", click "entry N" to read each quote highlighted.
 7. Decide whether the quoted evidence supports the agent's verdict.
 8. Click "open the live page" whenever you're unsure, to see today's page at that quote.
-9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 10.
+9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 5.
 10. Answer the two questions.
 
 **What you'll see:** The "Row" column counts the rows shown, in the order of the claims file, so rows 1
-to 10 are fixed by the rule. I ask for the first ten so that nobody, you or Claude, chooses which claims
+to 5 are fixed by the rule. I ask for the first five so that nobody, you or Claude, chooses which claims
 get checked. A claim's page says, under "The agent", whether its verdict "matches the dataset's label":
 that is the table's fourth column. To read more of a page as the agent read it, ask Claude to run one of these (`--no-log`
 keeps them out of your record from 1b):
@@ -123,18 +123,30 @@ uv run python lookup.py --no-log read "<page title>" "<section>"
 
 **What to write:** In `WRITEUP.md`, under 2c, fill in the table and answer:
 
-- The first ten claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
-- Of the ten, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
+- The first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
+- Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
-**You're done when:** The homework page ticks 2c: all ten rows are filled, and both answers have text
-after the `>`.
+**You're done when:** The homework page ticks 2c: all five rows are filled, and both answers have text
+after the `>`. That finishes Part 2, so the page commits your work as `Part 2 done` and pushes it to
+your fork.
 
 **Hint:** You type all the columns. Claude can show you each claim's first words and the agent's
 verdict in the chat. Claude will not say whether the quoted evidence supports a verdict, because that
 judgment is what this step is about.
 
-## 2d. Find where Wikipedia has changed
+## What I look for
+
+Part 2 is 35% of the homework. At a minimum I am looking for the following:
+
+- Accuracy and cost: 50% - Your answers to 2a and 2b use numbers from your run, by number of articles.
+- Evidence check: 50% - Each of your five checks in 2c says whether the quote supports the verdict and
+  why, and your answer weighs accuracy against how good the evidence is.
+
+## Extra credit: find where Wikipedia has changed
+
+This is extra credit, and it has no step on the homework page. Do it after Part 2, in any Claude
+session you like (the homework page can take you back to 2c's), or with none.
 
 **What you're finding out:** What it means to judge a system that reads today's Wikipedia against
 labels made from the Wikipedia of 2017.
@@ -149,48 +161,47 @@ each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't s
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 2d, in a terminal tab in the
-   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Open **Results** at the top of the homework page, then "runs/part2".
-3. Click "Clear the filters" under the claims filters.
-4. Set "Result" in "The agent" box to "does not match the dataset's label (any reason)".
-5. Click these claims one at a time; "Next →" goes to the next one.
-6. For each, decide whether its quoted evidence supports its verdict and today's page disagrees with the label.
-7. For a claim you think qualifies, look at its page as it was at the end of 2017 (see the Hint).
-8. Find at least two such claims, and fill in a row of the table for each.
-9. Stop if you have read ten of the agent's wrong answers and found fewer than two.
-10. In that case, fill each remaining row with the closest case you found, and say it is not a clear case.
-11. Answer the question under the table.
+1. Open **Results** at the top of the homework page, then "runs/part2".
+2. Click "Clear the filters" under the claims filters.
+3. Set "Result" in "The agent" box to "does not match the dataset's label (any reason)".
+4. Click these claims one at a time; "Next →" goes to the next one.
+5. For each, decide whether its quoted evidence supports its verdict and today's page disagrees with the label.
+6. For a claim you think qualifies, look at its page as it was at the end of 2017 (see the Hint).
+7. Find at least two such claims.
+8. Stop if you have read ten of the agent's wrong answers and found fewer than two.
+9. In that case, use the closest case you found for each remaining row, and say it is not a clear case.
+10. Type a heading `## Extra credit` at the end of `WRITEUP.md`, and under it the table and question below.
 
 **What you'll see:** A claim's page shows "The dataset's label" at the top, and "The dataset lists these
 articles for this claim:" and "Pages it read, live on Wikipedia today:" link to today's pages. The
 results viewer cannot show older versions; Wikipedia's "View history" can. To read today's page as the
-agent reads it, ask Claude to run:
+agent reads it, ask Claude to run this, or run it yourself in a terminal in the homework's folder:
 
 ```
 uv run python lookup.py --no-log read "<page title>"
 ```
 
-**What to write:** In `WRITEUP.md`, under 2d, fill in the table and answer:
+**What to write:** Under `## Extra credit` at the end of `WRITEUP.md`, copy this, then fill in the table
+and type your answer after the `>`:
 
-- Two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
-- What does this tell you about using a fixed dataset to judge a system that reads a live source?
+```
+Two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
 
-**You're done when:** The homework page ticks 2d: both rows are filled, and the answer has text after
-the `>`. That finishes Part 2, so the page commits your work as `Part 2 done` and pushes it to your
-fork.
+| # | Claim (first few words) | The dataset's label | What today's Wikipedia says | What changed on the page, if you can tell |
+|---|---|---|---|---|
+| 1 | | | | |
+| 2 | | | | |
+
+What does this tell you about using a fixed dataset to judge a system that reads a live source?
+
+>
+```
+
+**You're done when:** Both rows are filled and the question has an answer. The homework page does not
+tick extra credit. It commits it with the rest of your work, as the Extra credit section of the README
+says.
 
 **Hint:** For a claim you think qualifies, open the Wikipedia page that holds the fact. Choose "View
 history", open "Filter revisions", set "To date" to 31 December 2017 and press "Show revisions". The
 first row is the page as it was at the end of 2017. This is for the table's last column; if you can't
 tell what changed, say so there.
-
-## What I look for
-
-Part 2 is 35% of the homework. At a minimum I am looking for the following:
-
-- Accuracy and cost: 35% - Your answers to 2a and 2b use numbers from your run, by number of articles.
-- Evidence check: 35% - Each of your ten checks in 2c says whether the quote supports the verdict and
-  why, and your answer weighs accuracy against how good the evidence is.
-- Changed pages: 30% - Each claim you found in 2d shows the dataset's label, what today's page says,
-  and what that means for the score.
