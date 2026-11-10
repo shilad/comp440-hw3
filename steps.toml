@@ -172,8 +172,8 @@ student's thinking about their own results, which is not.
 One example of the line. In about a quarter of the agent's runs, the trace shows an answer the
 loop sent back before a later answer was accepted, most often because the agent quoted a search
 result, which does not count as something it read. If the student asks what that means, explain
-that it is the loop's check on evidence doing its job. Do not say whether it makes the final
-verdict better or worse.
+it as the loop's evidence check: a quoted sentence was not in anything the agent had read, so the
+loop sent the answer back. Do not say whether that makes the final verdict better or worse.
 
 ## Commands
 
@@ -202,9 +202,12 @@ Facts about the programs that come up in several steps:
   a run is going. Say so if they mention editing it during a run.
 - The model does not give the same answer every time. Running one claim again with check.py
   gives a different trace from the one saved in a run.
-- In the results viewer a trace numbers every entry, answers and reminders included, so after an
-  answer the loop sent back, the entry numbers run ahead of the count of lookups. "Found in
-  lookup 3" means entry 3 of the trace. Explain that if a number puzzles the student.
+- A numbered line of a trace is an entry: a lookup or an answer. The trace numbers every entry,
+  answers included, while "Lookups: N" on the last line counts only search, read and wikidata,
+  so it can be smaller than the last number. The results viewer says "Found in entry 3 of the
+  trace (read)". When a question asks for a number, the student gives the number on that
+  entry's line. Say "entry" for a numbered line, and "lookup" only for a search, read or
+  wikidata call.
 - When Wikipedia asks the program to slow down, the program prints "Wikipedia asked this program
   to slow down, so it is waiting N seconds before it tries again." and carries on by itself. If
   you see it, paste it with the rest of the output, and say in one line that the program waits
@@ -327,11 +330,11 @@ slots = ["Name"]
 files = [".env", "runs/part0/setup-check.txt"]
 allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"]
 summary = "Get your copy of the homework running, with your name in WRITEUP.md and your key in .env."
-goal = "Nothing yet. This step gets the homework running on your laptop."
+goal = "This step gets the homework running on your laptop."
 checkpoints = [
-  "Start this step's Claude session with the command on this page, and answer Claude Code's question about trusting the folder",
-  { text = "Type your name after Name: at the top of WRITEUP.md", slots = ["Name"] },
-  { text = "In your editor, copy .env.example to .env and fill in your API key and your Macalester email", files = [".env"] },
+  { text = "In a terminal tab of your own, in the homework's folder, run cp .env.example .env; then open .env in your editor, fill in your API key and your Macalester email, and save", files = [".env"] },
+  { text = "Type your name after Name: at the top of WRITEUP.md, and save", slots = ["Name"] },
+  "Start this step's Claude session with the command on this page, in that tab, and answer Claude Code's question about trusting the folder",
   { text = "Ask Claude to run the set-up check, until it says everything is ready", files = ["runs/part0/setup-check.txt"] },
 ]
 brief = '''
@@ -339,15 +342,20 @@ This is the set-up step, so you may take the student through its actions in orde
 session started, the student forked the repository, cloned their fork, and started the homework
 page. The actions, in order:
 
-1. They started this session with the command on the homework page, and answered Claude Code's
-   question about trusting the folder. Tick checkpoint 1 in your first reply, then say what the
-   next action is.
-2. They type their name after "Name:" at the top of WRITEUP.md, in their editor. Do not type it
-   for them.
-3. In their editor, they copy .env.example to a new file named .env. After ANTHROPIC_API_KEY=
-   they paste the API key the instructor sent them by Slack direct message, and after
-   WIKIPEDIA_CONTACT= they type their Macalester email. Never create, open, read or edit .env,
-   even to help, and never ask for the key. Tell them how, and wait.
+1. In a terminal tab of their own, in the homework's folder, they run `cp .env.example .env`.
+   Then they open .env in their editor. After ANTHROPIC_API_KEY= they paste the API key the
+   instructor sent them by Slack direct message, after WIKIPEDIA_CONTACT= they type their
+   Macalester email, and they save. Never run that cp command yourself, and never create, open,
+   read or edit .env, even to help: no Claude session writes .env. Never ask for the key. Files
+   whose names start with a dot are hidden in Finder and in most Open windows: if their editor's
+   Open window does not show .env, they press Command-Shift-period in that window, or open the
+   whole comp440-hw3 folder in their editor.
+2. They type their name after "Name:" at the top of WRITEUP.md, in their editor, and save. Do not
+   type it for them.
+3. They started this session in that tab, with the command on the homework page, and answered
+   Claude Code's question about trusting the folder. Tick checkpoint 3 in your first reply, then
+   say what the next action is: if .env or the name is not done yet, that one; otherwise the
+   set-up check.
 4. They ask you to run the set-up check:
 
        uv run python check_setup.py
@@ -382,7 +390,7 @@ slots = ["0b.*"]
 files = ["runs/part0/no-tools-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See how well the model checks the claim from memory alone."
-goal = "How well the model checks this claim from memory alone, with no lookups. This is the first baseline, the simplest of the three versions you will compare."
+goal = "How well the model checks this claim from memory alone, with no lookups. This is the first baseline, the simplest of the three versions (no tools, one search, the agent) you will compare."
 checkpoints = [
   "You said what you expect the model to say",
   { text = "The no-tools baseline's answer is saved in runs/part0/", files = ["runs/part0/no-tools-*.json"] },
@@ -470,7 +478,7 @@ summary = "See how the agent gets from the claim to a verdict when it chooses it
 goal = "How the agent gets from the claim to a verdict when it chooses its own lookups."
 checkpoints = [
   { text = "The agent's run is saved in runs/part0/", files = ["runs/part0/agent-*.json"] },
-  "You have read the trace, one lookup at a time",
+  "You have read the trace, one entry at a time",
   { text = "Your answers are in WRITEUP.md", slots = ["0d.*"] },
 ]
 brief = '''
@@ -492,10 +500,10 @@ Before running, ask what they expect the agent to do. Run the command when they 
 output in full, say the run is saved in runs/part0/, and say that the results viewer ("Results"
 at the top of the homework page) shows each lookup's full result.
 
-The student reads the trace one lookup at a time. If they ask you to go through it with them,
-take one lookup per turn: what the agent asked for and what came back, in the output's own
-words. The full result of each lookup is in the saved file in runs/part0/; paste it if they ask.
-Explain any tool or term they ask about. When they have been through every lookup, or say they
+The student reads the trace one entry at a time (an entry is a numbered line: a lookup or an
+answer). If they ask you to go through it with them, take one entry per turn: what the agent
+asked for and what came back, in the output's own words. The full result of each lookup is in the saved file in runs/part0/; paste it if they ask.
+Explain any tool or term they ask about. When they have been through every entry, or say they
 have read the trace, tick checkpoint 2.
 
 How the agent got from the claim to its verdict, and which lookup they would have done
@@ -639,7 +647,7 @@ summary = "Run the agent on the 12 development claims and read six of its traces
 goal = "Whether the agent reaches the dataset's label, and whether it gets there for a good reason."
 checkpoints = [
   { text = "The agent's run on the 12 development claims is saved", files = ["runs/part1/before/report.txt"] },
-  "You have read six traces closely in the results viewer",
+  "You have read six traces closely in the results viewer: two each for 2, 3 and 4 articles, one of them claim 2 from 1b",
   { text = "Your table and answer are in WRITEUP.md", slots = ["1c.*"] },
 ]
 brief = '''
@@ -671,7 +679,7 @@ facts it asks for in the chat (a claim's first few words, its number of articles
 matched the dataset's label), but do not write them in WRITEUP.md. Whether the agent got there
 for a good reason is theirs to judge. Never say whether a trace shows a good reason.
 
-To show a trace, paste it from runs/part1/before/agent.jsonl, one lookup per line, or point them
+To show a trace, paste it from runs/part1/before/agent.jsonl, one entry per line, or point them
 to the results viewer, which shows each lookup's full result. Do not run check.py to show a
 trace: it would give a new trace, not the one in the run. check.py is there if the student wants
 to check one claim on its own: `uv run python check.py --method agent "<claim>"`.
@@ -696,7 +704,7 @@ allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
 summary = "Write the agent's instructions, and see how its traces change."
 goal = "How much the agent's behavior depends on its instructions."
 checkpoints = [
-  "Your own instructions are in instructions.md",
+  "Your own instructions are in instructions.md, and say: how to break a claim into pieces; when to use wikidata; when to stop; when to answer \"doesn't say\"",
   { text = "The second run on the 12 development claims is saved", files = ["runs/part1/after/report.txt"] },
   "You have compared the two runs in the results viewer",
   { text = "Your answers are in WRITEUP.md", slots = ["1d.*"] },
@@ -759,8 +767,9 @@ minutes = 15
 slots = ["1e.*"]
 files = ["runs/part2/no-tools.jsonl"]
 allow = ["Bash(uv run python evaluate.py:*)"]
+run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --out runs/part2", note = "About 20 minutes and about 50 cents on your key. Leave that tab open and your laptop awake until it ends with two tables. Fill in your predictions while it runs, and don't look at its results before they are saved." }
 summary = "Start the full run in your own terminal tab, and write your predictions while it runs."
-goal = "Nothing yet. You commit to predictions before you see any results, so that later you can tell where you were surprised."
+goal = "You commit to predictions before you see any results, so that later you can tell where you were surprised."
 checkpoints = [
   { text = "The full run has started", files = ["runs/part2/no-tools.jsonl"] },
   { text = "Your predictions and answer are in WRITEUP.md", slots = ["1e.*"] },
@@ -893,12 +902,14 @@ allow = ["Bash(uv run python lookup.py:*)"]
 summary = "Check whether the agent's quoted evidence really supports its verdicts, for ten claims."
 goal = "Whether the agent's quoted evidence really supports its verdicts, and so whether accuracy alone is a fair measure of it."
 checkpoints = [
-  "You have checked the quoted evidence for ten claims yourself",
+  "You have checked the quoted evidence for the first ten claims where the agent answered \"supported\" or \"refuted\"",
   { text = "Your table and answers are in WRITEUP.md", slots = ["2c.*"] },
 ]
 brief = '''
-The student checks whether the agent's quoted evidence really supports its verdicts. A quote can
-be real and still not support the verdict.
+The student checks, for ten claims, whether the quoted evidence supports the verdict. That is the
+one judgment in this step, and its one phrase: say "the quoted evidence supports the verdict",
+not "accept", "sound" or "settles". A quote can be real and still not support the verdict. For a
+verdict of *refuted*, the question is whether the quotes show that the claim is false.
 
 Which ten claims is fixed by a rule, so that every student gets the same ten: in the results
 viewer, on the page for runs/part2, click "Clear the filters", then set "Verdict" in "The agent"
@@ -906,18 +917,18 @@ box to "supported or refuted", and leave "Order" at "Order of the claims file". 
 the claims table are the ten. Do not pick claims yourself, and do not suggest others. If they ask
 which ten, give them that rule.
 
-On a claim's page, under "Quoted evidence", each quote says "Found in lookup N (read),
-highlighted below"; "lookup N" jumps to it in the trace, and "open the live page" opens today's
-Wikipedia page at that quote. For each claim they ask about, you may also show the claim word for
+On a claim's page, under "Quoted evidence", each quote says "Found in entry N of the trace
+(read), highlighted below"; "entry N" jumps to it in the trace, and "open the live page" opens
+today's Wikipedia page at that quote. For each claim they ask about, you may also show the claim word for
 word, the agent's verdict, its quoted evidence and its explanation, from runs/part2/agent.jsonl,
-and say which lookup in the trace each quote came from. To show a page as the agent read it, run
+and say which entry of the trace each quote came from. To show a page as the agent read it, run
 what they ask, with `--no-log` so that 1b's record in runs/part1/lookups.jsonl stays as it was:
 
     uv run python lookup.py --no-log read "<page title>"
     uv run python lookup.py --no-log read "<page title>" "<section>"
 
-Never say whether a quote supports the verdict, whether it is relevant, or whether the agent was
-right. The student types the whole table under 2c and the answers after it; you may show the
+Never say whether the quoted evidence supports the verdict, whether a quote is relevant, or
+whether the agent was right. The student types the whole table under 2c and the answers after it; you may show the
 facts the table asks for in the chat. Tick checkpoint 1 when they say they have checked all ten.
 '''
 
@@ -933,21 +944,24 @@ allow = ["Bash(uv run python lookup.py:*)"]
 summary = "Find claims where today's Wikipedia disagrees with the dataset's label."
 goal = "What it means to judge a system that reads today's Wikipedia against labels made from the Wikipedia of 2017."
 checkpoints = [
-  "You have found two claims where today's Wikipedia disagrees with the dataset's label, or the closest case after reading ten",
+  "You have found two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label, or the closest cases after reading ten",
   { text = "Your table and answer are in WRITEUP.md", slots = ["2d.*"] },
 ]
 brief = '''
 HoVer's labels were made from Wikipedia as it was in 2017. The agent reads today's Wikipedia.
-Pages change, so an answer scored as wrong can be a sound reading of today's page.
+Pages change, so an answer scored as wrong can be one where the quoted evidence supports the
+verdict on today's page. That is the one judgment in this step, and its one phrase: say "the
+quoted evidence supports the verdict", not "accept", "sound" or "settles".
 
-In the results viewer, on the page for runs/part2, the student sets "Result" in "The agent" box
-to "does not match the dataset's label (any reason)", and looks for claims where the agent's
-evidence is sound and today's page disagrees with the dataset's label. A claim's page shows "The
+In the results viewer, on the page for runs/part2, the student clicks "Clear the filters", sets
+"Result" in "The agent" box to "does not match the dataset's label (any reason)", and looks for
+claims where the agent's quoted evidence supports its verdict and today's page disagrees with
+the dataset's label. A claim's page shows "The
 dataset's label" at the top, and "The dataset lists these articles for this claim:" and "Pages it
 read, live on Wikipedia today:" link to today's pages. They need two. The rule when they find
 fewer: if they have read ten of the agent's wrong answers and found fewer than two, they fill
-each remaining row of the table with the closest case they found, and say in that row that it is
-not a clear case. The page ticks 2d only when both numbered rows are full. Confirm that rule when
+each remaining row of the table with the closest case they found (the claim that came nearest,
+and what kept it from being clear), and say in that row that it is not a clear case. The page ticks 2d only when both numbered rows are full. Confirm that rule when
 asked; never pick a case for them, and never say which case is closest.
 
 When asked, show a claim word for word, its dataset label (from data/eval.jsonl), and the agent's
@@ -959,12 +973,13 @@ it was:
     uv run python lookup.py --no-log read "<page title>" "<section>"
     uv run python lookup.py --no-log search "<query>"
 
-To see an older version of a page, the student opens it on Wikipedia, chooses "View history",
-and picks a version from 2017; the results viewer cannot show old versions. Explain that if
-asked; the student does it in their browser.
+To see a page as it was in 2017, the student opens it on Wikipedia, chooses "View history",
+opens "Filter revisions", sets "To date" to 31 December 2017 and presses "Show revisions"; the
+first row is the page as it was at the end of 2017. The results viewer cannot show old versions.
+Explain that if asked; the student does it in their browser.
 
-Never say which claims are cases of a changed page, whether the agent's evidence is sound, or
-what changed on a page. The student types the whole table under 2d and the answer after it; you
+Never say which claims are cases of a changed page, whether the quoted evidence supports the
+verdict, or what changed on a page. The student types the whole table under 2d and the answer after it; you
 may show the facts the table asks for in the chat. Tick checkpoint 1 when they say they have
 found two, or have read ten wrong answers and filled the rows with the closest cases.
 '''
@@ -982,7 +997,7 @@ slots = ["3a.*"]
 files = ["data/my-claims.jsonl"]
 allow = ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"]
 summary = "Write at least eight claims of your own, on a topic you know well."
-goal = "Nothing yet. You build a set of claims on a topic you know better than most people, to test the agent on."
+goal = "You build a set of claims on a topic you know better than most people, to test the agent on."
 checkpoints = [
   { text = "Your topic and at least eight claims are in WRITEUP.md", slots = ["3a.*"] },
   { text = "Your claims are copied into data/my-claims.jsonl", files = ["data/my-claims.jsonl"] },
@@ -1095,7 +1110,8 @@ The order, which the step's instructions also give the student:
    you have given your own. While they work you may paste a trace or explain a lookup, when
    asked. Never say which label a trace deserves.
 2. When they ask for your labels, read the failures' traces in the two files above and give one
-   label per failing claim in the chat, each with the line of the trace it rests on. Then tick
+   label per failing claim in the chat, each with the entry of the trace it rests on (its number
+   and a few words of what it shows). Then tick
    checkpoint 2. Do not tick checkpoint 1 yet: you have not seen their table.
 3. When they ask, read the table under 3c in WRITEUP.md. If every failure has their label, tick
    checkpoint 1. Write each of your labels into the "Claude's label" column of its row (that
@@ -1105,15 +1121,17 @@ The order, which the step's instructions also give the student:
    row, say which, in one line.
 4. Then they answer the questions: where the two of you disagreed and who they think is right,
    and which kind of failure was most common. Never say who is right, and do not argue for your
-   labels. If asked why you chose one, quote the trace line it rests on.
+   labels. If asked why you chose one, quote the entry of the trace it rests on.
 
 The labels:
 
 - *wrong page*: it never found the page that settles the claim;
 - *stopped too early*: it answered before checking every piece;
 - *misread*: it read the right page and drew the wrong conclusion;
-- *wouldn't say "doesn't say"*: it forced a verdict Wikipedia does not support;
-- *Wikipedia is missing or wrong*: the agent did fine and Wikipedia let it down;
+- *forced a verdict*: it answered *supported* or *refuted* when Wikipedia does not settle the
+  claim;
+- *Wikipedia is missing or wrong*: the agent did its job, and Wikipedia lacks the fact or has it
+  wrong;
 - or a label of their own, and of yours if none of these fits.
 
 If the agent disagreed with the student on fewer than three claims, the step asks them to go back
@@ -1140,6 +1158,7 @@ minutes = 20
 slots = ["3d.*"]
 files = ["runs/part3/after/report.txt", "runs/part3/after-eval/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Edit(instructions.md)"]
+run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval", note = "About 10 minutes and about 35 cents. Start it once you have settled on your change, and leave instructions.md alone until it ends." }
 summary = "Make one change aimed at the most common failure, and measure what it does."
 goal = "Whether one change aimed at the most common failure fixes it, and what it does on the 200 evaluation claims."
 checkpoints = [
