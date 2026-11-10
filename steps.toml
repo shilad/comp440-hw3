@@ -590,7 +590,7 @@ part = 1
 title = "Write the loop"
 page = "instructions/part1.md"
 section = "1a. Write the loop"
-minutes = 70
+minutes = 90
 slots = ["1a.*"]
 files = ["runs/part1/loop-check.txt"]
 # The file is the check's own record, not a run: no link to it in the results viewer.

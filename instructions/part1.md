@@ -4,7 +4,7 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you build and study the agent. You write its loop, check two claims yourself with its
 four tools, watch it work on 12 claims, write its instructions, and then start the full run on 200
-claims while you predict how it will do. It should take about 2 hours and 35 minutes, plus about 20
+claims while you predict how it will do. It should take about 2 hours and 55 minutes, plus about 20
 minutes for the full run, which goes on by itself while you do other things.
 
 ## 1a. Write the loop
@@ -72,9 +72,18 @@ passes.
   messages=messages)`.
 - The reply has `.content` (a list of blocks), `.stop_reason` and `.usage` (`.input_tokens`,
   `.output_tokens`). A tool call is a block with `.type == "tool_use"`, `.name`, `.input` and `.id`.
+  It is an object, not a dictionary, so read its parts with a dot, as in `call.name`. One reply can
+  hold several tool calls, and every one of them needs a result.
 - A turn of the conversation is a dictionary with a `"role"` (`"user"` or `"assistant"`) and a
-  `"content"`, like the first one in `my_loop.py`. The content can be a string or a list.
+  `"content"`, like the first one in `my_loop.py`. The content can be a string or a list. For the
+  assistant's turn, the content is the reply's `.content`, just as it came back.
 - A result sent back is `{"type": "tool_result", "tool_use_id": call.id, "content": result}`.
+  Every tool call gets one in the next user turn, whatever happened to it: what a lookup returned,
+  `REJECTED` followed by the problem for an answer that is sent back, or `OUT_OF_STEPS` for a lookup
+  refused at the limit.
+- In rule 5, "the first time" is the first reply that asks for a lookup when `steps` has already
+  reached `max_steps`. Each lookup in that reply gets `OUT_OF_STEPS.format(n=max_steps)` as its result
+  and is not run.
 - A trace entry is `{"tool": name, "input": input, "result": result}`. An accepted answer's result is
   `ACCEPTED`. A reminder is recorded as tool `"(reminder)"`, input `{}`, result `REMINDED`.
 - Every tool call gets one entry in `trace`, with the result it was given: what a lookup returned,
@@ -85,7 +94,8 @@ passes.
 - The answer is cleaned first: `answer = clean_answer(call.input)`.
 - `finish(claim, verdict, evidence, explanation, trace, tokens, steps)` makes what the loop returns.
   "Stop with no verdict" means `return finish(claim, None, [], why, trace, tokens, steps)`, where `why` is
-  `REJECTED_TOO_OFTEN.format(n=rejected)`, `RAN_OUT`, `NO_ANSWER` or `DECLINED`.
+  `REJECTED_TOO_OFTEN.format(n=rejected)`, `RAN_OUT`, `NO_ANSWER` or `DECLINED`. Stopping always means
+  `return`: a `break` leaves only the innermost loop.
 - `REJECTED`, `OUT_OF_STEPS`, `REMINDER` and the other sentences are in `agent.py`. `OUT_OF_STEPS` and
   `REJECTED_TOO_OFTEN` have a `{n}` to fill in with `.format(n=...)`.
 

@@ -43,7 +43,7 @@ EXPECTED = {
     "0b": (0, "0b. Ask the model with no tools", ["runs/part0/no-tools-*.json"], CHECK, 8),
     "0c": (0, "0c. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 8),
     "0d": (0, "0d. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 12),
-    "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 70),
+    "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 90),
     "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 25),
     "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 15),
     "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 28),
