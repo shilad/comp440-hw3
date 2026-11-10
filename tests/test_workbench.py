@@ -244,6 +244,32 @@ def test_slots_and_completion_in_the_new_heading_style(tmp_path):
     assert st["0b"]["complete"] and not st["1a"]["locked"]
 
 
+def test_a_second_paragraph_stays_with_its_answer_in_the_real_writeup():
+    import re
+    blank = (ROOT / "WRITEUP.md").read_text()
+    n1, n2 = iter(range(1, 999)), iter(range(1, 999))
+    filled = re.sub(r"(?m)^>[ \t]*$", lambda m: f"> Answer {next(n1)}.", blank)
+    two = re.sub(r"(?m)^>[ \t]*$", lambda m: (lambda k: f"> Answer {k}.\n\nMore {k}, after a blank line.")(next(n2)), blank)
+    empty, one, both = steps.read_slots(blank), steps.read_slots(filled), steps.read_slots(two)
+    assert list(empty) == list(one) == list(both)           # the questions' labels never change
+    assert all(v == "" for v in empty.values())             # no template text fills a blank answer
+    kept = [k for k in both if both[k] != one[k]]
+    assert kept and all(re.fullmatch(r"Answer (\d+)\.\n\nMore \1, after a blank line\.", both[k]) for k in kept)
+    assert len(kept) == sum(v.startswith("Answer") for v in one.values())
+
+
+def test_what_counts_as_more_of_an_answer():
+    text = ("# Part 0: Set up\n\n## 0b. Ask\n\nFirst question?\n\n> Mine.\n\nMy second paragraph.\n\n"
+            "Second question?\n\n>\n\nA note before the table:\n\n| # | Tool |\n|---|---|\n| | |\n\n"
+            "Third question?\n\n> Three.\n\nThe end of answer three.\n\n## 0c. Next\n\nFourth?\n\n>\n")
+    got = steps.read_slots(text)
+    assert got["Part 0 / 0b. Ask / First question?"] == "Mine.\n\nMy second paragraph."
+    assert got["Part 0 / 0b. Ask / Second question?"] == ""  # blank: the note never fills it
+    assert "Part 0 / 0b. Ask / A note before the table:" in got   # the table's question stays its label
+    assert got["Part 0 / 0b. Ask / Third question?"] == "Three.\n\nThe end of answer three."
+    assert got["Part 0 / 0c. Next / Fourth?"] == ""
+
+
 def _write(path, text):
     path.write_text(text)
     return path
@@ -380,6 +406,27 @@ def test_the_name_has_its_own_plain_now_line(tmp_path):
     js = (ROOT / "workbench/static/app.js").read_text()
     assert "Paste this into a terminal in your homework folder, not into a Claude chat. If the last step's " \
            "Claude is still open in that terminal, type /exit first." in js
+
+
+def test_a_step_can_carry_a_command_the_student_runs_themselves(tmp_path):
+    own = ("uv run python evaluate.py data/eval.jsonl --out \"runs/part 2\" --note 'the student\'s run'")
+    literal = "'" * 3 + own + "'" * 3                     # a TOML literal string
+    steps_ = STEPS.replace('title = "Read the loop"', 'title = "Read the loop"\nrun_yourself = { command = '
+                           + literal + ', note = "About 20 minutes. Leave that tab open." }')
+    h = homework(tmp_path, {"steps.toml": steps_})
+    app = server.App(h.student)
+    a = json.loads(json.dumps(app.assignment()))
+    by = {s["label"]: s for s in a["steps"]}
+    assert by["1a"]["run_yourself"] == {"command": own, "note": "About 20 minutes. Leave that tab open."}
+    assert by["0b"]["run_yourself"] is None
+    (h.student / "WRITEUP.md").write_text(FILLED)
+    finish_part0(h.student)
+    app.hub.sessions["1a"].prepare()
+    assert own in (app.hub.dir / "1a.md").read_text()
+    app.hub.sessions["0b"].prepare()
+    assert "terminal tab of\ntheir own" not in (app.hub.dir / "0b.md").read_text()
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert "Run this yourself, in a terminal tab of your own" in js
 
 
 # -- saving the student's work -------------------------------------------------------------------

@@ -303,9 +303,19 @@ function command(label, cmd, flags) {
     ${flags ? `<span class="small">If Claude says the model is not available, delete <code>${esc(flags)}</code> from the command and run it again.</span>` : ""}</div>`;
 }
 
+// A command the student runs in a terminal tab of their own (a long run), under the Claude command.
+function yourself(s) {
+  const r = s.run_yourself;
+  if (!r) return "";
+  return `<div class="cmd"><span class="label">Run this yourself, in a terminal tab of your own</span>
+    <div class="cmd-row"><code title="${esc(r.command)}">${esc(r.command)}</code><button class="copy" data-copy="${esc(r.command)}" type="button">Copy</button></div>
+    ${r.note ? `<span class="small">${esc(r.note)}</span>` : ""}</div>`;
+}
+
 function recordCol(s, st, ss) {
   const when = st.waiting_on.map(labelOf).join(", ");
-  const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command, ss.model_flags) : "";
+  const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command, ss.model_flags)
+    + yourself(s) : "";
   if (s.setup) {
     const steps = `<ol class="plainsteps">${ss.record.checkpoints.filter((c) => c.n).map((c) => `<li class="${c.done ? "done" : ""}">${esc(c.text)}</li>`).join("")}</ol>`;
     return `<div class="record-head"><span class="label">Setup steps</span><span class="state">${esc(st.complete ? "Done." : ss.started ? stateLine(ss) : st.locked ? `Opens when you finish ${when}.` : "Not started.")}</span></div>
