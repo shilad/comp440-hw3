@@ -210,7 +210,10 @@ your own judgment. Ask questions in `#comp440-f26` on Slack. Follow the class's
 ## Resources
 
 - [The HoVer paper](https://arxiv.org/abs/2011.03088) (Jiang et al., 2020): where the claims come from,
-  and how each was built to need two to four Wikipedia articles.
+  and how each was built to need two to four Wikipedia articles. The claims in `data/dev.jsonl` and
+  `data/eval.jsonl` are a sample of [HoVer](https://hover-nlp.github.io/)'s, which its authors share
+  under the [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) licence; the sample
+  carries the same licence.
 - [Wikipedia's API documentation](https://www.mediawiki.org/wiki/API:Main_page): what the agent's tools
   use to search and read pages.
 
