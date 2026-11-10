@@ -108,11 +108,12 @@ or *doesn't say* counts as *not supported*.
 8. Answer the two questions.
 
 Claude can read more of a page for you with one of these commands, but it will not say whether a quote
-supports a verdict, because that judgment is what this step is about:
+supports a verdict, because that judgment is what this step is about. `--no-log` keeps these lookups
+out of your record from 1b:
 
 ```
-uv run python lookup.py read "<page title>"
-uv run python lookup.py read "<page title>" "<section>"
+uv run python lookup.py --no-log read "<page title>"
+uv run python lookup.py --no-log read "<page title>" "<section>"
 ```
 
 **What to write:** Under `## 2c. Check the evidence yourself` in `WRITEUP.md`, fill in the table and
@@ -145,7 +146,8 @@ Wikipedia.
 4. Open these claims one at a time. For each, decide whether the agent's evidence is sound and today's
    Wikipedia page disagrees with the dataset's label.
 5. To see an older version of a page, open the page on Wikipedia, choose "View history", and pick a
-   version from 2017.
+   version from 2017. To see today's version as the agent reads it, ask Claude to read it for you with
+   `uv run python lookup.py --no-log read "<page title>"`.
 6. Find at least two such claims, and fill in a row of the table for each.
 7. Stop if you have read ten of the agent's wrong answers and found fewer than two. Use a row of the
    table for the closest case you found, and say so in that row.

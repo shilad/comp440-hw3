@@ -163,6 +163,8 @@ In your repository I look for:
 - **A run says the API key is missing or wrong.** Open `.env` in your editor and check that the key I
   sent you comes right after `ANTHROPIC_API_KEY=`. Never paste the key into the chat with Claude:
   your conversations are saved in `TRANSCRIPT.md` and pushed to GitHub, where anyone can read them.
+- **You want to check your set-up.** Run `uv run python check_setup.py` in a terminal in the homework's
+  folder. It says whether `.env`, your key and Wikipedia all work, and it never prints your key.
 - **A run warns that `WIKIPEDIA_CONTACT` is not set.** Add a line to `.env`, in your editor:
   `WIKIPEDIA_CONTACT=` followed by your Macalester email. Without it, your runs share one Wikipedia
   allowance with the whole class and may slow down.

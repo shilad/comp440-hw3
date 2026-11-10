@@ -133,7 +133,8 @@ The labels:
 
 If the agent disagreed with you on fewer than three claims, there isn't enough to sort. Go back to your
 3a table and add harder claims, ask Claude to add them to `data/my-claims.jsonl`, and ask Claude to run
-3b's command again. It checks only the new claims, because the others are already saved:
+3b's command again. Add new claims rather than rewording old ones: a run keeps its saved result for each
+claim number, so a reworded claim would not be checked again. The command checks only the new claims:
 
 ```
 uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
