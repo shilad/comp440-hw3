@@ -146,9 +146,12 @@ def test_check_setup_says_what_is_missing_and_never_prints_the_key(monkeypatch, 
     monkeypatch.setattr(check_setup, "load_dotenv", lambda path: None)  # leave this process's environment alone
     monkeypatch.setattr(check_setup, "wikipedia_problem", lambda: None)
     monkeypatch.setattr(check_setup, "key_problem", lambda: None)
+    saved = tmp_path / "runs" / "part0" / "setup-check.txt"  # what marks step 0a as done
+    monkeypatch.setattr(check_setup, "SAVED", saved)
 
     assert check_setup.main() == 1  # no .env yet
     assert "There is no .env file" in capsys.readouterr().out
+    assert not saved.exists()
 
     env.write_text("ANTHROPIC_API_KEY=sk-ant-not-a-real-key\nWIKIPEDIA_CONTACT=\n")
     assert check_setup.main() == 1  # the email is missing
@@ -157,16 +160,21 @@ def test_check_setup_says_what_is_missing_and_never_prints_the_key(monkeypatch, 
     assert "NOT READY  WIKIPEDIA_CONTACT is empty" in printed
     assert "Not ready yet" in printed
     assert "sk-ant" not in printed
+    assert not saved.exists()
 
     env.write_text("ANTHROPIC_API_KEY=sk-ant-not-a-real-key\nWIKIPEDIA_CONTACT=student@macalester.edu\n")
     assert check_setup.main() == 0
     printed = capsys.readouterr().out
     assert "Everything is ready." in printed
     assert "sk-ant" not in printed and "student@macalester.edu" not in printed
+    kept = saved.read_text()  # saved only when everything is ready, with nothing from .env in it
+    assert "Everything is ready." in kept and "the Claude API accepted your key" in kept
+    assert "sk-ant" not in kept and "student@macalester.edu" not in kept
 
     monkeypatch.setattr(check_setup, "key_problem", lambda: "the Claude API did not accept the key.")
     assert check_setup.main() == 1  # a key that the API refuses
     assert "NOT READY  the Claude API did not accept the key." in capsys.readouterr().out
+    assert not saved.exists()  # an earlier "ready" does not outlive a failed check
 
 
 class Reply:
