@@ -197,12 +197,21 @@ def test_briefs_tick_only_checkpoints_claude_can_tick(a, step_id):
 
 # ---- the briefs ------------------------------------------------------------------------------
 
+# Commands a brief names for the student to run in their own terminal, never Claude. No allow list
+# may cover them, and the brief must say Claude never runs them.
+STUDENT_ONLY = {"cp .env.example .env"}
+
+
 @pytest.mark.parametrize("step_id", list(EXPECTED))
 def test_brief_commands_run_without_asking(a, step_id):
     s = a.step(step_id)
     rules = a.allow + s.allow
-    bad = [c for c in commands(s.brief) if not allowed(c, rules)]
+    bad = [c for c in commands(s.brief) if c not in STUDENT_ONLY and not allowed(c, rules)]
     assert not bad, f"{step_id}: its brief gives commands its allow list does not cover: {bad}"
+    for c in commands(s.brief):
+        if c in STUDENT_ONLY:
+            assert not allowed(c, rules), f"{step_id}: {c} must not run without asking"
+            assert "Never run that" in s.brief, f"{step_id}: the brief must say Claude never runs {c}"
 
 
 def test_claim_steps_give_the_claim_word_for_word(a):
@@ -239,6 +248,29 @@ def test_no_brief_reruns_the_long_runs_with_fresh(a):
         for c in commands(s.brief):
             if "--fresh" in c:
                 assert "runs/part2" not in c and "after-eval" not in c, f"{s.id}: {c}"
+
+
+def test_long_runs_are_shown_as_run_yourself():
+    """1e and 3d's long runs are the student's own, shown on the page as a second command box.
+    Read from the file itself, since a page version without the key ignores it."""
+    import tomllib
+    steps = {s["id"]: s for s in tomllib.loads(STEPS.read_text(encoding="utf-8"))["step"]}
+    want = {"1e": "uv run python evaluate.py data/eval.jsonl --out runs/part2",
+            "3d": "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval"}
+    for step_id, s in steps.items():
+        if step_id in want:
+            run = s.get("run_yourself") or {}
+            assert run.get("command") == want[step_id], step_id
+            assert run.get("note", "").startswith("About "), step_id
+        else:
+            assert "run_yourself" not in s, step_id
+
+
+def test_a_numbered_line_of_a_trace_is_an_entry():
+    text = STEPS.read_text(encoding="utf-8")
+    for old in ("Found in lookup", "one lookup per turn", "one lookup at a time", "wouldn't say \"doesn't say\"",
+                "let it down", "doing its job", "Nothing yet."):
+        assert old not in text, old
 
 
 def test_the_loop_has_more_than_two_ways_to_end():
