@@ -130,6 +130,65 @@ def test_a_failing_check_rewrites_a_yours_file_as_reference(tmp_path, monkeypatc
     assert check_loop.main([]) == 0 and agent.which_loop() == "yours"
 
 
+def printing(source, what):
+    """The loop, printing `what` after each reply from the model."""
+    old = '        messages.append({"role": "assistant", "content": response.content})\n'
+    assert source.count(old) == 1
+    return source.replace(old, old + f"        {what}\n")
+
+
+IDS = 'print("ids:", [b.id for b in response.content if b.type == "tool_use"])'
+
+
+def test_what_the_loop_printed_is_shown_for_the_first_failing_rule(tmp_path, monkeypatch,
+                                                                     saved, capsys):
+    # Steps are not counted, so rule 2 is the first to fail (and rule 5 fails too).
+    a_loop(tmp_path, printing(broken(("                steps += 1\n", "")),
+                              IDS + "; print('to stderr', file=sys.stderr)"), monkeypatch)
+    source = check_loop.MY_LOOP.read_text().replace("import anthropic\n",
+                                                    "import sys\n\nimport anthropic\n", 1)
+    check_loop.MY_LOOP.write_text(source)
+    assert check_loop.main([]) == 1
+    printed = capsys.readouterr().out.splitlines()
+    assert printed[1].startswith("NOT YET    2. ") and printed[4].startswith("NOT YET    5. ")
+    assert printed[6:9] == ["", check_loop.FAILED, ""]
+    assert printed[9] == "What your loop printed during the made-up check for rule 2:"
+    shown = printed[10:]
+    # Only the made-up check for rule 2, whose tool ids carry its name; stderr too.
+    assert shown[0] == "ids: ['toolu_lookups_11']"
+    assert shown[1] == "to stderr"
+    assert all("toolu_" not in line or "toolu_lookups_" in line for line in shown)
+    assert len(shown) == 2 * 4       # four replies before its answer is accepted, two lines each
+    assert not saved.exists()        # and nothing of it is saved
+
+
+def test_what_the_loop_printed_is_not_shown_when_every_rule_passes(tmp_path, monkeypatch, saved,
+                                                                  capsys):
+    a_loop(tmp_path, printing(REFERENCE, IDS), monkeypatch)
+    assert check_loop.main([]) == 0
+    out = capsys.readouterr().out
+    assert "ids:" not in out and "What your loop printed" not in out
+    assert "ids:" not in saved.read_text()
+
+
+def test_long_output_is_cut_to_40_lines(tmp_path, monkeypatch, capsys):
+    a_loop(tmp_path, printing(broken(("system=system, ", "")),
+                              "print('\\n'.join(f'line {i}' for i in range(30)))"), monkeypatch)
+    assert check_loop.main([]) == 1
+    out = capsys.readouterr().out
+    shown = out.split("What your loop printed during the made-up check for rule 1:\n")[1]
+    shown = shown.splitlines()
+    # The made-up check for rule 1 gets three replies: 90 lines printed, 40 shown.
+    assert shown[:40] == [f"line {i % 30}" for i in range(40)]
+    assert shown[40:] == ["(50 more lines not shown)"]
+
+
+def test_nothing_is_shown_when_the_loop_printed_nothing(tmp_path, monkeypatch, capsys):
+    a_loop(tmp_path, broken(("system=system, ", "")), monkeypatch)
+    assert check_loop.main([]) == 1
+    assert "What your loop printed" not in capsys.readouterr().out
+
+
 def test_a_failing_check_makes_no_file_when_there_was_none(tmp_path, monkeypatch, saved, capsys):
     a_loop(tmp_path, broken(("                steps += 1\n", "")), monkeypatch)
     assert check_loop.main([]) == 1
