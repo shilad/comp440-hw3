@@ -59,6 +59,53 @@ def test_a_finished_run_saves_its_report(monkeypatch, tmp_path, capsys):
     assert (out_dir / "report.txt").read_text() == report
 
 
+def test_saved_results_from_an_earlier_agent_are_pointed_out(monkeypatch, tmp_path, capsys):
+    monkeypatch.setitem(evaluate.METHODS, "agent", always_supported)
+    monkeypatch.setattr(evaluate, "agent_version", lambda: "v1")
+    _, out_dir = run_main(monkeypatch, tmp_path)
+    assert "earlier version" not in capsys.readouterr().out
+
+    # The student changes instructions.md and runs the same command: nothing runs,
+    # and the program says the saved results are from the earlier agent.
+    monkeypatch.setattr(evaluate, "agent_version", lambda: "v2")
+    monkeypatch.setitem(evaluate.METHODS, "agent",
+                        lambda claim: pytest.fail("ran again without --fresh"))
+    evaluate.main()
+    printed = capsys.readouterr().out
+    assert "earlier version of your agent" in printed and "--fresh" in printed
+
+    # With --fresh every claim runs again with the agent as it is now.
+    monkeypatch.setitem(evaluate.METHODS, "agent", always_supported)
+    monkeypatch.setattr(sys, "argv", sys.argv + ["--fresh"])
+    evaluate.main()
+    printed = capsys.readouterr().out
+    assert "agent: 0 already done, running 12" in printed
+    assert "earlier version" not in printed
+    rows = [json.loads(line) for line in (out_dir / "agent.jsonl").read_text().splitlines()]
+    assert len(rows) == 12 and {row["agent_version"] for row in rows} == {"v2"}
+    assert (out_dir / "report.txt").exists()
+
+
+def test_old_and_new_results_are_not_mixed(monkeypatch, tmp_path, capsys):
+    def two_fail(claim):  # a run that stopped before it finished
+        if claim in ("claim 10", "claim 11"):
+            raise wiki.RateLimited("too many requests")
+        return always_supported(claim)
+
+    monkeypatch.setattr(evaluate, "agent_version", lambda: "v1")
+    monkeypatch.setitem(evaluate.METHODS, "agent", two_fail)
+    _, out_dir = run_main(monkeypatch, tmp_path)
+
+    monkeypatch.setattr(evaluate, "agent_version", lambda: "v2")  # then the agent changed
+    monkeypatch.setitem(evaluate.METHODS, "agent",
+                        lambda claim: pytest.fail("mixed old and new results"))
+    with pytest.raises(SystemExit) as stopped:
+        evaluate.main()
+    assert "earlier version of your agent" in str(stopped.value)
+    assert "--fresh" in str(stopped.value)
+    assert len((out_dir / "agent.jsonl").read_text().splitlines()) == 10
+
+
 def test_a_run_with_a_failed_claim_has_no_report(monkeypatch, tmp_path, capsys):
     def one_fails(claim):
         if claim == "claim 3":

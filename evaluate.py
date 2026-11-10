@@ -14,10 +14,17 @@ such as Wikipedia refusing requests, is not saved, so the next run tries it
 again. While it runs, it prints how far it has got. When every claim has a
 result, it prints two tables and saves them as report.txt in the run's folder.
 Running the same command again prints them again and costs nothing.
+
+Saved results are never run again, even after you change the agent. To run a
+folder's claims again with the agent as it is now, add --fresh:
+
+    uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after --fresh
 """
 
 import argparse
+import hashlib
 import json
+import sys
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -32,6 +39,47 @@ import baselines  # noqa: E402
 
 METHODS = {"no-tools": baselines.no_tools, "one-search": baselines.one_search,
            "agent": agent.run_agent}
+
+# The files that decide how the agent behaves. A change to any of them makes a new
+# version of the agent.
+AGENT_FILES = ["instructions.md", "agent.py", "wiki.py"]
+NOTES = []  # said again after the tables, where they will be seen
+
+
+def agent_version():
+    """A short fingerprint of the agent's files. It is saved with each of the
+    agent's results, so a later run can tell whether the results in a folder
+    were made by the agent as it is now."""
+    digest = hashlib.sha256()
+    for name in AGENT_FILES:
+        digest.update((Path(__file__).parent / name).read_bytes())
+    return digest.hexdigest()[:12]
+
+
+def saved(path):
+    """The results already saved in a file, by claim id."""
+    if not path.exists():
+        return {}
+    return {row["id"]: row for row in map(json.loads, path.read_text().splitlines())}
+
+
+def check_saved_agent(out_dir, items):
+    """Results saved by an earlier version of the agent are easy to mistake for
+    new ones. Say so, and refuse to mix old and new results in one folder."""
+    done = saved(out_dir / "agent.jsonl")
+    old = [row for row in done.values() if row.get("agent_version") not in (None, agent_version())]
+    if not old:
+        return
+    todo = [item for item in items if item["id"] not in done]
+    why = "instructions.md, agent.py or wiki.py has changed since"
+    if todo:
+        sys.exit(f"Stopped: {out_dir} has {len(old)} saved results from an earlier version of "
+                 f"your agent ({why}), and {len(todo)} claims still to run. Mixing the two would "
+                 "give results you could not interpret. To start this run over with the agent "
+                 "as it is now, add --fresh to the command.")
+    NOTES.append(f"Note: the agent's saved results in {out_dir} were made by an earlier version "
+                 f"of your agent ({why}), and nothing was run again. That is fine if you meant "
+                 "to keep them. To replace them with a new run, add --fresh to the command.")
 
 # The dataset labels, as the three verdicts the agent can give.
 FEVER = {"SUPPORTS": "supported", "REFUTES": "refuted", "NOT ENOUGH INFO": "doesn't say"}
@@ -62,16 +110,14 @@ def run_one(method, item):
                   "trace": [], "steps": 0, "tokens": {"input": 0, "output": 0}, "cost_usd": 0}
     result.update(id=item["id"], method=method, seconds=round(time.time() - start, 2),
                   correct=is_correct(item, result["verdict"]))
+    if method == "agent":
+        result["agent_version"] = agent_version()
     return result
 
 
 def run_method(method, items, out_dir, workers):
     path = out_dir / f"{method}.jsonl"
-    done = {}
-    if path.exists():
-        for line in path.read_text().splitlines():
-            row = json.loads(line)
-            done[row["id"]] = row
+    done = saved(path)
     todo = [item for item in items if item["id"] not in done]
     print(f"{method}: {len(done)} already done, running {len(todo)}", flush=True)
     start = time.time()
@@ -153,16 +199,28 @@ def main():
     # send at most 3 requests at once, and each claim makes its requests one
     # after another, so 3 claims at a time keeps to that.
     parser.add_argument("--workers", type=int, default=3)
+    parser.add_argument("--fresh", action="store_true",
+                        help="forget this folder's saved results for these methods and run them again")
     args = parser.parse_args()
 
     items = [json.loads(line) for line in Path(args.claims).read_text().splitlines() if line.strip()]
     items = items[: args.limit] if args.limit else items
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+    methods = args.methods.split(",")
+    NOTES.clear()
+    if args.fresh:
+        for method in methods:
+            (out_dir / f"{method}.jsonl").unlink(missing_ok=True)
+        (out_dir / "report.txt").unlink(missing_ok=True)
+    if "agent" in methods:
+        check_saved_agent(out_dir, items)
     # Which claims file this run used, so the results viewer can find the claims.
     (out_dir / "run.json").write_text(json.dumps({"claims": args.claims}) + "\n")
-    results = {m: run_method(m, items, out_dir, args.workers) for m in args.methods.split(",")}
+    results = {m: run_method(m, items, out_dir, args.workers) for m in methods}
     report(items, results, out_dir)
+    for note in NOTES:
+        print("\n" + note, flush=True)
 
 
 if __name__ == "__main__":
