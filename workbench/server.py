@@ -101,8 +101,9 @@ class App:
         return tuple(f.stat().st_mtime_ns if f.exists() else 0 for f in dict.fromkeys(files))
 
     def code_stamp(self) -> tuple:
-        files = [f for d in (HERE, self.repo / "viewer") if d.is_dir() for f in sorted(d.rglob("*"))
-                 if f.is_file() and "__pycache__" not in f.parts]
+        """The page's own code and the viewer's: when either changes, the page must restart."""
+        files = [f for d in (self.repo / "workbench", self.repo / "viewer") if d.is_dir()
+                 for f in sorted(d.rglob("*")) if f.is_file() and "__pycache__" not in f.parts]
         return tuple((str(f), f.stat().st_mtime_ns) for f in files)
 
     def fresh(self) -> None:
