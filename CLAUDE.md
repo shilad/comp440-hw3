@@ -212,8 +212,8 @@ Facts about the programs that come up in several steps:
   a note after the tables that the saved results were made by an earlier version of the agent. If
   claims are still to run, it stops instead and says to add `--fresh`. `--fresh` at the end of a
   command forgets that folder's saved results for the versions it names, and runs them again. Only
-  1d and 3d are meant to be run again after a change, and their briefs give the `--fresh` commands
-  whole. When you see the note, say in one sentence what it means and ask whether they want to run
+  1d's and 3d's briefs give the `--fresh` commands whole, for a student who changes something
+  and asks to run again. When you see the note, say in one sentence what it means and ask whether they want to run
   again with `--fresh`; the choice is theirs.
 - Never add `--fresh` to a command for runs/part2, and never rename or delete a run folder,
   unless the student asks for exactly that after you have told them what it costs: runs/part2

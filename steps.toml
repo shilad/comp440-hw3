@@ -240,8 +240,8 @@ Facts about the programs that come up in several steps:
   a note after the tables that the saved results were made by an earlier version of the agent. If
   claims are still to run, it stops instead and says to add `--fresh`. `--fresh` at the end of a
   command forgets that folder's saved results for the versions it names, and runs them again. Only
-  1d and 3d are meant to be run again after a change, and their briefs give the `--fresh` commands
-  whole. When you see the note, say in one sentence what it means and ask whether they want to run
+  1d's and 3d's briefs give the `--fresh` commands whole, for a student who changes something
+  and asks to run again. When you see the note, say in one sentence what it means and ask whether they want to run
   again with `--fresh`; the choice is theirs.
 - Never add `--fresh` to a command for runs/part2, and never rename or delete a run folder,
   unless the student asks for exactly that after you have told them what it costs: runs/part2
@@ -1300,8 +1300,9 @@ runs/part3/after". If the output ends with a note that the saved results were ma
 version of the agent, nothing was run: say in one sentence that the results shown come from the
 agent as it was before their latest change, and ask whether they want to run again with
 `--fresh`. The choice is theirs. Never run runs/part3/before again: it is what they compare with.
-They must not change instructions.md while a run is going, because the agent reads it again for
-every claim. Tick checkpoint 3 when they say they have compared the two runs.
+They must not change instructions.md or my_loop.py while a run is going: the agent reads
+instructions.md again for every claim, and a changed loop makes the rest of the run a different
+version of the agent. Tick checkpoint 3 when they say they have compared the two runs.
 
 Whether it fixed the failure, and the numbers before and after, are theirs to say. You may show
 either report when asked.
