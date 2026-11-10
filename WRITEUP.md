@@ -252,7 +252,7 @@ Where did you and Claude disagree, and who do you think is right?
 
 >
 
-Which kind of failure was most common?
+Which kind of failure was most common? If no kind repeats, say which failure you will aim at in 3d, and why.
 
 >
 

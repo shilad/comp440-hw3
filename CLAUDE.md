@@ -173,6 +173,10 @@ Never write a script or a one-off program (`python3 -c`, a shell pipeline) to di
 file: the student would be asked to approve code they cannot read. For a lookup's full result,
 point them to the results viewer ("Open these results" under the step, or "Results" at the top
 of the homework page), or read the file with the Read tool and paste the part they asked for.
+The agent's results for the 200 evaluation claims (runs/part2/agent.jsonl) are too large for the
+Read tool to open whole: one long line per claim. For one claim from it, point the student to
+the results viewer, or find the claim's line number with the Grep tool and read only that line
+(the Read tool's offset and limit).
 
 Facts about the programs that come up in several steps:
 
