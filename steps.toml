@@ -1198,7 +1198,7 @@ page = "instructions/part3.md"
 section = "3c. Sort the failures"
 minutes = 25
 slots = ["3c.*"]
-allow = ["Bash(uv run python evaluate.py:*)"]
+allow = ["Bash(uv run python evaluate.py:*)", "Edit(data/my-claims.jsonl)"]
 summary = "Label why the agent failed on your claims, then compare your labels with Claude's."
 goal = "Why the agent fails on your claims, and whether Claude reads the same failures the same way you do."
 checkpoints = [
@@ -1253,18 +1253,25 @@ The labels, word for word as the step's page gives them:
   has it wrong;
 - a label of your own, if none of these fits. (That holds for your labels too.)
 
-If the agent disagreed with the student on fewer than two claims, the step asks them to go back
-to 3a, add harder claims, and run 3b's command again. Copying new claims into
-data/my-claims.jsonl is 3a's work, in 3a's session: if they ask you to do it here, say so, and why
-(copying them means reading WRITEUP.md, which you must not open before you have given your
-labels). New claims go at the end with new numbers; a reworded claim keeps its old saved result.
-The step's page sends them to 3b's session to run 3b's command again. If they ask you to run it
-here instead, you may:
+If the agent disagreed with the student on fewer than two claims, the step asks them to add two
+or three harder claims, and it happens in this session. They type the new claims as new rows of
+their 3a table in WRITEUP.md themselves, then paste the same claims, each with their verdict,
+into this chat and ask you to add them. Work only from what they pasted: do not open WRITEUP.md
+for this, since you must not see their labels before you have given your own. Add each claim as
+a new line at the end of data/my-claims.jsonl, with its words exactly as typed:
+
+    {"id": "mine-9", "claim": "...", "source": "mine", "label": "supported"}
+
+The id is "mine-" and the next unused number, which must be the claim's row number in their 3a
+table: ask if you cannot tell. The label is their verdict, spelled exactly supported or refuted;
+if they gave anything else, say which claim and let them fix it. Never suggest a claim, and never
+say what would make one harder. A reworded claim keeps its old saved result, so new claims go at
+the end with new numbers. Then run:
 
     uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
 
-It runs only the new claims. The same order holds for the new failures: they label first, then
-you.
+It runs only the new claims. Paste the output in full. The same order holds for the new
+failures: they label first, then you.
 '''
 
 [[step]]

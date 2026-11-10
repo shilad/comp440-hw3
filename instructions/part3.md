@@ -144,18 +144,15 @@ chat without opening `WRITEUP.md`, so it has not seen yours. It will not say whi
 included, and both answers have text after the `>`.
 
 **If something goes wrong:** Two failures are enough to go on. If the agent disagreed with you on fewer
-than two claims, there isn't enough to sort, and you need harder claims:
+than two claims, there isn't enough to sort, and you need harder claims. You can do all of this in this
+step's session:
 
-1. Type two or three new claims as new rows at the end of your 3a table in `WRITEUP.md`. Add new claims
-   rather than rewording old ones: a run keeps its saved result for each claim number, so a reworded
-   claim would not be checked again.
-2. On the homework page, open step 3a, which is marked Done. It shows the command that takes you back
-   to 3a's Claude session. Type `/exit` in your terminal, paste that command, and ask Claude to add the
-   new claims to `data/my-claims.jsonl`.
-3. In the same way, go back to step 3b's session and ask Claude to run 3b's command again (it is below).
-   It checks only the new claims.
-4. Update your answers under 3b, come back to this step's session in the same way, and start again from
-   action 2.
+1. Type two or three new claims as new rows at the end of your 3a table in `WRITEUP.md`, each with your
+   verdict and your source. Add new claims rather than rewording old ones: a run keeps its saved result
+   for each claim number, so a reworded claim would not be checked again.
+2. Paste the same new claims into the chat, each with your verdict, and ask Claude to add them to
+   `data/my-claims.jsonl` and to run 3b's command again (it is below). It checks only the new claims.
+3. Update your answers under 3b if its numbers changed, then go on from action 2 above.
 
 ```
 uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before

@@ -54,7 +54,7 @@ EXPECTED = {
     "3a": (3, "3a. Pick a topic and write your claims", ["data/my-claims.jsonl"],
            ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"], 30),
     "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),
-    "3c": (3, "3c. Sort the failures", [], EVALUATE, 25),
+    "3c": (3, "3c. Sort the failures", [], EVALUATE + ["Edit(data/my-claims.jsonl)"], 25),
     "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt"],
            EVALUATE + CHECK + ["Edit(instructions.md)"], 20),
     "3e": (3, "3e. Write it up", [], [], 23),
