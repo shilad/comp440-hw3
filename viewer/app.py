@@ -674,8 +674,9 @@ def pager(prev, nxt, where, back) -> str:
     n = a(nxt, "Next →", "pg") if nxt else '<span class="pg off">Next →</span>'
     p = p.replace("<a ", '<a rel="prev" ', 1) if prev else p
     n = n.replace("<a ", '<a rel="next" ', 1) if nxt else n
+    keys = '<br><span class="hint">The left and right arrow keys move too.</span>' if (prev or nxt) else ""
     return (f'<nav class="pager" aria-label="Claims">{p}<span class="where">{e(where)} · '
-            f'{a(back, "back to the table")}</span>{n}</nav>')
+            f'{a(back, "back to the table")}{keys}</span>{n}</nav>')
 
 
 def claim_head(item: dict, known: bool) -> str:
@@ -711,6 +712,9 @@ def result_card(method: str, row: dict | None, note: str = "", anchor_for: str =
     if not places:
         out.append('<p class="small">None.</p>')
     else:
+        if any(h for place in places for h in place["hits"]):
+            out.append('<p class="small hint">An <em>open the live page</em> link opens today\'s Wikipedia '
+                       'page in a new tab. Your browser jumps to the quote if the page still has it.</p>')
         out.append('<ol class="quotes">')
         for n, place in enumerate(places, 1):
             out.append(f'<li><blockquote id="q-{e(anchor_for)}-{n}">{e(place["quote"])}</blockquote>'
@@ -742,8 +746,7 @@ def quote_where(row: dict, place: dict, n: int, who: str) -> str:
         extra = ""
         if page and page["kind"] == "wikipedia":
             extra = " · " + a(wiki_url(page["title"]) + text_fragment(place["quote"]),
-                              "open the live page at this quote", new_tab=True)
-            extra += ' <span class="hint">(your browser jumps to it if the page still has it)</span>'
+                              "open the live page", new_tab=True)
         elif page:
             extra = " · " + page_link(page)
         if call["tool"] == "search":
