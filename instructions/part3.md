@@ -4,7 +4,8 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you test the agent on a topic you know better than most people. You write your own claims,
 run the agent on them, sort out why it fails, make one change, and write up what you found. It should
-take about 2 hours and 20 minutes, including a second full run of about [[RERUN_MINUTES]] minutes.
+take about 2 hours and 20 minutes, including a second run on the 200 evaluation claims of about 10
+minutes.
 
 ## 3a. Pick a topic and write your claims
 
@@ -113,24 +114,23 @@ The labels:
 - *Wikipedia is missing or wrong*: the agent did fine, and Wikipedia let it down;
 - a label of your own, if none of these fits.
 
-**What to do:** Do these in this order.
+**What to do:** Do these in this order. You label first, and Claude labels without seeing yours, so
+that neither set of labels can steer the other.
 
 1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
    homework page shows for 3c.
-2. Ask Claude to label every claim where the agent's verdict differs from yours, and to save its labels
-   in `runs/part3/claude-labels.md` without showing them to you. Claude labels first, before yours
-   exist, so that neither set of labels can steer the other. Claude Code may show the start of the file
-   in the terminal as Claude writes it: skip past it, and don't open the file until your labels are
-   typed.
-3. Open **Results** at the top of the homework page, open the run `runs/part3/before`, and filter the
-   claims table to the claims where the agent's verdict did not match yours.
-4. Open each of those claims and read its trace one lookup at a time.
-5. Give each one label from the list above. For each, fill in a row of the table under 3c: the claim's
+2. Open **Results** at the top of the homework page, open the run `runs/part3/before`, and in the
+   claims table's filters set the agent's Result to "did not match". The table then shows the claims
+   where the agent's verdict differs from yours.
+3. Open each of those claims and read its trace one lookup at a time.
+4. Give each one label from the list above. For each, fill in a row of the table under 3c: the claim's
    number from your 3a table, your label, and the line of the trace that shows it (the lookup's number
    and a few words of what it shows). Use the empty row for the first claim and add a row for each of
-   the others.
-6. Ask Claude to show you its labels and to add them to the last column of the table, "Claude's
-   label". Claude will not say which of you is right.
+   the others. Don't tell Claude your labels.
+5. Ask Claude to label the same claims. Claude reads their traces and gives its labels in the chat,
+   without opening `WRITEUP.md`, so it has not seen yours.
+6. Ask Claude to add its labels to the last column of the table, "Claude's label", or type them in
+   yourself. Claude will not say which of you is right.
 7. Answer the two questions.
 
 If the agent disagreed with you on fewer than three claims, there isn't enough to sort. Go back to your
@@ -142,11 +142,11 @@ claim number, so a reworded claim would not be checked again. The command checks
 uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
 ```
 
-Then start again from action 2, so that Claude labels the new failures before you do.
+Then start again from action 2.
 
 **What to write:** Under `## 3c. Sort the failures` in `WRITEUP.md`, fill in the table and answer:
 
-- One row for each claim where the agent's verdict differs from yours: the claim's number from your 3a table, your label, and the line of the trace that shows it. Ask Claude to fill in the last column only after your labels are typed.
+- One row for each claim where the agent's verdict differs from yours: the claim's number from your 3a table, your label, and the line of the trace that shows it. Type your labels before you ask Claude for its own. Then ask Claude to add its labels to the last column, or type them in yourself.
 - Where did you and Claude disagree, and who do you think is right?
 - Which kind of failure was most common?
 
@@ -179,21 +179,30 @@ checked, saved in `runs/part2`.
    uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after
    ```
 
-5. Open a new terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
-6. Start the agent on the 200 evaluation claims again yourself, in that tab:
+5. If you adjust your change after seeing these results, ask Claude to run the same command with
+   `--fresh` at the end. Without `--fresh`, a run never checks a claim again once its result is saved,
+   and `--fresh` replaces this folder's saved results with a new run:
+
+   ```
+   uv run python evaluate.py data/my-claims.jsonl --methods agent --out runs/part3/after --fresh
+   ```
+
+   Settle on your change before the next action, because the long run uses the agent as it is then.
+6. Open a new terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
+7. Start the agent on the 200 evaluation claims again yourself, in that tab:
 
    ```
    uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after-eval
    ```
 
-   It takes about [[RERUN_MINUTES]] minutes and costs about [[RERUN_COST]] on your key. Start it in your
+   It takes about 10 minutes and costs about 35 cents on your key. Start it in your
    own tab, because a run started by Claude stops if you close that Claude session. Leave the tab open,
    your laptop awake and `instructions.md` alone until it ends with two tables, since the agent reads
    `instructions.md` again for every claim.
-7. Open **Results** at the top of the homework page, choose "Compare two runs", and compare
+8. Open **Results** at the top of the homework page, choose "Compare two runs", and compare
    `runs/part3/before` with `runs/part3/after`.
-8. When the long run has finished, compare `runs/part2` with `runs/part3/after-eval` the same way.
-9. Answer the three questions.
+9. When the long run has finished, compare `runs/part2` with `runs/part3/after-eval` the same way.
+10. Answer the three questions.
 
 **What to write:** Under `## 3d. Make one change` in `WRITEUP.md`, answer:
 
@@ -209,9 +218,10 @@ answers have text after the `>`.
 
 - A run stops partway: run the same command again. It keeps every claim it already finished and checks
   only the rest.
-- A run stops at once and says the folder has saved results from an earlier version of your agent: you
-  changed `instructions.md`, `agent.py` or `wiki.py` after that run started. To start that run over
-  with the agent as it is now, add `--fresh` to the end of the same command.
+- One of this step's two runs stops at once and says its folder has saved results from an earlier
+  version of your agent: you changed `instructions.md`, `agent.py` or `wiki.py` after that run started.
+  To start that run over with the agent as it is now, add `--fresh` to the end of the same
+  command.
 
 ## 3e. Write it up
 

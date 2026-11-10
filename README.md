@@ -17,16 +17,20 @@ measure what it adds over simpler methods. You will:
 The agent is given a claim, one sentence that is either true or false, and nothing else. Here is the
 claim you'll check in Part 0:
 
-> [[SAMPLE_CLAIM]]
+> The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
+
+I chose it because it is short, and it is about a recording most people have not heard of, so the
+model cannot lean on what it remembers.
 
 The agent has to give a *verdict*: *supported*, *refuted* or *doesn't say*. It also has to quote the
 sentences from Wikipedia that its verdict rests on, its *evidence*. No source comes with the claim.
 The agent finds its own evidence by searching and reading Wikipedia as it is today.
 
 The claims in this homework come from HoVer, a public dataset of claims that each need two, three or
-four Wikipedia articles to check. Because the evidence is spread across several articles, one search
-and one page are usually not enough. To check the whole claim, the agent has to work out what the
-claim is made of, look up each piece, and put the pieces together. That is what you'll study.
+four Wikipedia articles to check. A claim like this often does not name the page that holds the
+answer, so something has to be looked up first before the right page is even known. That is why one
+search is usually not enough. To check the whole claim, the agent has to work out what the claim is
+made of, look up each piece, and put the pieces together. That is what you'll study.
 
 ## What you need before you start
 
@@ -90,11 +94,13 @@ You used all of these in earlier homeworks:
   in the chat.
 - Your work is saved when you finish each part. When every step of a part is ticked, the homework page
   saves your conversations with Claude in `TRANSCRIPT.md`, commits your work as `Part N done`, and
-  pushes it to your fork. If you change an answer after that, it commits the change too. I read
+  pushes it to your fork. The commit holds everything in the repository that git does not ignore: your
+  answers, `instructions.md`, your claims, everything under `runs/` and `TRANSCRIPT.md`. If you change
+  an answer after that, it commits the change too. I read
   `TRANSCRIPT.md` when I grade, so start every Claude session in the homework's folder. Don't edit
   `TRANSCRIPT.md` yourself: the page writes it again before each commit.
-- The two long runs, in steps 1e and 3d, take about [[EVAL_MINUTES]] and [[RERUN_MINUTES]] minutes. You
-  start them yourself, in a terminal tab of their own, because a run started by Claude stops if you
+- The two long runs, in steps 1e and 3d, take about 20 minutes and about 10 minutes. You start them
+  yourself, in a terminal tab of their own, because a run started by Claude stops if you
   close that Claude session.
 
 ## The parts
@@ -163,14 +169,18 @@ In your repository I look for:
 - **A run says the API key is missing or wrong.** Open `.env` in your editor and check that the key I
   sent you comes right after `ANTHROPIC_API_KEY=`. Never paste the key into the chat with Claude:
   your conversations are saved in `TRANSCRIPT.md` and pushed to GitHub, where anyone can read them.
-- **You want to check your set-up.** Run `uv run python check_setup.py` in a terminal in the homework's
-  folder. It says whether `.env`, your key and Wikipedia all work, and it never prints your key.
+- **You want to check your set-up again.** Run `uv run python check_setup.py` in a terminal in the
+  homework's folder, as in step 0a. It says whether `.env`, your key and Wikipedia all work, and it
+  never prints your key.
+- **A run's first line reads "ANTHROPIC_API_KEY is set and takes precedence...".** That is a notice
+  from Anthropic's library, which a few laptops print before every run. It is harmless.
 - **A run warns that `WIKIPEDIA_CONTACT` is not set.** Add a line to `.env`, in your editor:
   `WIKIPEDIA_CONTACT=` followed by your Macalester email. Without it, your runs share one Wikipedia
   allowance with the whole class and may slow down.
-- **Wikipedia refuses requests for a while.** The program waits and tries again by itself. If a run
-  stops anyway, start the same command again: it keeps every claim it already finished and checks only
-  the rest.
+- **A run prints "Wikipedia asked this program to slow down, so it is waiting...".** The program waits
+  and carries on by itself. It happens much less once you have filled in `WIKIPEDIA_CONTACT` in `.env`. If a
+  run stops anyway, start the same command again: it keeps every claim it already finished and checks
+  only the rest.
 - **The homework page shows an update banner.** Press **Update**. The page saves your work first.
 - **The page says your work is committed but not pushed.** Run `git push` in a terminal in the
   homework's folder.
@@ -202,7 +212,8 @@ only after Part 3 is done, because it changes the agent. Then run the agent on y
 When do the two sources disagree, and how should the agent decide which to believe?
 
 Write what you found under a heading `## Extra credit` at the end of `WRITEUP.md`. The homework page
-does not commit extra credit, so commit and push it yourself, in a terminal in the homework's folder:
+commits only when a part is finished or a finished part's answers change, so commit and push your
+extra credit yourself, in a terminal in the homework's folder:
 
 ```
 git add -A

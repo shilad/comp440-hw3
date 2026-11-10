@@ -34,8 +34,9 @@ articles to check: that is its number of articles.
 3. Open **Results** at the top of the homework page, then open the run `runs/part2`. Its page shows the
    report's two tables and every claim.
 4. Ask Claude to paste the report into the empty block under 2a in `WRITEUP.md`.
-5. Compare the report's first table with your predictions under 1e in `WRITEUP.md`. Each cell of that
-   table is how many claims matched the dataset's label, out of how many, so divide to get a percentage.
+5. Compare the report's first table with your predictions under 1e in `WRITEUP.md`. That table gives,
+   for each version, how many claims matched the dataset's label, out of how many: by number of
+   articles, for all 200, and by the dataset's label. Divide to get a percentage.
 6. Answer the three questions.
 
 **What to write:** Under `## 2a. Compare accuracy` in `WRITEUP.md`, fill in the block and answer:
@@ -66,7 +67,7 @@ counts text in and charges by, about three quarters of a word.
 2. Read the second table of the report from your full run, in the block under 2a in `WRITEUP.md`: the
    average lookups, tokens, seconds and cost in dollars per claim, for each version.
 3. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-4. Use the claims table's filter for claims where the agent used all 12 lookups.
+4. Tick the claims table's box for claims where the agent used all 12 lookups.
 5. If there are any, open one and read its trace one lookup at a time. A trace is the list of the
    agent's lookups for one claim, in order, with what each returned.
 6. Answer the three questions.
@@ -97,10 +98,10 @@ or *doesn't say* counts as *not supported*.
 1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
    homework page shows for 2c. Claude is your Claude Code session, your tutor and lab assistant.
 2. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-3. Clear the claims table's filters, so that it shows every claim, in the order of the claims file.
-4. Going down the table, take the first ten claims where the agent's verdict is *supported* or
-   *refuted*. Skip any where it said *doesn't say* or gave no verdict. I ask for the first ten so that
-   nobody, you or Claude, chooses which claims get checked.
+3. Clear the claims table's filters. Then, in the agent's Verdict list, choose "supported or
+   refuted". The table keeps the order of the claims file.
+4. Take the first ten rows. I ask for the first ten so that nobody, you or Claude, chooses which claims
+   get checked.
 5. Open the first claim. Read each sentence the agent quoted where it is highlighted in what the agent
    read, and decide whether it supports the agent's verdict.
 6. Open the live Wikipedia page from the claim's page whenever you're unsure.
@@ -144,8 +145,8 @@ Wikipedia.
 1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
    homework page shows for 2d. Claude is your Claude Code session, your tutor and lab assistant.
 2. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-3. Filter the claims table to the claims where the agent's result is wrong: its verdict did not match
-   the dataset's label.
+3. In the claims table's filters, set the agent's Result to "did not match", so the table shows only
+   the claims where the agent's verdict did not match the dataset's label.
 4. Open these claims one at a time. For each, decide whether the agent's evidence is sound and today's
    Wikipedia page disagrees with the dataset's label.
 5. To see an older version of a page, open the page on Wikipedia, choose "View history", and pick a

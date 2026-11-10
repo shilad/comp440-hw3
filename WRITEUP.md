@@ -69,19 +69,25 @@ The loop rejects an answer when a quoted sentence is not in anything the agent r
 
 ## 1b. Be the agent
 
-The claim: "Mel Duncan holds a history degree from the private, coeducational liberal arts Macalester College located in Saint Paul, Minnesota, US."
+Claim 1, to learn the tools: "Mel Duncan holds a history degree from the private, coeducational liberal arts Macalester College located in Saint Paul, Minnesota, US."
 
-Your lookups, in order. Ask Claude to paste the first three columns from `runs/part1/lookups.jsonl`. Type every "Why you chose it" yourself.
+Claim 2: "Vic & Anthony's Steakhouse is located at the American casino that was combined with the California Club. The casino is owned by Landry's, Inc."
 
-| # | Tool | What you asked for | Why you chose it |
-|---|---|---|---|
-| 1 | | | |
+Your lookups for both claims, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type every "Why you chose it" yourself.
 
-Your verdict, and the sentence or sentences it rests on.
+| # | Claim (1 or 2) | Tool | What you asked for | Why you chose it |
+|---|---|---|---|---|
+| 1 | | | | |
+
+Your verdict on the first claim, and the sentence it rests on.
 
 >
 
-How many lookups did you make? Which one was hardest to choose, and why?
+Your verdict on the second claim, and the sentence or sentences it rests on. If you stopped at 12 lookups without settling it, your verdict is *doesn't say*: say where you got stuck.
+
+>
+
+How many lookups did the second claim take? Which one was hardest to choose, and why?
 
 >
 
@@ -236,7 +242,7 @@ What surprised you?
 
 ## 3c. Sort the failures
 
-One row for each claim where the agent's verdict differs from yours: the claim's number from your 3a table, your label, and the line of the trace that shows it. Ask Claude to fill in the last column only after your labels are typed.
+One row for each claim where the agent's verdict differs from yours: the claim's number from your 3a table, your label, and the line of the trace that shows it. Type your labels before you ask Claude for its own. Then ask Claude to add its labels to the last column, or type them in yourself.
 
 | Claim # | Your label | The line of the trace that shows it | Claude's label |
 |---|---|---|---|

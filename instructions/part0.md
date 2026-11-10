@@ -25,15 +25,17 @@ says. Then:
    `.env.example` into it.
 6. Paste the API key I sent you by Slack direct message right after `ANTHROPIC_API_KEY=` in `.env`.
 7. Type your Macalester email right after `WIKIPEDIA_CONTACT=` in `.env`, and save the file.
-8. Ask Claude to run the tests. Claude runs this command:
+8. Ask Claude to run the set-up check. Claude runs this command:
 
    ```
-   uv run pytest -q
+   uv run python check_setup.py
    ```
 
-   The tests need no key and no network. They check that the code is installed and works.
-9. Ask Claude to check that your `.env` file is there. Claude checks with `test -f .env` and never
-   opens the file.
+   It prints one line for each of five things, each marked `ok` or `NOT READY`: the `.env` file is
+   there, the key is filled in, the email is filled in, Wikipedia answered a search, and the Claude API
+   accepted your key. It never prints your key or your email, and it costs a small fraction of a cent.
+9. If a line says `NOT READY`, do what that line says, in your editor, and save. Then ask Claude to run
+   the check again. Repeat until the last line reads "Everything is ready."
 
 Why `.env`: the agent calls the Claude API directly, not through your Claude Code account, so it needs
 your key. The email gives your runs their own allowance of Wikipedia requests, because Wikipedia counts
@@ -45,15 +47,17 @@ them.
 **What to write:** Only your name, after `Name:` at the top of `WRITEUP.md`. There is nothing to write
 under `## 0a. Get your copy running`.
 
-**You're done when:** The homework page ticks 0a. It does that when the saved `WRITEUP.md` has your name
-after `Name:` and the file `.env` exists. The first step that uses your key is 0b.
+**You're done when:** The set-up check's last line reads "Everything is ready." and the homework page
+ticks 0a, which it does when the saved `WRITEUP.md` has your name after `Name:` and the file `.env`
+exists.
 
 **If something goes wrong:**
 
 - Claude says the model in the command is not available: delete `--model claude-opus-5-5 --effort medium`
   from the command, and run the rest of it.
-- A test fails: ask Claude what the error means. If it can't fix it, post the error in `#comp440-f26`
-  on Slack.
+- The check says `NOT READY` again after you fixed `.env`: make sure you saved the file, then ask
+  Claude to run the check again. If it still fails, post the `NOT READY` line in `#comp440-f26` on
+  Slack.
 - You can't find the key I sent you: ask me on Slack.
 
 ## 0b. Ask the model with no tools
@@ -66,7 +70,7 @@ baseline is a simpler method that the agent, the program this homework studies, 
 
 The claim for Part 0, which the homework page also shows beside this step's goal:
 
-> [[SAMPLE_CLAIM]]
+> The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
 **What to do:**
 
@@ -75,11 +79,10 @@ The claim for Part 0, which the homework page also shows beside this step's goal
 2. Ask Claude to run the no-tools baseline on the claim.
 3. Tell Claude what verdict you expect, when it asks. A verdict is the answer to a claim: *supported*,
    *refuted* or *doesn't say*. Claude asks before it runs anything whose result you'll judge.
-4. Read the output Claude pastes into the chat. Claude runs this command, with the claim in place of
-   `<claim>`:
+4. Read the output Claude pastes into the chat. Claude runs this command:
 
    ```
-   uv run python check.py --method no-tools --out runs/part0 "<claim>"
+   uv run python check.py --method no-tools --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
    ```
 
    The output gives the verdict, the model's explanation, and a last line with the lookups, tokens,
@@ -105,7 +108,7 @@ that settles the claim.
 
 The claim for Part 0, which the homework page also shows beside this step's goal:
 
-> [[SAMPLE_CLAIM]]
+> The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
 **What to do:**
 
@@ -117,11 +120,10 @@ The claim for Part 0, which the homework page also shows beside this step's goal
    top page that search finds, and the model answers from that page alone.
 3. Tell Claude which Wikipedia page you would want it to read for this claim, when it asks. Claude asks
    before it runs anything.
-4. Read the output Claude pastes into the chat. Claude runs this command, with the claim in place of
-   `<claim>`:
+4. Read the output Claude pastes into the chat. Claude runs this command:
 
    ```
-   uv run python check.py --method one-search --out runs/part0 "<claim>"
+   uv run python check.py --method one-search --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
    ```
 
    The line numbered 1 is the search: what it searched for, and under it a short version of the
@@ -157,7 +159,7 @@ when to answer. A lookup is one call to `search`, `read` or `wikidata`.
 
 The claim for Part 0, which the homework page also shows beside this step's goal:
 
-> [[SAMPLE_CLAIM]]
+> The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
 **What to do:**
 
@@ -166,11 +168,10 @@ The claim for Part 0, which the homework page also shows beside this step's goal
 2. Ask Claude to run the agent on the claim.
 3. Tell Claude what you expect the agent to do, when it asks.
 4. Read the trace Claude pastes into the chat, one lookup at a time. The trace is the list of the
-   agent's lookups for one claim, in order, with what each returned. Claude runs this command, with the
-   claim in place of `<claim>`:
+   agent's lookups for one claim, in order, with what each returned. Claude runs this command:
 
    ```
-   uv run python check.py --method agent --out runs/part0 "<claim>"
+   uv run python check.py --method agent --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
    ```
 
    Each numbered line is one call to one of the agent's four tools (`search`, `read`, `wikidata` and
@@ -179,9 +180,13 @@ The claim for Part 0, which the homework page also shows beside this step's goal
    *refuted* or *doesn't say*), its evidence (the sentences it quoted from Wikipedia), its explanation,
    and a line with the lookups, tokens, cost and time. The result is saved as
    `runs/part0/agent-<number>.json`.
-5. Open **Results** at the top of the homework page, then open this agent check from the list of your
-   runs and checks. The results viewer shows the agent's trace one lookup at a time, with each lookup's
-   full result.
+
+   A trace sometimes shows an answer that was sent back (rejected) before a later answer was accepted.
+   That is the loop's check on evidence doing its job: a quoted sentence was not in anything the agent
+   had read, and text shown in a search result does not count as read.
+5. Open this check in the results viewer: click "Open these results" under 0d on the homework page, or
+   open **Results** at the top of the homework page and find the check under Part 0. It shows the
+   agent's trace one lookup at a time, with each lookup's full result.
 
 **What to write:** Under `## 0d. Run the agent and read its trace` in `WRITEUP.md`, answer:
 
