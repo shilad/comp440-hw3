@@ -14,6 +14,9 @@
 const $ = (s, el = document) => el.querySelector(s);
 const byId = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// A question or checkpoint as the brief writes it: plain text, except that a `code` span shows as
+// code. Escaped first, so nothing in the text can become markup.
+const codeText = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
 
 let A = null;               // the assignment
 let S = null;               // the latest /api/state
@@ -199,7 +202,7 @@ function update() {
 // and their answer; the rest show what they say. A setup step lists only those it shows here.
 function counts(s, st, rec) {
   const row = (ok, text, sub, mine) => `<div class="check ${ok ? "ok" : ""}"><span class="tick">${ok ? "✓" : "○"}</span>
-      <div><span class="q">${esc(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
+      <div><span class="q">${codeText(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
   const rows = rec.checkpoints.filter((c) => !s.setup || c.auto).flatMap((c) => c.slots.length
     ? c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),
         x.filled ? trim(x.answer, 400) : (x.todo || `Not written yet. Type it in WRITEUP.md, under ${s.label}.`), x.filled))
@@ -234,8 +237,8 @@ function recordSummary(rec) {
   return rec.summary.flatMap((x) => {
     if (x.kind === "predicted") return [line("plain", `You predicted ${ink(x.text)}.`)];
     if (x.kind === "result") return [line("plain", `It said ${ink(x.verdict)}${after(x.lookups)}.${x.file ? " " + fileLink(x.file, "See the output.") : ""}`),
-      ...(x.reached || []).map((t) => line("tick", esc(t) + "."))];
-    if (x.kind === "reached") return [line("tick", esc(x.text) + ".")];
+      ...(x.reached || []).map((t) => line("tick", codeText(t) + "."))];
+    if (x.kind === "reached") return [line("tick", codeText(x.text) + ".")];
     return [];
   });
 }
@@ -255,7 +258,7 @@ function recordDetail(rec) {
     if (x.kind === "asked") out.push(line("plain", `You said: ${ink("“" + trim(x.text, 300) + "”")}`));
     if (x.kind === "ran") out.push(line("plain", `${claudeDid(x.text)}${x.status === "error" ? ", and it failed" : ""}.`));
     if (x.kind === "said") out.push(line("plain", `It said ${ink(x.verdict)}${after(x.lookups)}.${x.reason ? ` Its reason: ${esc(trim(x.reason, 300))}` : ""}`));
-    (x.reached || []).forEach((t) => out.push(line("tick", esc(t) + ".")));
+    (x.reached || []).forEach((t) => out.push(line("tick", codeText(t) + ".")));
     return out;
   });
 }
@@ -264,9 +267,9 @@ function recordList(s, rec) {
   const detail = detailSteps.has(s.id);
   const items = detail ? recordDetail(rec) : recordSummary(rec);
   const now = rec.now;
-  if (now.plain) items.push(line("ring", `Now: <strong class="ink">${esc(now.plain)}</strong>`));
-  else if (now.question) items.push(line("ring", `Now: <strong class="ink">${esc(now.question)}</strong> ${esc(now.how)}`));
-  else if (now.todo) items.push(line("ring", `Still to reach: ${ink(now.todo)}.`));
+  if (now.plain) items.push(line("ring", `Now: <strong class="ink">${codeText(now.plain)}</strong>`));
+  else if (now.question) items.push(line("ring", `Now: <strong class="ink">${codeText(now.question)}</strong> ${esc(now.how)}`));
+  else if (now.todo) items.push(line("ring", `Still to reach: <span class="ink">${codeText(now.todo)}</span>.`));
   else items.push(line("tick", "Step done."));
   const c = rec.counts, n = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`;
   const toggle = c.messages || c.commands
@@ -317,7 +320,7 @@ function recordCol(s, st, ss) {
   const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command, ss.model_flags)
     + yourself(s) : "";
   if (s.setup) {
-    const steps = `<ol class="plainsteps">${ss.record.checkpoints.filter((c) => c.n).map((c) => `<li class="${c.done ? "done" : ""}">${esc(c.text)}</li>`).join("")}</ol>`;
+    const steps = `<ol class="plainsteps">${ss.record.checkpoints.filter((c) => c.n).map((c) => `<li class="${c.done ? "done" : ""}">${codeText(c.text)}</li>`).join("")}</ol>`;
     return `<div class="record-head"><span class="label">Setup steps</span><span class="state">${esc(st.complete ? "Done." : ss.started ? stateLine(ss) : st.locked ? `Opens when you finish ${when}.` : "Not started.")}</span></div>
       ${steps}${ss.started ? links(s, ss) : ""}${cmd}`;
   }
