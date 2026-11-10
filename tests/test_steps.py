@@ -33,6 +33,8 @@ DUE = "8:00am Tuesday, November 24"
 CHECK = ["Bash(uv run python check.py:*)"]
 EVALUATE = ["Bash(uv run python evaluate.py:*)"]
 LOOKUP = ["Bash(uv run python lookup.py:*)"]
+LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loop.py --use-reference)",
+              "Bash(uv run pytest:*)"]
 
 # id: (part, section heading without "## ", files, allow, minutes)
 EXPECTED = {
@@ -41,7 +43,7 @@ EXPECTED = {
     "0b": (0, "0b. Ask the model with no tools", ["runs/part0/no-tools-*.json"], CHECK, 8),
     "0c": (0, "0c. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 8),
     "0d": (0, "0d. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 12),
-    "1a": (1, "1a. Read the loop", [], [], 30),
+    "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 70),
     "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 25),
     "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 25),
     "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 35),
@@ -55,7 +57,7 @@ EXPECTED = {
     "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),
     "3c": (3, "3c. Sort the failures", [], EVALUATE, 25),
     "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt", "runs/part3/after-eval/report.txt"],
-           EVALUATE + CHECK + ["Edit(instructions.md)"], 20),
+           EVALUATE + CHECK + ["Edit(instructions.md)", "Bash(uv run python check_loop.py)"], 20),
     "3e": (3, "3e. Write it up", [], [], 30),
 }
 
@@ -124,7 +126,7 @@ def test_loads_the_way_the_page_does(a):
     assert a.title and a.tutor.strip() and a.writeup == "WRITEUP.md"
     assert a.model == "claude-opus-5-5" and a.effort == "medium"
     assert a.push is True and a.commit_parts is True
-    assert a.never_read == [".env"]
+    assert a.never_read == [".env", "reference_loop.py"]
     assert a.allow == GLOBAL_ALLOW
 
 
@@ -297,6 +299,62 @@ def test_a_numbered_line_of_a_trace_is_an_entry():
     for old in ("Found in lookup", "one lookup per turn", "one lookup at a time", "wouldn't say \"doesn't say\"",
                 "let it down", "doing its job", "Nothing yet."):
         assert old not in text, old
+
+
+# Shapes of loop code: a for or while header, an if line ending in a colon, an append or create
+# call, a dict key for a tool result, a return of finish(). The briefs may name words such as
+# tool_use_id inside a quoted hint that is forbidden; they must never show code.
+CODE = [re.compile(x) for x in (
+    r"\bfor \w+ in [\w.\[\]()]+\s*:",
+    r"\bwhile [^\n:]+:\s*$",
+    r"^\s*if [^\n]+:\s*$",
+    r"\.append\(",
+    r"messages\.create\(",
+    r"[\"']tool_use_id[\"']\s*:",
+    r"[\"']type[\"']\s*:\s*[\"']tool_result[\"']",
+    r"return finish\(",
+)]
+
+
+def test_no_brief_and_no_tutor_rule_shows_loop_code(a):
+    found = []
+    for where, text in [("tutor", a.tutor)] + [(s.id, s.brief) for s in a.steps]:
+        for n, line in enumerate(text.splitlines(), 1):
+            for pattern in CODE:
+                if pattern.search(line):
+                    found.append(f"{where} line {n}: {line.strip()}")
+    assert not found, "Loop code in the text Claude is given:\n" + "\n".join(found)
+
+
+def test_code_finder_sees_loop_code():
+    """The test above only means something if it finds code."""
+    for line in ("for block in response.content:", "    messages.append({'role': 'user'})",
+                 'results.append({"type": "tool_result", "tool_use_id": call.id})',
+                 "while True:", "if steps >= max_steps:", "return finish(claim, None, [], why)"):
+        assert any(p.search(line) for p in CODE), line
+    for line in ('- naming what to write: "append a dict with tool_use_id", "check stop_reason first";',
+                 "Explain Python: what a for loop, a dict, list.append or a return does."):
+        assert not any(p.search(line) for p in CODE), line
+
+
+def test_no_step_may_edit_the_students_loop():
+    """my_loop.py is the student's code: no allow list, global or a step's, lets Claude change it."""
+    import tomllib
+    data = tomllib.loads(STEPS.read_text(encoding="utf-8"))
+    rules = data.get("allow", []) + [r for s in data["step"] for r in s.get("allow", [])]
+    assert not [r for r in rules if "my_loop.py" in r and not r.startswith("Bash(")], rules
+    assert "reference_loop.py" in data["never_read"]
+
+
+def test_1a_forbids_writing_the_loop_and_reading_the_reference(a):
+    brief = flat(a.step("1a").brief)
+    for must in ("Never write, dictate, complete or correct a line of my_loop.py",
+                 "never describe it from memory", "uv run python check_loop.py --use-reference",
+                 "only when they ask for exactly that"):
+        assert must in brief, must
+    tutor = flat(a.tutor)
+    assert "never write, dictate, complete or correct a line of my_loop.py" in tutor
+    assert "cannot be opened from any step's session" in tutor
 
 
 def test_the_loop_has_more_than_two_ways_to_end():
