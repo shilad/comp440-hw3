@@ -285,8 +285,11 @@ class App:
             self.git("reset", "-q", "--", *GENERATED)   # uv.lock is uv's, not the student's work
             # Never commit a key: the student's fork is public.
             keyed = [f for f in self.git("diff", "--cached", "--name-only", "-G", "sk-ant-").stdout.split("\n") if f]
+            # A never_read file that would be newly added (.env, if .gitignore ever lost it) is left
+            # out. One the repository already tracks (a course file such as reference_loop.py) is
+            # committed like any other; the sk-ant- check above still covers what is in it.
             keyed += [x for x in self.a.never_read
-                      if self.git("diff", "--cached", "--quiet", "--", x).returncode == 1]
+                      if self.git("diff", "--cached", "--name-only", "--diff-filter=A", "--", x).stdout.strip()]
             if keyed:
                 self.git("reset", "-q", "--", *keyed)
                 names = ", ".join(dict.fromkeys(keyed))

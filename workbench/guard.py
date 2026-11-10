@@ -48,7 +48,9 @@ def touches(secret, inp, tool):
             text = "\n".join(x for x in parts if not WORDS_ONLY.match(x))
     else:
         text = json.dumps(inp)
-    return re.search(r"(?<![\w.])" + re.escape(secret) + r"(?![\w.])", text) is not None
+    names = [secret] + ([secret[:-3]] if secret.endswith(".py") else [])   # reference_loop too
+    return any(re.search(r"(?<![\w.])" + re.escape(n) + r"(?![\w])", text) for n in names) \
+        if secret.endswith(".py") else re.search(r"(?<![\w.])" + re.escape(secret) + r"(?![\w.])", text) is not None
 
 
 def writeup_text(conf, inp):

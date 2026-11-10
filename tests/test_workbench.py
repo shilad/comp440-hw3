@@ -624,6 +624,86 @@ def test_after_the_last_part_extra_credit_and_code_changes_are_saved(tmp_path, m
     assert subjects(h.student) == first and "key" in app.notices
 
 
+COURSE_FILE = STEPS.replace('never_read = [".env"]', 'never_read = [".env", "reference_loop.py", "secret.txt"]')
+
+
+def test_a_tracked_never_read_file_is_committed_like_any_other(tmp_path):
+    h = homework(tmp_path, {"steps.toml": COURSE_FILE, "reference_loop.py": "def run_agent():\n    pass\n"})
+    app = server.App(h.student)
+    (h.student / "reference_loop.py").write_bytes(b"def run_agent():\r\n    pass\r\n")   # line endings changed
+    (h.student / "secret.txt").write_text("not a course file\n")                        # new, never_read
+    finish_part0(h.student)
+    app.commit_finished_parts()
+    shipped = git(h.student, "show", "--name-only", "--format=", "HEAD").split()
+    assert subjects(h.student)[0] == "Part 0 done"
+    assert "reference_loop.py" in shipped and "secret.txt" not in shipped
+    assert "reference_loop.py" not in app.notices["key"]["text"] and "secret.txt" in app.notices["key"]["text"]
+
+
+def test_an_update_to_a_tracked_never_read_file_merges(tmp_path):
+    h = homework(tmp_path, {"steps.toml": COURSE_FILE, "reference_loop.py": "def run_agent():\n    pass\n"})
+    app = server.App(h.student, upstream=str(h.cls))
+    app.updates.setup()
+    finish_part0(h.student)
+    app.commit_finished_parts()
+    upstream_commit(h, "reference_loop.py", "def run_agent():\n    return 2\n", "A newer reference loop")
+    app.updates.fetch()
+    (h.student / "WRITEUP.md").write_text(FILLED.replace("it guessed", "it guessed, I think"))   # unsaved work
+    assert app.update() == {"ok": True}                    # merged, not refused as a key
+    assert (h.student / "reference_loop.py").read_text() == "def run_agent():\n    return 2\n"
+    assert "key" not in app.notices and "update-failed" not in app.notices
+    assert git(h.student, "status", "--porcelain") == ""
+    (h.student / "WRITEUP.md").write_text(FILLED.replace("it guessed", "it guessed, I said"))
+    server.SETTLE, settle = 0, server.SETTLE
+    try:
+        app.commit_changes()                                # and the next commit goes through
+    finally:
+        server.SETTLE = settle
+    assert subjects(h.student)[0] == "Part 0 updated" and "key" not in app.notices
+
+
+def test_the_guard_refuses_a_course_file_by_every_named_route(tmp_path):
+    h = homework(tmp_path, {"steps.toml": COURSE_FILE})
+    app = server.App(h.student)
+    guard, here = app.hub.dir / "guard.py", str(h.student)
+
+    def refused(tool, inp):
+        event = {"tool_name": tool, "tool_input": inp, "session_id": "s"}
+        out = subprocess.run([sys.executable, str(guard), "pre"], input=json.dumps(event),
+                             capture_output=True, text=True).stdout
+        return "deny" in out
+
+    for path in ("reference_loop.py", "./reference_loop.py", here + "/reference_loop.py"):
+        assert refused("Read", {"file_path": path}), path
+        assert refused("Edit", {"file_path": path, "old_string": "a", "new_string": "b"}), path
+        assert refused("Write", {"file_path": path, "content": "x"}), path
+    for cmd in ("cat reference_loop.py", "head -40 ./reference_loop.py", "grep -n def reference_loop.py",
+                "sed -n 1,20p " + here + "/reference_loop.py", "python3 reference_loop.py",
+                "uv run python -c 'import reference_loop'", "cat reference_loop*",
+                "python3 -c 'import inspect, reference_loop; print(inspect.getsource(reference_loop))'"):
+        assert refused("Bash", {"command": cmd}), cmd
+    for tool, inp in (("Bash", {"command": "cat my_loop.py"}), ("Bash", {"command": "uv run python check.py x"}),
+                      ("Read", {"file_path": here + "/my_loop.py"}),
+                      ("Bash", {"command": "test -f reference_loop.py && echo there"})):
+        assert not refused(tool, inp), inp
+    assert refused("Read", {"file_path": here + "/.env"}) and refused("Bash", {"command": "cat .env"})
+
+
+def test_a_refused_read_of_a_never_read_file_is_never_a_link(tmp_path):
+    h = homework(tmp_path, {"steps.toml": COURSE_FILE, "reference_loop.py": "x = 1\n"})
+    app = server.App(h.student)
+    save_session(h.student, app.hub.session_id("0b"), [
+        ("user", "Start step 0b."),
+        ("assistant", [{"type": "tool_use", "id": "t1", "name": "Read",
+                        "input": {"file_path": str(h.student / "reference_loop.py")}}]),
+        ("user", [{"type": "tool_result", "tool_use_id": "t1", "is_error": True, "content": "Refused."}]),
+    ])
+    s = app.hub.sessions["0b"]
+    s.refresh()
+    assert [e["category"] for e in s.events if e["kind"] == "tool"] == ["secret"]
+    assert app.file("reference_loop.py")[1] == 403
+
+
 def test_a_file_holding_a_key_is_never_committed(tmp_path):
     h = homework(tmp_path, {"notes.txt": "nothing yet\n"})
     app = server.App(h.student)
