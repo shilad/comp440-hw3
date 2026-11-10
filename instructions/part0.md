@@ -65,6 +65,8 @@ can read them.
 **What you're finding out:** How well the model checks a claim from memory alone, with no lookups.
 This is the first baseline, the no-tools baseline.
 
+The claim you check in Part 0:
+
 > The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
 **Words in this step:** *the model*: Claude Haiku, the small Claude model that every version in this
@@ -104,6 +106,8 @@ your key comes right after `ANTHROPIC_API_KEY=` in `.env`. Never paste the key i
 
 **What you're finding out:** What one Wikipedia search adds, and whether it lands on a page that
 settles the claim.
+
+The claim you check in Part 0:
 
 > The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
@@ -150,6 +154,8 @@ and both answers have text after the `>`.
 
 **What you're finding out:** How the agent gets from the claim to a verdict when it chooses its own
 lookups.
+
+The claim you check in Part 0:
 
 > The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
