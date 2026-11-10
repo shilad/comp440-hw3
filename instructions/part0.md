@@ -92,7 +92,7 @@ quarters of a word.
 uv run python check.py --method no-tools --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 ```
 
-The output gives the verdict, the model's explanation, and a last line with the lookups (none here),
+The output gives the verdict, the model's explanation, and a line with the lookups (none here),
 tokens, cost and time. The result is saved as `runs/part0/no-tools-<number>.json`.
 
 **What to write:** In `WRITEUP.md`, under 0b:

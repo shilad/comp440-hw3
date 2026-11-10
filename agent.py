@@ -19,7 +19,7 @@ import anthropic
 import wiki
 
 MODEL = "claude-haiku-5-5"
-MAX_STEPS = 12          # the most tool calls the agent may make for one claim
+MAX_STEPS = 12          # the most lookups the agent may make for one claim
 MAX_REJECTED = 3        # the most answers the loop sends back before it gives up
 INSTRUCTIONS = Path(__file__).parent / "instructions.md"
 VERDICTS = ["supported", "refuted", "doesn't say"]

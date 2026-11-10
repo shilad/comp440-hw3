@@ -100,7 +100,8 @@ You used all of these in earlier homeworks:
 - Your work is saved when you finish each part. When every step of a part is ticked, the homework page
   saves your conversations with Claude in `TRANSCRIPT.md`, commits your work as `Part N done`, and
   pushes it to your fork. The commit holds everything in the repository that git does not ignore: your
-  answers, `instructions.md`, your claims, everything under `runs/` and `TRANSCRIPT.md`. If you change
+  answers, `instructions.md`, your claims, everything under `runs/`, `TRANSCRIPT.md`, and `record/`, the
+  page's own record of each step. If you change
   an answer after that, it commits the change too. I read `TRANSCRIPT.md` when I grade, so start every Claude session in the homework's folder. Don't edit
   `TRANSCRIPT.md` yourself: the page writes it again before each commit.
 - The two long runs, in steps 1e and 3d, take about 20 minutes and about 10 minutes. You start them
