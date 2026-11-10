@@ -22,7 +22,8 @@ claim needs (2, 3 or 4).
 
 1. Start this step's Claude session with the command the homework page shows for 2a.
 2. Check that the full run has finished (see "What you'll see").
-3. Open **Results** at the top of the homework page, then open the run `runs/part2`.
+3. Open **Results** at the top of the homework page, then "runs/part2" under "Part 2: The agent
+   against the baselines", and read its "Accuracy" table.
 4. Ask Claude to paste the report into the empty block under 2a in `WRITEUP.md`.
 5. Compare the report's first table with your predictions under 1e in `WRITEUP.md`.
 6. Answer the three questions.
@@ -38,7 +39,8 @@ uv run python evaluate.py data/eval.jsonl --out runs/part2
 
 The report's first table gives, for each version, how many claims matched the dataset's label, out of
 how many: by number of articles, for all 200, and by the dataset's label. Divide to get a percentage.
-The run's page in the results viewer shows the same two tables and every claim.
+The run's "Accuracy" table in the results viewer shows the same counts with their percentages, and
+"The same numbers as evaluate.py prints them" opens the report's exact text.
 
 **What to write:** Under `## 2a. Compare accuracy` in `WRITEUP.md`, fill in the block and answer:
 
@@ -65,13 +67,15 @@ quarters of a word. *trace*: the agent's lookups for one claim, in order, with w
 
 1. Start this step's Claude session with the command the homework page shows for 2b.
 2. Read the report's second table, in the block under 2a in `WRITEUP.md`.
-3. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-4. Tick the claims table's box for claims where the agent used all 12 lookups.
-5. If any are listed, open one and read its trace one lookup at a time.
+3. Open **Results** at the top of the homework page, then "runs/part2", and read its "Cost" tables.
+4. Tick "Only claims where the agent used all 12 lookups" in the claims filters.
+5. If any are listed, click one and read "The agent's trace", one lookup at a time.
 6. Answer the three questions.
 
 **What you'll see:** The report's second table gives, for each version, the average lookups, tokens,
-seconds and cost in dollars per claim.
+seconds and cost in dollars per claim. The run's "Cost" section in the results viewer has the same
+"Average per claim" table, the totals, and the line "The agent used all 12 lookups on N claims.", where
+"N claims" is a link to those claims.
 
 **What to write:** Under `## 2b. Compare cost` in `WRITEUP.md`, answer:
 
@@ -97,18 +101,18 @@ verdict of *refuted* or *doesn't say* counts as *not supported*.
 **What to do:**
 
 1. Start this step's Claude session with the command the homework page shows for 2c.
-2. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-3. Clear the claims table's filters.
-4. In the agent's Verdict list, choose "supported or refuted".
-5. Take the first ten rows, in the order the table shows them.
-6. Open the first claim and read each quoted sentence where it is highlighted in what the agent read.
+2. Open **Results** at the top of the homework page, then "runs/part2".
+3. Click "Clear the filters" under the claims filters.
+4. Set "Verdict" in "The agent" box to "supported or refuted", and leave "Order" at "Order of the claims file".
+5. Take rows 1 to 10.
+6. Click row 1. Under "Quoted evidence", click "lookup N" to read each quote highlighted.
 7. Decide whether the quotes support the agent's verdict.
-8. Use the claim page's "open the live page" link whenever you're unsure.
-9. Fill in that claim's row of the table, then do the same for the other nine.
+8. Click "open the live page" whenever you're unsure, to see today's page at that quote.
+9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 10.
 10. Answer the two questions.
 
-**What you'll see:** The table keeps the order of the claims file, so the first ten rows are fixed by the
-rule, not chosen. I ask for the first ten so that nobody, you or Claude, chooses which claims get
+**What you'll see:** The table keeps the order of the claims file, and its "Row" column counts the rows
+shown, so rows 1 to 10 are fixed by the rule, not chosen. I ask for the first ten so that nobody, you or Claude, chooses which claims get
 checked. If you want to read more of a page as the agent read it, ask Claude to run one of these. The
 `--no-log` keeps them out of your record from 1b:
 
@@ -147,9 +151,9 @@ lookups. *the dataset's label*: HoVer's *supported* or *not supported*; a verdic
 **What to do:**
 
 1. Start this step's Claude session with the command the homework page shows for 2d.
-2. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-3. In the claims table's filters, set the agent's Result to "did not match (any reason)".
-4. Open these claims one at a time.
+2. Open **Results** at the top of the homework page, then "runs/part2".
+3. Set "Result" in "The agent" box to "does not match the dataset's label (any reason)".
+4. Click these claims one at a time; "Next →" goes to the next one.
 5. For each, decide whether the agent's evidence is sound and today's page disagrees with the label.
 6. Look at the page as it was in 2017: on Wikipedia, choose "View history" and pick a 2017 version.
 7. Find at least two such claims, and fill in a row of the table for each.
@@ -157,9 +161,11 @@ lookups. *the dataset's label*: HoVer's *supported* or *not supported*; a verdic
 9. In that case, use a row of the table for the closest case you found, and say so in that row.
 10. Answer the question under the table.
 
-**What you'll see:** With the Result filter set, the table shows only the claims where the agent's
-verdict did not match the dataset's label. To read today's version of a page as the agent reads it, ask
-Claude to run:
+**What you'll see:** With that filter set, the table shows only the claims where the agent's verdict
+does not match the dataset's label. A claim's page shows "The dataset's label" at the top, and "The
+dataset lists these articles for this claim:" and "Pages it read, live on Wikipedia today:" link to
+today's pages. The results viewer cannot show older versions; those are on Wikipedia, under "View
+history". To read today's version of a page as the agent reads it, ask Claude to run:
 
 ```
 uv run python lookup.py --no-log read "<page title>"

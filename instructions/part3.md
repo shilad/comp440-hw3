@@ -72,8 +72,9 @@ back, and decides when to answer. *the one-search baseline*: one search, one pag
 2. Ask Claude to run the one-search baseline and the agent on your claims.
 3. Tell Claude what you expect, when it asks.
 4. Read the two tables the run prints at the end.
-5. Open **Results** at the top of the homework page, then open the run `runs/part3/before`.
-6. Open the claims where a version disagreed with you, and read what it did.
+5. Open **Results** at the top of the homework page, then "runs/part3/before" under "Part 3: Your own
+   claims".
+6. Click the claims where a version disagreed with you, and read what it did.
 7. Answer the two questions.
 
 **What you'll see:** Claude runs this command. It takes about 3 minutes and costs a few cents on your
@@ -116,9 +117,9 @@ The labels:
 neither set of labels can steer the other.
 
 1. Start this step's Claude session with the command the homework page shows for 3c.
-2. Open **Results** at the top of the homework page, then open the run `runs/part3/before`.
-3. In the claims table's filters, set the agent's Result to "did not match (any reason)".
-4. Open each of those claims and read its trace one lookup at a time.
+2. Open **Results** at the top of the homework page, then "runs/part3/before".
+3. Set "Result" in "The agent" box to "does not match your verdict (any reason)".
+4. Click each of those claims and read "The agent's trace", one lookup at a time.
 5. Give each one label from the list above, without telling Claude.
 6. Fill in a row of the table under 3c for each: claim number, your label, and the trace line.
 7. Ask Claude to label the same claims.
@@ -171,9 +172,10 @@ picks the next lookup, reads what comes back, and decides when to answer. *the e
 7. Open a new terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
 8. Start the agent on the 200 evaluation claims yourself, in that tab.
 9. Leave that tab open, your laptop awake and `instructions.md` alone until the run ends.
-10. Open **Results** at the top of the homework page, choose "Compare two runs", and compare
-    `runs/part3/before` with `runs/part3/after`.
-11. When the long run has finished, compare `runs/part2` with `runs/part3/after-eval` the same way.
+10. Open **Results** at the top of the homework page, click "Compare two runs", then "Step 3d:
+    runs/part3/before with runs/part3/after".
+11. When the long run has finished, go back to "Compare two runs" and click "Step 3d: runs/part2 with
+    runs/part3/after-eval".
 12. Answer the three questions.
 
 **What you'll see:** When you ask, Claude makes exactly the change you describe and shows you what

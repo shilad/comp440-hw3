@@ -144,10 +144,11 @@ each returned. *evidence*: the sentences the agent quoted from Wikipedia.
 2. Ask Claude to run the agent on the 12 development claims.
 3. Tell Claude what you expect, when it asks.
 4. Read the two tables the run prints at the end.
-5. Open **Results** at the top of the homework page, then open the run `runs/part1/before`.
+5. Open **Results** at the top of the homework page, then "runs/part1/before" under "Part 1: How the
+   agent works".
 6. Choose six claims: two each that need 2, 3 and 4 articles (see the Hint for how).
 7. Make one of the six claim 2 from 1b, the claim about Vic & Anthony's Steakhouse.
-8. Open each of the six and read its trace one lookup at a time.
+8. Click each of the six and read "The agent's trace", one lookup at a time.
 9. Decide for each whether its evidence really settles the claim.
 10. Fill in one row of the table for each claim, and answer the question under it.
 
@@ -162,8 +163,8 @@ At the end it prints two tables. The first shows how many claims matched the dat
 of articles and by the dataset's label. The second shows the average lookups, tokens, seconds and cost
 per claim. The run is saved in `runs/part1/before`. The folder is called `before` because in 1d you
 write the agent's instructions and run the same claims again, into `runs/part1/after`. On a claim's
-page in the results viewer, each sentence the agent quoted is highlighted where it appears in what the
-agent read.
+page in the results viewer, each quote under "Quoted evidence" says "Found in lookup N (read),
+highlighted below"; click "lookup N" to see it highlighted in what the agent read.
 
 **What to write:** Under `## 1c. Watch the agent work` in `WRITEUP.md`, fill in the table and answer:
 
@@ -178,8 +179,10 @@ answer has text after the `>`.
 keeps every claim it already finished and checks only the rest.
 
 **Hint:** For each number of articles, choose one claim the agent got right and one it got wrong, where
-there is one. The claims table can be filtered by the number of articles and by the agent's result
-(whether it matched the dataset's label).
+there is one. In the run's "Claims" filters, set "The number of articles" to "2" (then "3", then "4"),
+and set "Result" in "The agent" box to "matches the dataset's label" or "does not match the dataset's
+label (any reason)". "Next →" on a claim's page goes to the next claim in the filtered list. To find
+claim 2 from 1b, type a few of its words in "Claim contains" and press Enter.
 
 ## 1d. Write the agent's instructions
 
@@ -197,9 +200,9 @@ order, with what each returned.
 2. Open `instructions.md` in your editor.
 3. Write your own instructions in it, covering at least the four points below, and save the file.
 4. Ask Claude to run the agent on the 12 development claims again, with your instructions.
-5. Open **Results** at the top of the homework page and choose "Compare two runs".
-6. Compare `runs/part1/before` with `runs/part1/after`.
-7. Read the claims whose verdict changed, with their traces before and after side by side.
+5. Open **Results** at the top of the homework page and click "Compare two runs".
+6. Click "Step 1d: runs/part1/before with runs/part1/after" and read "Accuracy".
+7. Under "Claims that changed", click "Open A and B" to read a claim's two traces side by side.
 8. Open a few claims whose verdict stayed the same, in each run, to see whether their lookups changed.
 9. Each time you change `instructions.md` again, ask Claude to run the same command with `--fresh`.
 10. Answer the two questions in `WRITEUP.md`.
@@ -233,6 +236,10 @@ uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after 
 
 **You're done when:** The homework page ticks 1d. It does that when `runs/part1/after/report.txt`
 exists (the run saves it when it finishes) and both answers have text after the `>`.
+
+**If something goes wrong:** If the comparison says "A and B used the same version of the agent", your
+change to `instructions.md` was not in the second run. Save the file, then ask Claude to run the command
+with `--fresh`.
 
 **Hint:** You can do this however you want, but I recommend writing short, direct rules and changing
 one thing at a time. It is hard to tell what helped when you change everything at once. The model does

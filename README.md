@@ -88,8 +88,8 @@ You used all of these in earlier homeworks:
   you are graded on your own explanations and judgments.
 - Claude will run commands for you, explain the code, the tools, Wikipedia's API and the scores as often
   as you ask, and paste a program's output into `WRITEUP.md` where a question asks for it.
-- The results viewer is where you read your runs. Open **Results** at the top of the homework page. It
-  shows each run's accuracy and cost, each claim's verdicts from all three versions, the agent's lookups
+- The results viewer is where you read your runs. Open **Results** at the top of the homework page; it
+  opens in a new tab. It shows each run's accuracy and cost, each claim's verdicts from all three versions, the agent's lookups
   for a claim one at a time, and two runs side by side. Long results are much easier to read there than
   in the chat.
 - Your work is saved when you finish each part. When every step of a part is ticked, the homework page

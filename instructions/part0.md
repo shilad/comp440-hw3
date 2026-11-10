@@ -138,8 +138,9 @@ The line numbered 1 is the search: what it searched for, and under it a short ve
 The line numbered 2 is the page it read, and under it a short version of that page. Then come the
 verdict, the model's explanation, and a line with the lookups, tokens, cost and time. The result is
 saved as `runs/part0/one-search-<number>.json`. To read the whole page it read, click "Open these
-results" under 0c on the homework page, or open **Results** at the top of the homework page and find the
-check under Part 0.
+results" under 0c on the homework page. Or open **Results** at the top of the homework page (it opens in
+a new tab) and, under "Part 0: Set up", in "Single checks in runs/part0/", click the claim in the row
+whose Version is "one-search baseline". A long result is folded: click "+ Show the whole result".
 
 **What to write:** Under `## 0c. Give it one search` in `WRITEUP.md`, answer:
 
@@ -189,8 +190,11 @@ Each numbered line is one call to one of the agent's four tools (`search`, `read
 `answer`): the tool, what it asked for, and under it a short version of what came back. The last
 numbered line is usually its call to `answer`. Then come the verdict, the evidence, the explanation and
 a line with the lookups, tokens, cost and time. The result is saved as `runs/part0/agent-<number>.json`.
-To open it in the results viewer, click "Open these results" under 0d on the homework page, or open
-**Results** at the top of the homework page and find the check under Part 0.
+To open it in the results viewer, click "Open these results" under 0d on the homework page. Or open
+**Results** at the top of the homework page (it opens in a new tab) and, under "Part 0: Set up", in
+"Single checks in runs/part0/", click the claim in the row whose Version is "agent". Below "The agent"
+box, "The agent's trace" shows one lookup at a time with each lookup's full result: click "+ Show the
+whole result" to open a long one, or "Open every result" to open them all.
 
 A trace sometimes shows an answer that was sent back (rejected) before a later answer was accepted.
 That is the loop's check on evidence doing its job: a quoted sentence was not in anything the agent had
