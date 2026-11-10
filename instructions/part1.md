@@ -41,9 +41,9 @@ these are the agent's four tools.
 
 **Hint:** The comments and messages in `agent.py` call the model "Claude" and call a lookup a "step".
 In this homework, "Claude" means your Claude Code session, and the model is Claude Haiku. In a trace you
-may see an answer that was sent back (rejected) before a later one was accepted. That is the evidence
-check you are reading here: a quoted sentence was not in anything the agent had read, and text shown in
-a search result does not count as read.
+may see an answer that was sent back (rejected) before a later one was accepted. That is the loop's
+evidence check, which you are reading here: a quoted sentence was not in anything the agent had read,
+and text shown in a search result does not count as read.
 
 ## 1b. Be the agent
 
@@ -54,7 +54,7 @@ I'd like you to do this before you watch the agent do it. You'll read its traces
 you've made the same choices yourself.
 
 Use **only** the agent's tools, not your browser: the point is to see only what the agent sees.
-Claim 1 is short, to learn the tools:
+Claim 1 is for learning the tools:
 
 > Mel Duncan holds a history degree from the private, coeducational liberal arts Macalester
 > College located in Saint Paul, Minnesota, US.
@@ -97,7 +97,8 @@ uv run python lookup.py wikidata "<entity>" "<property>"
 page, or with no section the opening paragraphs and the list of sections. `wikidata` returns one fact
 from Wikidata, Wikipedia's sister site, for an entity (a person, a place) and a property ("place of
 birth", "population"). Each lookup is added to `runs/part1/lookups.jsonl`, which Claude fills the table
-from. Your verdicts go in `WRITEUP.md`, so there is no `answer` call.
+from. Claude fills the Claim column from when you told it you moved on to claim 2: check it. Your
+verdicts go in `WRITEUP.md`, so there is no `answer` call.
 
 **What to write:** In `WRITEUP.md`, under 1b, fill in the table and answer:
 
@@ -128,7 +129,8 @@ and whether it gets there for a good reason.
 **Words in this step:** *the development claims*: the 12 claims in `data/dev.jsonl`. *the number of
 articles*: how many Wikipedia articles a claim needs (2, 3 or 4). *the dataset's label*: HoVer's
 *supported* or *not supported*; *refuted* and *doesn't say* count as *not supported*. *trace*: the
-agent's lookups for one claim, in order, with what each returned.
+agent's lookups for one claim, in order, with what each returned. *entry*: one numbered line of a
+trace, a lookup or an answer.
 
 **What to do:**
 
@@ -140,8 +142,8 @@ agent's lookups for one claim, in order, with what each returned.
 5. Open **Results** at the top of the homework page, then "runs/part1/before".
 6. Choose six claims: two each that need 2, 3 and 4 articles (see the Hint).
 7. Make one of the six claim 2 from 1b, the claim about Vic & Anthony's Steakhouse.
-8. Click each of the six and read "The agent's trace", one lookup at a time.
-9. Decide for each whether its quoted evidence really settles the claim.
+8. Click each of the six and read "The agent's trace", one entry at a time.
+9. Decide for each whether it got there for a good reason: does its quoted evidence really settle the claim?
 10. Fill in one row of the table for each, and answer the question under it.
 
 **What you'll see:** Claude runs this command. It takes about a minute and costs about 2 cents:
@@ -153,11 +155,12 @@ uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/before
 The first table shows how many claims matched the dataset's label, by number of articles and by the
 dataset's label; the second, the average lookups, tokens, seconds and cost per claim. The run is saved
 in `runs/part1/before`, "before" the instructions you write in 1d. On a claim's page, each quote under
-"Quoted evidence" says "Found in lookup N (read), highlighted below": click "lookup N" to see it.
+"Quoted evidence" says "Found in entry N of the trace (read), highlighted below": click "entry N" to see
+it.
 
 **What to write:** In `WRITEUP.md`, under 1c, fill in the table and answer:
 
-- The six traces you read closely: two claims each that need 2, 3 and 4 articles. For each number of articles, one the agent got right and one it got wrong, where there is one.
+- The six traces you read closely: two claims each that need 2, 3 and 4 articles. For each number of articles, one the agent got right and one it got wrong, where there is one. One of the six must be claim 2 from 1b.
 - Which trace did you find most interesting, and what did the agent do well or badly in it?
 
 **You're done when:** The homework page ticks 1c: `runs/part1/before/report.txt` exists (the run saves
@@ -166,8 +169,8 @@ it when it finishes), all six rows are filled, and the answer has text after the
 **If something goes wrong:** If the run stops partway, ask Claude to run the same command again. It
 keeps every claim it already finished.
 
-**Hint:** For each number of articles, choose one claim the agent got right and one it got wrong, where
-there is one. In "Claims", set "The number of articles" to "2" (then "3", then "4"), and set "Result" in
+**Hint:** For each number of articles, choose one claim the agent got right and one it got wrong. If
+the agent got both right, or both wrong, for a number of articles, use both. In "Claims", set "The number of articles" to "2" (then "3", then "4"), and set "Result" in
 "The agent" box to "matches the dataset's label" or "does not match the dataset's label (any reason)".
 "Next →" goes to the next claim in the filtered list. To find claim 2 from 1b, type a few of its words
 in "Claim contains" and press Enter.
@@ -201,6 +204,9 @@ At a minimum your instructions must say:
 - when to use `wikidata` instead of reading a page;
 - when the agent has enough evidence to stop;
 - when to answer *doesn't say*.
+
+Add to the three sentences already in `instructions.md`, or rewrite them, but keep what they say about
+finishing with `answer` and the three verdict words.
 
 **What you'll see:** For the first run with your instructions, Claude runs this command. It takes about
 a minute and costs about 2 cents, or more if your instructions make the agent do more:
@@ -236,8 +242,8 @@ the agent is told is your decision.
 
 ## 1e. Start the full run, and predict
 
-**What you're finding out:** Nothing yet. You start the run on the 200 evaluation claims and write down
-your predictions before you see any results.
+**What this step is for:** Starting the run on the 200 evaluation claims, and writing down your
+predictions before you see any results.
 
 **Words in this step:** *the three versions*: the no-tools baseline (the model answers from memory), the
 one-search baseline (one search, one page, then an answer) and the agent. A version gets a claim right
@@ -251,7 +257,7 @@ and *doesn't say* count as *not supported*.
 2. Open another terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
 3. Start the full run yourself in that tab, with the command under "What you'll see".
 4. Leave that tab open, your laptop awake and `instructions.md` alone until the run ends.
-5. Don't look at any results, in the terminal or the results viewer, until your predictions are saved.
+5. Don't look at any results until your predictions are saved. If the run finishes first, don't look at its tab.
 6. Fill in the predictions table under 1e in `WRITEUP.md`.
 7. Answer the question under the table.
 
@@ -275,9 +281,13 @@ exists), every cell of the table's three rows is filled, and the answer has text
 need not have finished. That finishes Part 1, so the page commits your work as `Part 1 done` and pushes
 it to your fork. Once the run has ended, this is a good place to stop for the day.
 
-**If something goes wrong:** If the run stops (you closed the tab, your laptop slept, or Wikipedia
-refused requests for too long), run the same command again in a terminal tab in the homework's folder.
-It keeps every claim it already finished.
+**If something goes wrong:**
+
+- The run stops (you closed the tab, your laptop slept, or Wikipedia refused requests for too long): run
+  the same command again in a terminal tab in the homework's folder. It keeps every claim it already
+  finished.
+- It stops and says the saved results came from an earlier version of your agent: you changed
+  `instructions.md` after the run started. Put it back as it was and run the command again.
 
 **Hint:** Start the run in your own tab, because a run started by Claude stops if you close that Claude
 session. Leave `instructions.md` alone while it runs, because the agent reads it again for every claim.
@@ -293,5 +303,5 @@ Part 1 is 25% of the homework. At a minimum I am looking for the following:
   choice.
 - Predictions: 15% - Each prediction in 1e has a reason. They are graded on the reasoning, not on being
   right.
-- Instructions: 40% - Your `instructions.md` covers the four points in 1d, and your 1d answers compare
-  the traces before and after with a specific example.
+- Instructions: 40% - Your `instructions.md` covers the four points in 1d, and your 1c table and 1d
+  answers compare the traces before and after with a specific example.

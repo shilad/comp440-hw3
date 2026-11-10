@@ -8,8 +8,8 @@ before you look inside any of them. It should take about 50 minutes.
 
 ## 0a. Get your copy running
 
-**What you're finding out:** Nothing yet. This step gets the homework running on your laptop, so the
-later steps can reach Wikipedia and the Claude API.
+**What this step is for:** Getting the homework running on your laptop, so the later steps can reach
+Wikipedia and the Claude API.
 
 **Words in this step:** *Claude*: your Claude Code session, your tutor and lab assistant; each step has
 its own. *`.env`*: the file that holds your API key and your email; only you edit it.
@@ -18,12 +18,12 @@ its own. *`.env`*: the file that holds your API key and your email; only you edi
 Getting started section says. Then:
 
 1. Open a new terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
-2. Copy the command the homework page shows for 0a, paste it into that tab and press Enter.
-3. Say yes when Claude Code asks whether you trust this folder.
-4. Type your name after `Name:` at the top of `WRITEUP.md`, in your editor, and save.
-5. In your editor, create a file named `.env` in the homework's folder and copy `.env.example` into it.
-6. Paste the API key I sent you by Slack right after `ANTHROPIC_API_KEY=`. Never paste it into the chat.
-7. Type your Macalester email right after `WIKIPEDIA_CONTACT=`, and save `.env`.
+2. In that tab, run `cp .env.example .env` to make your own `.env`.
+3. Open `.env` in your editor and paste the API key I sent you by Slack right after `ANTHROPIC_API_KEY=`.
+4. Type your Macalester email right after `WIKIPEDIA_CONTACT=`, and save `.env`.
+5. Type your name after `Name:` at the top of `WRITEUP.md`, and save.
+6. Copy the command the homework page shows for 0a, paste it into that tab and press Enter.
+7. Say yes when Claude Code asks whether you trust this folder.
 8. Ask Claude to run the set-up check.
 9. Fix each line marked `NOT READY` in your editor, save, and ask Claude to run the check again.
 10. Repeat action 9 until the check's last line reads "Everything is ready."
@@ -53,6 +53,8 @@ the saved `WRITEUP.md` has your name after `Name:`, and the check has passed (it
   post the `NOT READY` line in `#comp440-f26` on Slack.
 - A first line reading "ANTHROPIC_API_KEY is set and takes precedence...": a harmless notice from
   Anthropic's library, which a few laptops print before every run.
+- Your editor's Open window does not show `.env`: press Command-Shift-period in that window to show
+  hidden files, or open the whole `comp440-hw3` folder in your editor.
 - You can't find the key I sent you: ask me on Slack.
 
 **Hint:** The agent calls the Claude API directly, not through your Claude Code account, so it needs
@@ -80,7 +82,7 @@ quarters of a word.
 1. Start this step's Claude session with the command the homework page shows for 0b, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the no-tools baseline on the claim.
-3. Tell Claude what verdict you expect, when it asks.
+3. Tell Claude what verdict you expect, when it asks. "Not sure" is a fine answer.
 4. Read the output Claude pastes into the chat.
 5. Answer the two questions in `WRITEUP.md`.
 
@@ -122,7 +124,8 @@ alone. *verdict*: *supported*, *refuted* or *doesn't say*.
 1. Start this step's Claude session with the command the homework page shows for 0c, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the one-search baseline on the claim.
-3. Tell Claude which Wikipedia page you would want it to read, when it asks.
+3. Tell Claude which page you would want it to read, when it asks. If you don't know its title,
+   describe the page, or say you're not sure.
 4. Read the output Claude pastes into the chat.
 5. Click "Open these results" under 0c on the homework page to read the whole page it read.
 6. Answer the two questions in `WRITEUP.md`.
@@ -165,7 +168,8 @@ The claim you check in Part 0:
 **Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku)
 picks the next lookup, reads what comes back, and decides when to answer. *lookup*: one call to
 `search`, `read` or `wikidata` (`wikidata` asks Wikidata, Wikipedia's sister site of facts, for one fact). *trace*: the agent's lookups for one claim, in order, with what each
-returned. *evidence*: the sentences quoted from Wikipedia that a verdict rests on.
+returned. *entry*: one numbered line of a trace, a lookup or an answer. *evidence*: the sentences
+quoted from Wikipedia that a verdict rests on.
 
 **What to do:**
 
@@ -173,7 +177,7 @@ returned. *evidence*: the sentences quoted from Wikipedia that a verdict rests o
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the agent on the claim.
 3. Tell Claude what you expect the agent to do, when it asks.
-4. Read the trace Claude pastes into the chat, one lookup at a time.
+4. Read the trace Claude pastes into the chat, one entry at a time.
 5. Click "Open these results" under 0d and read "The agent's trace", with each lookup's full result.
 6. Answer the two questions in `WRITEUP.md`.
 
@@ -183,19 +187,22 @@ returned. *evidence*: the sentences quoted from Wikipedia that a verdict rests o
 uv run python check.py --method agent --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 ```
 
-Each numbered line is one call to one of the agent's four tools (`search`, `read`, `wikidata`,
+Each numbered entry is one call to one of the agent's four tools (`search`, `read`, `wikidata`,
 `answer`): what it asked for, then a short version of what came back. The last is usually `answer`. Then
 come the verdict, the evidence, the explanation, and the line of lookups, tokens, cost and time. The
+numbers count every entry in the trace, answers included. The Lookups count on the last line counts
+only `search`, `read` and `wikidata`, so it can be smaller than the last number. When a question asks
+for a number, give the number on that entry's line. The
 result is saved as `runs/part0/agent-<number>.json`. In the results viewer, "Open every result" unfolds
 every lookup.
 
 A trace sometimes shows an answer that was sent back (rejected) before a later one was accepted. That
-is the loop's check on evidence doing its job: a quoted sentence was not in anything the agent had read,
-and text shown in a search result does not count as read.
+is the loop's evidence check: a quoted sentence was not in anything the agent had read, and text shown
+in a search result does not count as read.
 
 **What to write:** In `WRITEUP.md`, under 0d:
 
-- In one or two sentences, how did the agent get from the claim to its verdict? Point to the lookups by their numbers in the trace.
+- In one or two sentences, how did the agent get from the claim to its verdict? Point to the entries by their numbers in the trace.
 - Which lookup would you have done differently, and how? If none, which one surprised you?
 
 **You're done when:** The homework page ticks 0d: a `runs/part0/agent-<number>.json` file exists, and

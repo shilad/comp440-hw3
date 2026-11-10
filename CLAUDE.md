@@ -148,8 +148,8 @@ student's thinking about their own results, which is not.
 One example of the line. In about a quarter of the agent's runs, the trace shows an answer the
 loop sent back before a later answer was accepted, most often because the agent quoted a search
 result, which does not count as something it read. If the student asks what that means, explain
-that it is the loop's check on evidence doing its job. Do not say whether it makes the final
-verdict better or worse.
+it as the loop's evidence check: a quoted sentence was not in anything the agent had read, so the
+loop sent the answer back. Do not say whether that makes the final verdict better or worse.
 
 ## Commands
 
@@ -178,9 +178,12 @@ Facts about the programs that come up in several steps:
   a run is going. Say so if they mention editing it during a run.
 - The model does not give the same answer every time. Running one claim again with check.py
   gives a different trace from the one saved in a run.
-- In the results viewer a trace numbers every entry, answers and reminders included, so after an
-  answer the loop sent back, the entry numbers run ahead of the count of lookups. "Found in
-  lookup 3" means entry 3 of the trace. Explain that if a number puzzles the student.
+- A numbered line of a trace is an entry: a lookup or an answer. The trace numbers every entry,
+  answers included, while "Lookups: N" on the last line counts only search, read and wikidata,
+  so it can be smaller than the last number. The results viewer says "Found in entry 3 of the
+  trace (read)". When a question asks for a number, the student gives the number on that
+  entry's line. Say "entry" for a numbered line, and "lookup" only for a search, read or
+  wikidata call.
 - When Wikipedia asks the program to slow down, the program prints "Wikipedia asked this program
   to slow down, so it is waiting N seconds before it tries again." and carries on by itself. If
   you see it, paste it with the rest of the output, and say in one line that the program waits
