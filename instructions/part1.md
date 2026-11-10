@@ -114,7 +114,7 @@ ok         1. Ask the model
 ok         2. Run its lookups
 ok         3. Send the results back
 NOT YET    4. Check the answer: the model's second reply gave an answer that quotes the page it had read, and your loop called lookup() for it.
-NOT YET    5. Enforce the limit: the model's third reply asked for a third search with the limit of 2 lookups reached, and your loop ran it.
+NOT YET    5. Enforce the limit: the model's third reply asked for a third search with the limit of 2 lookups reached, and your loop ran it: it had run 2 lookups before that one, and max_steps was 2; in another made-up check the model asked for 6 searches, and your loop ran all 6 and never sent back OUT_OF_STEPS.
 NOT YET    6. Stop when the model stops: the model's first reply had text and no tool call, and the next request your loop sent did not end with one user turn holding REMINDER ('Please finish by calling answer().').
 
 Not yet. Fix the first NOT YET line, then run this again.
