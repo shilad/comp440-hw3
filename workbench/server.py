@@ -46,6 +46,7 @@ STATIC = HERE / "static"
 PORT = 8450                     # other course tools use 8440
 PORTS = 20                      # how many ports to try from there
 SETTLE = 30                     # seconds a committed part's changes sit still before they're committed
+CONVO_SETTLE = 120              # and seconds its conversations sit still, so a commit never cuts one off
 RETRY_PUSH = 5 * 60
 HELP = "post in #comp440-f26 on Slack"
 CODE = {".py", ".js", ".css", ".html", ".md", ".json"}   # a change to one of these asks for a restart
@@ -72,6 +73,7 @@ class App:
         self.push_due = 0.0                  # when to try a push again; 0 for never
         self.pushed: bool | None = None      # whether the last push went through
         self.retry_at = 0.0                  # after a commit that failed, when to try again
+        self.idle = None                     # what `git status` showed after the last commit
         self.stamp = self.file_stamp()
         self.version = 1
         self.code = self.code_stamp()
@@ -260,6 +262,7 @@ class App:
             else:
                 self.notice("key", None)
             if not empty and self.git("diff", "--cached", "--quiet").returncode == 0:
+                self.after_commit()
                 return True
             r = self.git("commit", "-q", "--allow-empty", "-m", message, timeout=300)
             if r.returncode:
@@ -268,6 +271,7 @@ class App:
                             f"{(r.stderr or r.stdout).strip()[-200:]}. Your files are untouched. If this stays, {HELP}.")
                 return False
             self.notice("save", None)
+            self.after_commit()
             self.pushed = None if self.a.push else self.pushed
             say(f"Committed “{message}”.")
             self.push_soon()
@@ -284,11 +288,24 @@ class App:
                 if mine and n not in done and all(s["complete"] for s in mine):
                     self.save(f"Part {n} done", empty=True)
 
+    def after_commit(self) -> None:
+        self.hub.remember_convos()
+        self.idle = self.loose()
+
+    def loose(self) -> tuple:
+        """What git sees changed, with each file's modification time; uv.lock left out."""
+        out = self.git("status", "--porcelain", "--untracked-files=all", "--", ".",
+                       *[f":(exclude){g}" for g in GENERATED]).stdout
+        names = [line[3:].strip().strip('"') for line in out.splitlines() if line.strip()]
+        return tuple((n, (self.repo / n).stat().st_mtime if (self.repo / n).exists() else 0) for n in names)
+
     def changed_parts(self) -> list[int]:
-        """Committed parts whose answers or files have changed since the last commit."""
+        """Committed parts whose answers, files or conversations have changed since the last commit.
+        After the last part is committed, any other change (extra credit, code) counts as its own."""
         done = stepmod.part_done_commits(self.repo)
         if not done:
             return []
+        saved = self.hub.state.get("saved_convos", {})
         head = self.git("show", f"HEAD:{self.a.writeup}")
         old, new = stepmod.read_slots(head.stdout if head.returncode == 0 else ""), self.hub.slots()
         out = []
@@ -296,9 +313,15 @@ class App:
             mine = [s for s in self.a.steps if s.part == n]
             keys = {k for s in mine for k in stepmod.step_keys(s, old) + stepmod.step_keys(s, new)}
             patterns = [pat for s in mine for pat in s.files]
-            if any(old.get(k) != new.get(k) for k in keys) or (patterns and self.git(
+            grown = any(self.hub.convo_size(s.id) > saved.get(s.id, 0) for s in mine)
+            if grown or any(old.get(k) != new.get(k) for k in keys) or (patterns and self.git(
                     "status", "--porcelain", "--untracked-files=all", "--", *patterns).stdout.strip()):
                 out.append(n)
+        last = max(self.a.parts, default=None)
+        if last in done and last not in out:
+            loose = self.loose()
+            if loose and loose != self.idle:
+                out.append(last)
         return out
 
     def commit_changes(self) -> None:
@@ -311,8 +334,10 @@ class App:
             if not changed:
                 return
             files = [self.repo / self.a.writeup] + [self.repo / p for p in self.part_files(changed)]
-            newest = max((f.stat().st_mtime for f in files if f.exists()), default=0)
-            if time.time() - newest >= SETTLE:
+            newest = max([f.stat().st_mtime for f in files if f.exists()] + [t for _, t in self.loose()], default=0)
+            talk = [self.hub.sessions[s.id].transcript() for s in self.a.steps if s.part in changed]
+            talked = max((f.stat().st_mtime for f in talk if f), default=0)
+            if time.time() - newest >= SETTLE and time.time() - talked >= CONVO_SETTLE:
                 names = " and ".join(str(n) for n in changed)
                 self.save(f"Part{'s' if len(changed) > 1 else ''} {names} updated")
 
