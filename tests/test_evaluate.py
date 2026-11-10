@@ -139,6 +139,36 @@ def test_lookup_with_no_log_prints_but_does_not_add_to_the_record(monkeypatch, t
     assert not (tmp_path / "lookups.jsonl").exists()
 
 
+def test_check_setup_says_what_is_missing_and_never_prints_the_key(monkeypatch, tmp_path, capsys):
+    import check_setup
+    env = tmp_path / ".env"
+    monkeypatch.setattr(check_setup, "ENV", env)
+    monkeypatch.setattr(check_setup, "load_dotenv", lambda path: None)  # leave this process's environment alone
+    monkeypatch.setattr(check_setup, "wikipedia_problem", lambda: None)
+    monkeypatch.setattr(check_setup, "key_problem", lambda: None)
+
+    assert check_setup.main() == 1  # no .env yet
+    assert "There is no .env file" in capsys.readouterr().out
+
+    env.write_text("ANTHROPIC_API_KEY=sk-ant-not-a-real-key\nWIKIPEDIA_CONTACT=\n")
+    assert check_setup.main() == 1  # the email is missing
+    printed = capsys.readouterr().out
+    assert "ok         ANTHROPIC_API_KEY is filled in" in printed
+    assert "NOT READY  WIKIPEDIA_CONTACT is empty" in printed
+    assert "Not ready yet" in printed
+    assert "sk-ant" not in printed
+
+    env.write_text("ANTHROPIC_API_KEY=sk-ant-not-a-real-key\nWIKIPEDIA_CONTACT=student@macalester.edu\n")
+    assert check_setup.main() == 0
+    printed = capsys.readouterr().out
+    assert "Everything is ready." in printed
+    assert "sk-ant" not in printed and "student@macalester.edu" not in printed
+
+    monkeypatch.setattr(check_setup, "key_problem", lambda: "the Claude API did not accept the key.")
+    assert check_setup.main() == 1  # a key that the API refuses
+    assert "NOT READY  the Claude API did not accept the key." in capsys.readouterr().out
+
+
 class Reply:
     """What requests.get() returns, for a scripted Wikipedia."""
 
