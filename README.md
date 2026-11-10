@@ -90,8 +90,7 @@ You used all of these in earlier homeworks:
   as you ask, and paste a program's output into `WRITEUP.md` where a question asks for it.
 - The results viewer is where you read your runs. Open **Results** at the top of the homework page; it
   opens in a new tab. It shows each run's accuracy and cost, each claim's verdicts from all three versions, the agent's lookups
-  for a claim one at a time, and two runs side by side. Long results are much easier to read there than
-  in the chat.
+  for a claim one at a time, and two runs side by side. Long results are easier to read there.
 - Your work is saved when you finish each part. When every step of a part is ticked, the homework page
   saves your conversations with Claude in `TRANSCRIPT.md`, commits your work as `Part N done`, and
   pushes it to your fork. The commit holds everything in the repository that git does not ignore: your
@@ -169,9 +168,8 @@ In your repository I look for:
 - **A run says the API key is missing or wrong.** Open `.env` in your editor and check that the key I
   sent you comes right after `ANTHROPIC_API_KEY=`. Never paste the key into the chat with Claude:
   your conversations are saved in `TRANSCRIPT.md` and pushed to GitHub, where anyone can read them.
-- **You want to check your set-up again.** Run `uv run python check_setup.py` in a terminal in the
-  homework's folder, as in step 0a. It says whether `.env`, your key and Wikipedia all work, and it
-  never prints your key.
+- **You want to check your set-up again.** Run `uv run python check_setup.py` in the homework's
+  folder, as in step 0a. It never prints your key.
 - **A run's first line reads "ANTHROPIC_API_KEY is set and takes precedence...".** That is a notice
   from Anthropic's library, which a few laptops print before every run. It is harmless.
 - **A run warns that `WIKIPEDIA_CONTACT` is not set.** Add a line to `.env`, in your editor:
