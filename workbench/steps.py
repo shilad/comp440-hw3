@@ -40,6 +40,9 @@ class Step:
     goal: str = ""               # what the student is finding out, shown when it is open
     setup: bool = False          # a setup step: its text and checkpoints show as plain steps
     claim: bool = False          # show the assignment's sample claim beside the goal
+    # A command the student runs in a terminal tab of their own (a long run), shown in a second
+    # box under the Claude command: a table with `command` and `note`.
+    run_yourself: dict | None = None
     # What counts: the step's checkpoints, in order, worded as outcomes, not moves. Each is a
     # string, or a table with `text` and the `files` or `slots` that tick it by themselves; one with
     # neither is ticked by Claude, through the page skill, or by any later checkpoint being ticked.
@@ -51,6 +54,16 @@ class Checkpoint:
     text: str
     files: list[str] = field(default_factory=list)
     slots: list[str] = field(default_factory=list)
+
+
+def run_yourself(s: Step) -> dict | None:
+    """The step's own-terminal command as {"command", "note"}, or None."""
+    r = s.run_yourself
+    if isinstance(r, str):
+        r = {"command": r}
+    if not isinstance(r, dict) or not str(r.get("command") or "").strip():
+        return None
+    return {"command": str(r["command"]).strip(), "note": str(r.get("note") or "").strip()}
 
 
 def checkpoints(s: Step) -> list[Checkpoint]:
@@ -230,29 +243,43 @@ def read_quote_slots(lines: list[str]) -> dict[str, str]:
     found: dict[str, str] = {}
     part, section, sub = None, None, None
     para: list[str] = []          # the paragraph just above, which asks the question
+    last = None                   # the ">" answer just above, which a paragraph may continue
     i = 0
 
-    def put(label: str, answer: str) -> None:
+    def put(label: str, answer: str) -> str:
         trail = [x for x in (section, sub) if x]
         base = " / ".join(trail + [label])
         k, n = key(part, base), 2
         while k in found:
             k, n = key(part, f"{base} ({n})"), n + 1
         found[k] = answer
+        return k
+
+    def rest_of_answer() -> None:
+        """A paragraph after an answer and a blank line, followed by another paragraph or a
+        heading (not by a ">" line, a table or a block), is more of that answer: a student who
+        leaves a blank line inside an answer keeps the second paragraph. Only an answer that has
+        something in it takes more, so text in the template can never fill a blank answer."""
+        text = "\n".join(x for x in para if x).strip()
+        if last and found.get(last) and text:
+            found[last] += "\n\n" + text
 
     while i < len(lines):
         line = lines[i]
         m = QUOTE_PART.match(line)
         if m:
-            part, section, sub, para = int(m.group(1)), None, None, []
+            rest_of_answer()
+            part, section, sub, para, last = int(m.group(1)), None, None, [], None
             i += 1
             continue
         if line.startswith("## "):
-            section, sub, para = line[3:].strip(), None, []
+            rest_of_answer()
+            section, sub, para, last = line[3:].strip(), None, [], None
             i += 1
             continue
         if line.startswith("### "):
-            sub, para = line[4:].strip(), []
+            rest_of_answer()
+            sub, para, last = line[4:].strip(), [], None
             i += 1
             continue
         m = PLAIN.match(line) if part is None else None
@@ -269,7 +296,7 @@ def read_quote_slots(lines: list[str]) -> dict[str, str]:
             while i < len(lines) and lines[i].strip() and not lines[i].startswith(("#", "|", "```")):
                 block.append(lines[i])
                 i += 1
-            put(question(para) or "Answer", "\n".join(block).strip())
+            last = put(question(para) or "Answer", "\n".join(block).strip())
             para = []
             continue
         if line.lstrip().startswith("|"):
@@ -281,7 +308,7 @@ def read_quote_slots(lines: list[str]) -> dict[str, str]:
             done = bool(body_rows) and all(all(c for c in r) for r in body_rows)
             label = question(para) or "Table: " + ", ".join(c for c in head if c and c != "#")
             put(label, "\n".join(" | ".join(r) for r in body_rows) if done else "")
-            para = []
+            para, last = [], None
             continue
         if line.startswith("```"):
             inner = []
@@ -291,15 +318,17 @@ def read_quote_slots(lines: list[str]) -> dict[str, str]:
                 i += 1
             i += 1
             put(question(para) or "Pasted output", "\n".join(inner).strip())
-            para = []
+            para, last = [], None
             continue
         if line.strip():
             if para and para[-1] == "":
-                para = []          # a new paragraph replaces the one above
+                rest_of_answer()   # a new paragraph replaces the one above, which may be more answer
+                para = []
             para.append(line.strip())
         elif para and para[-1] != "":
             para.append("")
         i += 1
+    rest_of_answer()
     return found
 
 

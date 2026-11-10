@@ -47,8 +47,8 @@ from pathlib import Path
 from typing import Any
 
 from . import labels
-from .steps import (Assignment, Step, body, checkpoints, filled, layout, present, read_slots, status,
-                    step_keys)
+from .steps import (Assignment, Step, body, checkpoints, filled, layout, present, read_slots, run_yourself,
+                    status, step_keys)
 
 REFUSED = ("git commit", "git push", "git reset", "git checkout", "git restore", "git stash", "git clean")
 GUARD = Path(__file__).parent / "guard.py"
@@ -719,7 +719,9 @@ The slots this step fills in {a.writeup}. The student types their own answers in
 editor:
 {slot_lines}
 {f"The step also needs these files to exist: {files}." if files else ""}
-
+{f"""The page also shows the student this command, which they run themselves in a terminal tab of
+their own, not in this session: {run_yourself(s)["command"]}
+""" if run_yourself(s) else ""}
 How the page works, so you don't duplicate it:
 - It marks this step complete by itself, from {a.writeup}{" and the files" if files else ""}. Don't announce it.
 - It commits "Part {s.part} done" when every step of Part {s.part} is complete. Never run git commit,
