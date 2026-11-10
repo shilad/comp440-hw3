@@ -89,7 +89,8 @@ table.grid tr.first th, table.grid tr.first td { border-top: 2px solid var(--lin
 table.grid .num { text-align: right; white-space: nowrap; }
 .pct { color: var(--muted); }
 table.claims { width: 100%; }
-table.claims td.claimcell { min-width: 320px; width: 42%; }
+table.claims td.claimcell { min-width: 260px; width: 36%; }
+table.claims thead th { white-space: normal; vertical-align: bottom; }
 td.claimcell a { color: var(--ink); text-decoration-color: var(--faint); }
 td.claimcell a:hover { color: var(--link); }
 td.claimcell a:visited { color: var(--muted); }

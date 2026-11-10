@@ -651,7 +651,7 @@ def test_a_run_just_started_and_a_run_emptied_by_fresh(repo):
 def test_the_dataset_articles_and_which_the_agent_read(repo):
     words = text_of(get(repo, "/results/claim?dir=runs/part2&id=h1")[2])
     assert "The dataset lists these articles for this claim:" in words
-    assert re.search(r"Alpha Person \(opens in a new tab\) · ✓ read by the agent \( ?lookup 2 ?\)", words)
+    assert re.search(r"Alpha Person \(opens in a new tab\) · read by the agent \( ?lookup 2 ?\)", words)
     words = text_of(get(repo, "/results/claim?dir=runs/part2&id=h2")[2])
     for title in ("Beta Writer", "Gamma (novel)"):
         assert f"{title} (opens in a new tab) · not read by the agent" in words

@@ -188,13 +188,12 @@ def noun(items) -> str:
     return "the dataset's label"
 
 
-def matched_means(items) -> str:
-    """Said once on a page, where a ✓ first appears."""
+def matched_means(items, lead: str = "A ✓ means") -> str:
+    """Said once on a page, where a ✓ (or the word "Matched") first appears."""
     sources = sources_of(items)
     if sources and sources <= {"mine"}:
-        return ("A ✓ means the agent's or baseline's verdict matched your verdict, the one in your "
-                "claims file.")
-    text = "A ✓ means the verdict matched the dataset's label"
+        return f"{lead} the verdict matched your verdict, the one in your claims file."
+    text = f"{lead} the verdict matched the dataset's label"
     text += (", or, for your own claims, your verdict. " if "mine" in sources else ". ")
     return text + ("HoVer labels each claim only <em>supported</em> or <em>not supported</em>, so "
                    "<em>refuted</em> and <em>doesn't say</em> both count as <em>not supported</em>.")
@@ -273,7 +272,7 @@ def home(repo: Path, q: dict) -> str:
         if run is not None:
             runs[rel] = run
     if runs:
-        out.append(f'<p class="small">{matched_means([it for r in runs.values() for it in r.items.values()] or [{}])}</p>')
+        out.append(f'<p class="small">{matched_means([it for r in runs.values() for it in r.items.values()] or [{}], "<em>Matched</em> means")}</p>')
     if len(runs) > 1:
         out.append(f'<p>{a(link("/compare"), "Compare two runs side by side")}</p>')
     for part in (0, 1, 2, 3, None):
@@ -815,8 +814,7 @@ def articles_html(item: dict, reads: list) -> str:
             who = f"the agent in {name}" if name else "the agent"
             if n:
                 anchor_id = f"#call-{(name.lower() + '-') if name else ''}agent-{n}"
-                bits.append(f'<span class="o correct"><span class="mk" aria-hidden="true">✓</span>read by {who} '
-                            f'({a(anchor_id, f"lookup {n}")})</span>')
+                bits.append(f'<span class="o">read by {who} ({a(anchor_id, f"lookup {n}")})</span>')
             else:
                 bits.append(f'<span class="o notread">not read by {who}</span>')
         out.append(f'<li>{a(wiki_url(str(title)), e(title), new_tab=True)}'
