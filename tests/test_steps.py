@@ -76,7 +76,8 @@ GLOBAL_ALLOW = ["Bash(git log:*)", "Bash(git status:*)", "Bash(git diff:*)", "Ba
 
 # Words students must not see on the homework page (the step list's agreed vocabulary).
 RULED_OUT = ["guardrail", "guardrails", "hop", "hops", "pipeline", "scaffold", "harness",
-             "workbench", "step budget", "drive", "drives", "driving", "sample", "samples"]
+             "workbench", "step budget", "drive", "drives", "driving", "sample", "samples",
+             "not enough info"]
 
 # The first word of anything in a brief that is a shell command.
 COMMAND_WORDS = {"uv", "python", "python3", "test", "git", "ls", "cat", "wc", "rm", "mv", "cp",
