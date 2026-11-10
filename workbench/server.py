@@ -49,6 +49,9 @@ SETTLE = 30                     # seconds a committed part's changes sit still b
 CONVO_SETTLE = 120              # and seconds its conversations sit still, so a commit never cuts one off
 RETRY_PUSH = 5 * 60
 HELP = "post in #comp440-f26 on Slack"
+NOT_A_CLONE = ("This folder is not a git clone of your fork, so the page cannot save your work to GitHub or "
+               "bring you updates. Get the homework the way the README says: fork the repository on GitHub, "
+               "then run git clone on your fork, and start the page in that folder.")
 CODE = {".py", ".js", ".css", ".html", ".md", ".json"}   # a change to one of these asks for a restart
 NO_VIEWER = ("<!doctype html><meta charset='utf-8'><title>Results</title>"
              "<p style='font: 16px/1.5 system-ui, sans-serif; margin: 40px'>The results viewer is not "
@@ -78,10 +81,28 @@ class App:
         self.version = 1
         self.code = self.code_stamp()
         self.updates = Updates(repo, upstream or os.environ.get("WORKBENCH_UPSTREAM") or self.a.upstream)
+        self.own, self.own_checked = False, 0.0
+
+    def own_repo(self) -> bool:
+        """Whether the homework folder is the top of its own git repository. Every git command that
+        writes (remotes, fetch, add, commit, push, merge) runs only when it is, so a folder unpacked
+        from a ZIP inside some other repository never touches that repository. Checked at start and
+        kept once true; while false, checked again at most every 5 seconds, so a student who then
+        clones properly isn't stuck. Any failure to check counts as false."""
+        if self.own or time.time() - self.own_checked < 5:
+            return self.own
+        self.own_checked = time.time()
+        try:
+            top = git(self.repo, "rev-parse", "--show-toplevel")
+            self.own = top.returncode == 0 and os.path.samefile(top.stdout.strip(), self.repo)
+        except (OSError, ValueError):
+            self.own = False
+        return self.own
 
     def start(self) -> None:
         """The two loops that run beside the web server: saving work, and checking for updates."""
-        if self.a.push and git(self.repo, "rev-list", "--count", "HEAD", "--not", "--remotes=origin").stdout.strip() not in ("", "0"):
+        if self.own_repo() and self.a.push and git(self.repo, "rev-list", "--count", "HEAD", "--not",
+                                                   "--remotes=origin").stdout.strip() not in ("", "0"):
             self.push_due = time.time()      # commits from before a restart that never reached GitHub
         threading.Thread(target=self.watch, daemon=True).start()
         threading.Thread(target=self.watch_updates, daemon=True).start()
@@ -166,13 +187,16 @@ class App:
                              "pending": s.state == "asking",
                              "last": (last or {}).get("label") or ((last or {}).get("text") or "")[:80]}
         now = next((x["id"] for x in status if not x["complete"] and not x["locked"]), None)
-        return {"steps": status, "sessions": sessions, "committed": sorted(stepmod.part_done_commits(self.repo)),
+        committed = sorted(stepmod.part_done_commits(self.repo)) if self.own_repo() else []
+        return {"steps": status, "sessions": sessions, "committed": committed,
                 "now": now, "notices": self.current_notices(), "version": self.version,
                 "push": {"on": self.a.push, "ok": self.pushed}}
 
     def current_notices(self) -> list[dict]:
         u, out = self.updates, []
-        if u.url and u.copy_of_class:
+        if not self.own_repo():
+            out.append({"kind": "not-a-clone", "text": NOT_A_CLONE})
+        elif u.url and u.copy_of_class:
             out.append({"kind": "fork", "text": (
                 "This folder was cloned from the class repository, not from your own fork, so the page "
                 f"can't save your work to GitHub. Fork {web(u.url)} on GitHub, then run this in a "
@@ -183,7 +207,7 @@ class App:
             self.notice("update-failed", None)
         if u.missing:
             self.notice("updated", None)
-        if u.missing and "update-failed" not in self.notices:
+        if u.missing and "update-failed" not in self.notices and self.own_repo():
             out.append({"kind": "update", "text": "There is an update to the homework. It brings:",
                         "items": u.missing[:8] + ([f"and {len(u.missing) - 8} more"] if len(u.missing) > 8 else []),
                         "button": "Update"})
@@ -214,16 +238,21 @@ class App:
         later changes to a committed part."""
         while True:
             try:
-                self.fresh()
-                self.commit_finished_parts()
-                self.commit_changes()
-                if self.push_due and time.time() >= self.push_due:
-                    self.push_soon()
+                self.tick()
             except Exception as err:  # noqa: BLE001
                 traceback.print_exc()
                 self.notice("save", f"Something went wrong while saving your work ({err}). Your files are "
                             f"untouched. If this stays, {HELP}.")
             time.sleep(3)
+
+    def tick(self) -> None:
+        self.fresh()
+        if not self.own_repo():      # not a clone of the student's fork: nothing to commit into
+            return
+        self.commit_finished_parts()
+        self.commit_changes()
+        if self.push_due and time.time() >= self.push_due:
+            self.push_soon()
 
     def git(self, *args: str, timeout: float = 60, env: dict | None = None):
         return git(self.repo, *args, timeout=timeout, env=env)
@@ -236,6 +265,8 @@ class App:
         """Commit the student's work as `message`: everything in the repository that isn't
         git-ignored, with TRANSCRIPT.md and record/ written first, but never uv.lock and never a
         file holding something like a key. True if committed (or nothing to commit)."""
+        if not self.own_repo():
+            return False
         with self.commit_lock:
             ids = {s.id: self.hub.session_id(s.id) for s in self.a.steps}
             try:
@@ -279,7 +310,7 @@ class App:
             return True
 
     def commit_finished_parts(self) -> None:
-        if not self.a.commit_parts or not (self.repo / ".git").exists() or time.time() < self.retry_at:
+        if not self.a.commit_parts or not self.own_repo() or time.time() < self.retry_at:
             return
         with self.commit_lock:
             status = stepmod.status(self.a, self.repo, self.hub.marked())
@@ -328,7 +359,7 @@ class App:
     def commit_changes(self) -> None:
         """A change to a committed part's answers or files is committed as "Part N updated", once
         it has sat still for SETTLE seconds, so a student who is still typing gets one commit."""
-        if not self.a.commit_parts or time.time() < self.retry_at:
+        if not self.a.commit_parts or not self.own_repo() or time.time() < self.retry_at:
             return
         with self.commit_lock:
             changed = self.changed_parts()
@@ -343,12 +374,14 @@ class App:
                 self.save(f"Part{'s' if len(changed) > 1 else ''} {names} updated")
 
     def push_soon(self) -> None:
-        if self.a.push and not self.updates.copy_of_class:
+        if self.a.push and not self.updates.copy_of_class and self.own_repo():
             threading.Thread(target=self.push, daemon=True).start()
 
     def push(self) -> None:
         """Push to origin. A failure never blocks anything: the work is committed, the page says
         so in one sentence, and tries again every few minutes."""
+        if not self.own_repo():
+            return
         if not self.push_lock.acquire(blocking=False):
             self.push_due = time.time() + 10
             return
@@ -374,17 +407,25 @@ class App:
     def watch_updates(self) -> None:
         while True:
             try:
-                self.updates.setup()
-                if time.time() - self.updates.fetched >= FETCH_EVERY:
-                    self.updates.fetch()
-                else:
-                    self.updates.check()
+                self.check_updates()
             except Exception:  # noqa: BLE001  checking for updates is never worth a message
                 traceback.print_exc()
             time.sleep(60)
 
+    def check_updates(self) -> None:
+        if not self.own_repo():      # never add a remote to, or fetch into, someone else's repository
+            self.updates.missing = []
+            return
+        self.updates.setup()
+        if time.time() - self.updates.fetched >= FETCH_EVERY:
+            self.updates.fetch()
+        else:
+            self.updates.check()
+
     def update(self) -> dict:
         """The Update button: save the student's work, then merge the class repository's commits."""
+        if not self.own_repo():
+            return {"ok": False, "why": NOT_A_CLONE}
         with self.commit_lock:
             result = self.updates.apply(lambda: self.save("Save work before update"))
         if not result["ok"]:

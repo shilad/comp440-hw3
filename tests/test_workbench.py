@@ -841,6 +841,60 @@ def test_after_an_update_the_steps_are_read_again_and_a_code_change_asks_for_a_r
     assert "Restart it: press Ctrl-C" in app.notices["restart"]["text"]
 
 
+def unpacked(where):
+    """The homework as a ZIP unpacks it: the files, no .git of its own."""
+    where.mkdir(parents=True)
+    for name, text in {"steps.toml": STEPS, "WRITEUP.md": WRITEUP, "README.md": "# HW9\n"}.items():
+        (where / name).write_text(text)
+    return where
+
+
+def test_a_folder_inside_another_repository_never_touches_it(tmp_path):
+    h = homework(tmp_path)                                  # the class repository, for its address
+    outer = tmp_path / "course"
+    outer.mkdir()
+    (outer / "notes.md").write_text("the instructor's notes\n")
+    git(outer, "init", "-q", "-b", "main")
+    git(outer, "add", ".")
+    git(outer, "commit", "-q", "-m", "Course notes")
+    hw = unpacked(outer / "copies" / "comp440-hw3")
+    before = (git(outer, "remote", "-v"), git(outer, "log", "--format=%H %s"), git(outer, "status", "--porcelain"))
+    app = server.App(hw, upstream=str(h.cls))
+    upstream_commit(h, "README.md", "# HW9\n\nNewer.\n", "A fix")
+    app.check_updates()                                     # setup, and a fetch
+    app.updates.fetch()
+    finish_part0(hw)
+    app.tick()                                              # a round of the saving loop
+    assert app.update() == {"ok": False, "why": server.NOT_A_CLONE}
+    after = (git(outer, "remote", "-v"), git(outer, "log", "--format=%H %s"), git(outer, "status", "--porcelain"))
+    assert after[:2] == before[:2]                          # no remote, no commit, no merge
+    assert "A " not in after[2] and "M " not in after[2]    # nothing staged
+    notices = {x["kind"]: x for x in app.current_notices()}
+    assert notices["not-a-clone"]["text"] == server.NOT_A_CLONE and "update" not in notices
+    assert app.state()["committed"] == []
+    assert {x["id"]: x for x in app.state()["steps"]}["0b"]["complete"]    # the page still reads
+
+
+def test_a_folder_outside_any_repository_says_so_and_carries_on(tmp_path):
+    hw = unpacked(tmp_path / "comp440-hw3")
+    app = server.App(hw, upstream="/nonexistent/class")
+    app.check_updates()
+    finish_part0(hw)
+    app.tick()
+    assert any(x["kind"] == "not-a-clone" for x in app.state()["notices"])
+    assert app.hub.sessions["0b"].snapshot()["command"].startswith('claude -n "0b ')
+    assert not (hw / ".git").exists() and not (hw / "TRANSCRIPT.md").exists()
+
+
+def test_a_clone_made_later_is_noticed(tmp_path):
+    hw = unpacked(tmp_path / "comp440-hw3")
+    app = server.App(hw)
+    assert not app.own_repo()
+    git(hw, "init", "-q", "-b", "main")
+    app.own_checked = 0                                     # five seconds later
+    assert app.own_repo() and not any(x["kind"] == "not-a-clone" for x in app.current_notices())
+
+
 def test_a_clone_of_the_class_repository_is_told_to_fork(tmp_path):
     h = homework(tmp_path)
     git(h.student, "remote", "set-url", "origin", str(h.cls) + "/")
