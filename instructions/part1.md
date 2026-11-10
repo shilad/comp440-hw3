@@ -52,6 +52,7 @@ tools, before you watch it.
 I'd like you to do this before you watch the agent do it. You'll read its traces much more closely once
 you've made the same choices yourself.
 
+Use **only** the agent's tools, not your browser: the point is to see only what the agent sees.
 Claim 1 is short, to learn the tools:
 
 > Mel Duncan holds a history degree from the private, coeducational liberal arts Macalester
@@ -114,8 +115,7 @@ of the table has every cell filled, and the four answers have text after the `>`
 - A title with `&` or an apostrophe must be inside double quotes, as in
   `uv run python lookup.py read "<page title>"`, or the shell misreads it. Check Claude's command.
 
-**Hint:** Use **only** these tools, not your browser: the point is to see only what the agent sees.
-Claude will not suggest a lookup or say what a result means, but it will explain what a tool does or
+**Hint:** Claude will not suggest a lookup or say what a result means, but it will explain what a tool does or
 how to read its output.
 
 ## 1c. Watch the agent work

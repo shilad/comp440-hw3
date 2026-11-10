@@ -12,9 +12,9 @@ minutes.
 **What you're finding out:** Nothing yet. You build your own set of test claims, on a topic you know
 better than most people.
 
-**Words in this step:** *claim*: one sentence that is either true or false. *verdict*: *supported*,
-*refuted* or *doesn't say*. Your verdict is what is true as far as you know, from the source you would
-trust, not what you think Wikipedia says.
+**Words in this step:** *claim*: one sentence that is either true or false. *your verdict*:
+*supported* if the claim is true and *refuted* if it is false, according to the source you trust, not
+what you think Wikipedia says.
 
 **What to do:**
 
@@ -22,7 +22,7 @@ trust, not what you think Wikipedia says.
 2. Pick a topic you know well and that Wikipedia covers at least a little.
 3. Type your topic, and why you know it well, under 3a in `WRITEUP.md`.
 4. Write **at least eight** claims about it in the table under 3a, with the mix listed below.
-5. Type your verdict for each, spelled exactly `supported`, `refuted` or `doesn't say`.
+5. Type your verdict for each: `supported` if it is true, `refuted` if it is false, spelled exactly so.
 6. Type the source you would trust for each.
 7. Ask Claude to copy your table into `data/my-claims.jsonl`, with ids `mine-1`, `mine-2` and so on.
 8. Open `data/my-claims.jsonl` and check that it has one line for each claim in your table.
@@ -34,9 +34,12 @@ you could fact-check yourself without looking much up. Your claims must include:
 - at least two that need two or more Wikipedia articles to check;
 - at least two where you think Wikipedia doesn't say, or says something wrong.
 
+For those claims too, your verdict is what is true. Finding out what the agent does when Wikipedia
+lacks the fact, or has it wrong, is the point.
+
 **What you'll see:** Each line of `data/my-claims.jsonl` looks like this, with the claim's row number in
-its id and your verdict as its label. The program compares the agent's verdict with yours word for
-word, so the spelling matters.
+its id and your verdict, `supported` or `refuted`, as its label. The program compares the agent's
+verdict with yours word for word, so the spelling matters.
 
 ```
 {"id": "mine-1", "claim": "...", "source": "mine", "label": "supported"}
@@ -45,7 +48,7 @@ word, so the spelling matters.
 **What to write:** In `WRITEUP.md`, under 3a, answer and fill in the table:
 
 - Your topic, and why you know it well.
-- Your claims, at least eight: some true and some false, at least two that need two or more Wikipedia articles, and at least two where you think Wikipedia doesn't say or says something wrong. Write each verdict as `supported`, `refuted` or `doesn't say`. For more claims, add rows numbered 9, 10 and so on.
+- Your claims, at least eight: some true and some false, at least two that need two or more Wikipedia articles, and at least two where you think Wikipedia doesn't say or says something wrong. Write each verdict as `supported` if the claim is true or `refuted` if it is false, according to the source you trust. For more claims, add rows numbered 9, 10 and so on.
 
 **You're done when:** The homework page ticks 3a: `data/my-claims.jsonl` exists, the topic answer has
 text after the `>`, and every numbered row of the table is filled.
@@ -80,8 +83,8 @@ uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out 
 ```
 
 The first table shows on how many of your claims each version's verdict matched yours. A verdict
-matches only when it is the same word as yours: your claims keep all three verdicts, so *refuted* and
-*doesn't say* are different answers here. The run is saved in `runs/part3/before`.
+matches only when it is the same word as yours, so when a version answers *doesn't say* it does not
+match, whichever verdict you gave. The run is saved in `runs/part3/before`.
 
 **What to write:** In `WRITEUP.md`, under 3b:
 

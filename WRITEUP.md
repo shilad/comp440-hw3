@@ -198,7 +198,7 @@ Is accuracy alone a good measure of this agent? Why or why not?
 
 ## 2d. Find where Wikipedia has changed
 
-Two claims where the agent's evidence is sound and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, use a row for the closest case you found, and say so in it.
+Two claims where the agent's evidence is sound and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
 
 | # | Claim (first few words) | The dataset's label | What today's Wikipedia says | What changed on the page, if you can tell |
 |---|---|---|---|---|
@@ -217,7 +217,7 @@ Your topic, and why you know it well.
 
 >
 
-Your claims, at least eight: some true and some false, at least two that need two or more Wikipedia articles, and at least two where you think Wikipedia doesn't say or says something wrong. Write each verdict as `supported`, `refuted` or `doesn't say`. For more claims, add rows numbered 9, 10 and so on.
+Your claims, at least eight: some true and some false, at least two that need two or more Wikipedia articles, and at least two where you think Wikipedia doesn't say or says something wrong. Write each verdict as `supported` if the claim is true or `refuted` if it is false, according to the source you trust. For more claims, add rows numbered 9, 10 and so on.
 
 | # | Claim | Your verdict | The source you would trust |
 |---|---|---|---|

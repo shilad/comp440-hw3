@@ -147,7 +147,7 @@ of the agent's "wrong" answers may be right about today's Wikipedia.
 6. See the page as it was in 2017: on Wikipedia, choose "View history" and pick a 2017 version.
 7. Find at least two such claims, and fill in a row of the table for each.
 8. Stop if you have read ten of the agent's wrong answers and found fewer than two.
-9. In that case, use a row for the closest case you found, and say so in that row.
+9. In that case, fill each remaining row with the closest case you found, and say it is not a clear case.
 10. Answer the question under the table.
 
 **What you'll see:** A claim's page shows "The dataset's label" at the top, and "The dataset lists these
@@ -161,7 +161,7 @@ uv run python lookup.py --no-log read "<page title>"
 
 **What to write:** In `WRITEUP.md`, under 2d, fill in the table and answer:
 
-- Two claims where the agent's evidence is sound and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, use a row for the closest case you found, and say so in it.
+- Two claims where the agent's evidence is sound and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
 - What does this tell you about using a fixed dataset to judge a system that reads a live source?
 
 **You're done when:** The homework page ticks 2d: both rows are filled, and the answer has text after
