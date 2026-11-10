@@ -7,8 +7,8 @@ below. Each turn of the loop:
   2. runs whatever tool Claude asked for,
   3. adds the tool's result to the conversation,
 
-and stops when Claude calls answer() with evidence that checks out, when it
-runs out of steps, or when its answer has been sent back three times.
+and stops when Claude calls answer() with evidence that checks out, or when
+one of the limits in run_agent() ends it first.
 """
 
 import re
