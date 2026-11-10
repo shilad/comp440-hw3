@@ -1,5 +1,7 @@
-"""Offline tests for what evaluate.py prints and saves around a run: its progress
-lines, report.txt (which marks a finished run) and run.json."""
+"""Offline tests for what the programs print and save around a run: evaluate.py's
+progress lines, report.txt (which marks a finished run), run.json and --fresh;
+lookup.py's --no-log; the notice when Wikipedia asks the program to wait; and
+reading a verdict from a reply that is not valid JSON."""
 
 import json
 import sys
@@ -47,6 +49,8 @@ def test_a_finished_run_saves_its_report(monkeypatch, tmp_path, capsys):
     report = (out_dir / "report.txt").read_text()
     assert "Share of claims where the verdict matched the label" in report
     assert "12/12" in report
+    assert "HoVer, supported          12/12" in report   # the count split by the dataset's label
+    assert "HoVer, not supported       0/0" in report
     assert "Average per claim" in report
     assert report.strip() in printed
     assert json.loads((out_dir / "run.json").read_text()) == {"claims": str(claims)}
@@ -120,3 +124,126 @@ def test_a_run_with_a_failed_claim_has_no_report(monkeypatch, tmp_path, capsys):
     assert "run the same command again" in capsys.readouterr().out
     assert not (out_dir / "report.txt").exists()
     assert len((out_dir / "agent.jsonl").read_text().splitlines()) == 11
+
+
+def test_lookup_with_no_log_prints_but_does_not_add_to_the_record(monkeypatch, tmp_path, capsys):
+    import lookup
+    monkeypatch.setattr(lookup, "load_dotenv", lambda: None)  # leave your own .env alone
+    monkeypatch.setattr(lookup, "LOG", tmp_path / "lookups.jsonl")
+    monkeypatch.setattr(wiki, "read", lambda title, section=None: f"Page: {title}")
+    monkeypatch.setattr(sys, "argv", ["lookup.py", "--no-log", "read", "Saint Paul, Minnesota"])
+    lookup.main()
+    printed = capsys.readouterr().out
+    assert "Page: Saint Paul, Minnesota" in printed
+    assert "lookups.jsonl" not in printed
+    assert not (tmp_path / "lookups.jsonl").exists()
+
+
+def test_check_setup_says_what_is_missing_and_never_prints_the_key(monkeypatch, tmp_path, capsys):
+    import check_setup
+    env = tmp_path / ".env"
+    monkeypatch.setattr(check_setup, "ENV", env)
+    monkeypatch.setattr(check_setup, "load_dotenv", lambda path: None)  # leave this process's environment alone
+    monkeypatch.setattr(check_setup, "wikipedia_problem", lambda: None)
+    monkeypatch.setattr(check_setup, "key_problem", lambda: None)
+
+    assert check_setup.main() == 1  # no .env yet
+    assert "There is no .env file" in capsys.readouterr().out
+
+    env.write_text("ANTHROPIC_API_KEY=sk-ant-not-a-real-key\nWIKIPEDIA_CONTACT=\n")
+    assert check_setup.main() == 1  # the email is missing
+    printed = capsys.readouterr().out
+    assert "ok         ANTHROPIC_API_KEY is filled in" in printed
+    assert "NOT READY  WIKIPEDIA_CONTACT is empty" in printed
+    assert "Not ready yet" in printed
+    assert "sk-ant" not in printed
+
+    env.write_text("ANTHROPIC_API_KEY=sk-ant-not-a-real-key\nWIKIPEDIA_CONTACT=student@macalester.edu\n")
+    assert check_setup.main() == 0
+    printed = capsys.readouterr().out
+    assert "Everything is ready." in printed
+    assert "sk-ant" not in printed and "student@macalester.edu" not in printed
+
+    monkeypatch.setattr(check_setup, "key_problem", lambda: "the Claude API did not accept the key.")
+    assert check_setup.main() == 1  # a key that the API refuses
+    assert "NOT READY  the Claude API did not accept the key." in capsys.readouterr().out
+
+
+class Reply:
+    """What requests.get() returns, for a scripted Wikipedia."""
+
+    def __init__(self, status, data=None, retry_after=None):
+        self.status_code = status
+        self.headers = {"Retry-After": retry_after} if retry_after else {}
+        self.data = data
+
+    def json(self):
+        return self.data
+
+    def raise_for_status(self):
+        pass
+
+
+STEAKHOUSE = {"query": {"search": [{
+    "title": "Vic & Anthony's Steakhouse",
+    "snippet": 'Vic &amp; Anthony&#039;s is a <span class="searchmatch">steakhouse</span>'}]}}
+
+
+def scripted_wikipedia(monkeypatch, tmp_path, replies):
+    replies = list(replies)
+    monkeypatch.setattr(wiki, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(wiki.requests, "get", lambda url, **kwargs: replies.pop(0))
+    monkeypatch.setattr(wiki.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(wiki, "_warned", True)       # the warning about the contact is tested elsewhere
+    monkeypatch.setattr(wiki, "_said_waiting", 0.0)  # as at the start of a run
+
+
+def test_a_wait_for_wikipedia_is_announced_once(monkeypatch, tmp_path, capsys):
+    monkeypatch.delenv("WIKIPEDIA_CONTACT", raising=False)
+    scripted_wikipedia(monkeypatch, tmp_path, [
+        Reply(429, retry_after="7"), Reply(429, retry_after="7"), Reply(200, STEAKHOUSE)])
+    wiki.search("steakhouse")
+    said = capsys.readouterr().err
+    assert said.count("Wikipedia asked this program to slow down") == 1
+    assert "waiting 7 seconds" in said
+    assert "WIKIPEDIA_CONTACT" in said  # not set, so it says how to get your own allowance
+
+
+def test_the_wait_notice_leaves_out_the_contact_when_it_is_set(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("WIKIPEDIA_CONTACT", "student@macalester.edu")
+    scripted_wikipedia(monkeypatch, tmp_path, [Reply(429, retry_after="3"), Reply(200, STEAKHOUSE)])
+    wiki.search("steakhouse")
+    said = capsys.readouterr().err
+    assert "Wikipedia asked this program to slow down" in said
+    assert "WIKIPEDIA_CONTACT" not in said
+
+
+def test_search_results_show_plain_characters(monkeypatch, tmp_path):
+    scripted_wikipedia(monkeypatch, tmp_path, [Reply(200, STEAKHOUSE)])
+    assert "1. Vic & Anthony's Steakhouse: Vic & Anthony's is a steakhouse" in wiki.search("steakhouse")
+
+
+def test_a_reply_with_unescaped_quote_marks_keeps_its_verdict():
+    import baselines
+    reply = ('{"verdict": "doesn\'t say", "explanation": "The text names the composer of '
+             '"Persian Surgery Dervishes" but does not give his birthday."}')
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(reply)  # this is the kind of reply that used to lose its verdict
+    verdict, explanation = baselines._parse(reply)
+    assert verdict == "doesn't say"
+    assert explanation == ('The text names the composer of "Persian Surgery Dervishes" '
+                           "but does not give his birthday.")
+
+
+def test_a_reply_that_is_valid_json_is_read_as_before():
+    import baselines
+    fenced = '```json\n{"verdict": "refuted", "explanation": "The page says 1940."}\n```'
+    assert baselines._parse(fenced) == ("refuted", "The page says 1940.")
+    other_order = '{"explanation": "The page says "1935".", "verdict": "supported"}'
+    assert baselines._parse(other_order) == ("supported", 'The page says "1935".')
+
+
+def test_a_reply_with_no_verdict_still_gives_none():
+    import baselines
+    assert baselines._parse("I can't help with that.") == (None, "I can't help with that.")
+    assert baselines._parse('{"verdict": "maybe", "explanation": "x"}') == (None, "x")
