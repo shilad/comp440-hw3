@@ -430,6 +430,29 @@ def test_a_step_can_carry_a_command_the_student_runs_themselves(tmp_path):
     assert "Run this yourself, in a terminal tab of your own" in js
 
 
+def test_a_code_span_in_a_question_shows_as_code_and_nothing_else_is_markup():
+    js = (ROOT / "workbench/static/app.js").read_text()
+    source = next(line for line in js.splitlines() if line.startswith("const codeText ="))
+    assert "esc(s).replace(" in source                       # escaped first, then the code spans
+    for site in ('<span class="q">${codeText(text)}</span>', "codeText(now.question)", "codeText(now.todo)",
+                 'line("tick", codeText(x.text) + ".")', "${codeText(c.text)}</li>"):
+        assert site in js, site
+    import glob
+    import shutil
+    node = shutil.which("node") or next(iter(sorted(glob.glob(str(Path.home() / ".nvm/versions/node/*/bin/node")))), None)
+    if not node:                                            # a laptop without node: the checks above stand
+        return
+    esc = next(line for line in js.splitlines() if line.startswith("const esc ="))
+    run = esc + "\n" + source + "\n" + "\n".join(
+        f"console.log(codeText({json.dumps(q)}));" for q in (
+            "Give the line numbers in `my_loop.py`.", "Is <b>this</b> bold? `<i>x</i>` and [a](http://x)",
+            "Write *supported* or `doesn't say`."))
+    out = subprocess.run([node, "-e", run], capture_output=True, text=True).stdout.splitlines()
+    assert out == ["Give the line numbers in <code>my_loop.py</code>.",
+                   "Is &lt;b&gt;this&lt;/b&gt; bold? <code>&lt;i&gt;x&lt;/i&gt;</code> and [a](http://x)",
+                   "Write *supported* or <code>doesn't say</code>."]
+
+
 # -- saving the student's work -------------------------------------------------------------------
 
 def finish_part0(repo):
