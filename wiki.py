@@ -8,7 +8,9 @@ the agent reads.
 
 import hashlib
 import json
+import os
 import re
+import sys
 from pathlib import Path
 
 import time
@@ -19,10 +21,30 @@ WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 
 # Wikipedia asks every program that calls its API to say who it is and how to
-# reach whoever runs it. It lets a program that gives a web address or an email
-# make far more requests a minute than one that doesn't.
-HEADERS = {"User-Agent": "COMP440-HW3/0.1 (https://shilad.github.io/comp440-website/; "
-                         "Macalester College course assignment)"}
+# reach whoever runs it, in the User-Agent. It allows a set number of requests
+# a minute for each contact given there, counted by the contact. So you put
+# your own email in .env as WIKIPEDIA_CONTACT, and your requests get an
+# allowance of their own. Without it, every copy of this code gives the course
+# site as its contact, and the whole class shares one allowance.
+SHARED_USER_AGENT = ("COMP440-HW3/0.1 (https://shilad.github.io/comp440-website/; "
+                     "Macalester College course assignment)")
+_warned = False
+
+
+def _headers():
+    """The User-Agent for a request. It reads WIKIPEDIA_CONTACT each time, not
+    when this file is imported, so it works whenever .env is loaded."""
+    global _warned
+    contact = os.environ.get("WIKIPEDIA_CONTACT", "").strip()
+    if contact:
+        return {"User-Agent": f"COMP440-HW3/0.1 ({contact}; Macalester College course assignment)"}
+    if not _warned:  # once per run, not once per request
+        _warned = True
+        print("Warning: WIKIPEDIA_CONTACT is not set, so this copy shares Wikipedia's allowance "
+              "of requests with the whole class, and your runs may slow down. To fix it, add "
+              "the line WIKIPEDIA_CONTACT=<your Macalester email> to .env.", file=sys.stderr)
+    return {"User-Agent": SHARED_USER_AGENT}
+
 
 CACHE_DIR = Path(__file__).parent / ".cache"
 
@@ -53,9 +75,9 @@ def _get(url, params):
     path = CACHE_DIR / f"{key}.json"
     if path.exists():
         return json.loads(path.read_text())
-    tries, waited = 0, 0
+    headers, tries, waited = _headers(), 0, 0
     while True:
-        response = requests.get(url, params=params, headers=HEADERS, timeout=30)
+        response = requests.get(url, params=params, headers=headers, timeout=30)
         if response.status_code != 429:  # 429 means "too many requests"
             break
         tries += 1

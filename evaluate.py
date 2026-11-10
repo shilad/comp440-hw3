@@ -131,7 +131,10 @@ def main():
     parser.add_argument("--out", default="runs/eval")
     parser.add_argument("--methods", default="no-tools,one-search,agent")
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--workers", type=int, default=4)
+    # How many claims are checked at the same time. Wikipedia asks programs to
+    # send at most 3 requests at once, and each claim makes its requests one
+    # after another, so 3 claims at a time keeps to that.
+    parser.add_argument("--workers", type=int, default=3)
     args = parser.parse_args()
 
     items = [json.loads(line) for line in Path(args.claims).read_text().splitlines() if line.strip()]

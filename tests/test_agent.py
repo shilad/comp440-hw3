@@ -255,20 +255,39 @@ FOUND = {"query": {"search": [{"title": "Forrest Gump", "snippet": "1994 film"}]
 
 def scripted_wikipedia(monkeypatch, tmp_path, responses):
     """Send wiki.py's requests to the scripted responses, in order, with the
-    cache in tmp_path. Returns the headers of each request and each pause."""
+    cache in tmp_path. Returns the headers of each request and each pause.
+    WIKIPEDIA_CONTACT starts unset, whatever your own environment or .env says,
+    and the warning about it starts unprinted, as at the start of a run."""
     sent, pauses = [], []
     responses = list(responses)
     monkeypatch.setattr(wiki, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(wiki.requests, "get",
                         lambda url, **kwargs: sent.append(kwargs["headers"]) or responses.pop(0))
     monkeypatch.setattr(wiki.time, "sleep", pauses.append)
+    monkeypatch.delenv("WIKIPEDIA_CONTACT", raising=False)
+    monkeypatch.setattr(wiki, "_warned", False)
     return sent, pauses
 
 
-def test_user_agent_gives_a_web_address(monkeypatch, tmp_path):
+def test_user_agent_gives_your_contact(monkeypatch, tmp_path, capsys):
     sent, _ = scripted_wikipedia(monkeypatch, tmp_path, [FakeResponse(200, FOUND)])
+    # Set after wiki.py was imported, as when a script loads .env late.
+    monkeypatch.setenv("WIKIPEDIA_CONTACT", "student@macalester.edu")
     assert wiki.search("Forrest Gump").startswith("1. Forrest Gump")
-    assert "https://" in sent[0]["User-Agent"]
+    assert sent[0]["User-Agent"] == ("COMP440-HW3/0.1 (student@macalester.edu; "
+                                     "Macalester College course assignment)")
+    assert "WIKIPEDIA_CONTACT" not in capsys.readouterr().err
+
+
+def test_without_a_contact_it_gives_the_course_site_and_warns_once(monkeypatch, tmp_path, capsys):
+    sent, _ = scripted_wikipedia(monkeypatch, tmp_path,
+                                 [FakeResponse(200, FOUND), FakeResponse(200, FOUND)])
+    wiki.search("Forrest Gump")
+    wiki.search("Robert Zemeckis")
+    assert len(sent) == 2
+    assert all(h["User-Agent"] == wiki.SHARED_USER_AGENT for h in sent)
+    assert "https://shilad.github.io/comp440-website/" in wiki.SHARED_USER_AGENT
+    assert capsys.readouterr().err.count("WIKIPEDIA_CONTACT is not set") == 1
 
 
 def test_too_many_requests_waits_as_long_as_asked(monkeypatch, tmp_path):
@@ -347,6 +366,7 @@ def test_one_search_unwraps_only_a_wholly_quoted_query():
 
 def test_lookup_prints_and_logs(monkeypatch, tmp_path, capsys):
     import lookup
+    monkeypatch.setattr(lookup, "load_dotenv", lambda: None)  # leave your own .env alone
     monkeypatch.setattr(lookup, "LOG", tmp_path / "lookups.jsonl")
     monkeypatch.setattr(wiki, "search", lambda q: f"1. Forrest Gump: {q}")
     monkeypatch.setattr(sys, "argv", ["lookup.py", "search", "1994 Best Picture"])
