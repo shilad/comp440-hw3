@@ -48,6 +48,7 @@ PORTS = 20                      # how many ports to try from there
 SETTLE = 30                     # seconds a committed part's changes sit still before they're committed
 RETRY_PUSH = 5 * 60
 HELP = "post in #comp440-f26 on Slack"
+CODE = {".py", ".js", ".css", ".html", ".md", ".json"}   # a change to one of these asks for a restart
 NO_VIEWER = ("<!doctype html><meta charset='utf-8'><title>Results</title>"
              "<p style='font: 16px/1.5 system-ui, sans-serif; margin: 40px'>The results viewer is not "
              "installed in this copy of the homework. <a href='/'>Back to the homework page</a></p>")
@@ -70,6 +71,7 @@ class App:
         self.push_lock = threading.Lock()
         self.push_due = 0.0                  # when to try a push again; 0 for never
         self.pushed: bool | None = None      # whether the last push went through
+        self.retry_at = 0.0                  # after a commit that failed, when to try again
         self.stamp = self.file_stamp()
         self.version = 1
         self.code = self.code_stamp()
@@ -103,7 +105,7 @@ class App:
     def code_stamp(self) -> tuple:
         """The page's own code and the viewer's: when either changes, the page must restart."""
         files = [f for d in (self.repo / "workbench", self.repo / "viewer") if d.is_dir()
-                 for f in sorted(d.rglob("*")) if f.is_file() and "__pycache__" not in f.parts]
+                 for f in sorted(d.rglob("*")) if f.suffix in CODE and "__pycache__" not in f.parts]
         return tuple((str(f), f.stat().st_mtime_ns) for f in files)
 
     def fresh(self) -> None:
@@ -258,12 +260,15 @@ class App:
                 self.git("reset", "-q", "--", *keyed)
                 self.notice("key", f"The page didn't commit {', '.join(dict.fromkeys(keyed))}, because it holds "
                             "what looks like an API key, and your repository on GitHub is public.")
+            else:
+                self.notice("key", None)
             if not empty and self.git("diff", "--cached", "--quiet").returncode == 0:
                 return True
             r = self.git("commit", "-q", "--allow-empty", "-m", message)
             if r.returncode:
+                self.retry_at = time.time() + 60    # don't write the transcript again every few seconds
                 self.notice("save", f"The page couldn't commit “{message}”: "
-                            f"{(r.stderr or r.stdout).strip()[-200:]}. Your files are untouched. {HELP.capitalize()}.")
+                            f"{(r.stderr or r.stdout).strip()[-200:]}. Your files are untouched. If this stays, {HELP}.")
                 return False
             self.notice("save", None)
             self.pushed = None if self.a.push else self.pushed
@@ -272,7 +277,7 @@ class App:
             return True
 
     def commit_finished_parts(self) -> None:
-        if not self.a.commit_parts or not (self.repo / ".git").exists():
+        if not self.a.commit_parts or not (self.repo / ".git").exists() or time.time() < self.retry_at:
             return
         with self.commit_lock:
             status = stepmod.status(self.a, self.repo, self.hub.marked())
@@ -302,7 +307,7 @@ class App:
     def commit_changes(self) -> None:
         """A change to a committed part's answers or files is committed as "Part N updated", once
         it has sat still for SETTLE seconds, so a student who is still typing gets one commit."""
-        if not self.a.commit_parts:
+        if not self.a.commit_parts or time.time() < self.retry_at:
             return
         with self.commit_lock:
             changed = self.changed_parts()

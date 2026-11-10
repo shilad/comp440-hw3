@@ -552,7 +552,7 @@ def test_an_untracked_file_in_the_way_changes_nothing(tmp_path):
 
 
 def test_after_an_update_the_steps_are_read_again_and_a_code_change_asks_for_a_restart(tmp_path):
-    h = homework(tmp_path, {"workbench/note.txt": "one\n"})
+    h = homework(tmp_path, {"workbench/note.py": "one\n"})
     app = server.App(h.student, upstream=str(h.cls))
     app.updates.setup()
     version = app.version
@@ -561,7 +561,7 @@ def test_after_an_update_the_steps_are_read_again_and_a_code_change_asks_for_a_r
     assert app.update() == {"ok": True}
     assert app.a.title.endswith("revised") and app.version > version
     assert "restart" not in app.notices and "up to date" in app.notices["updated"]["text"]
-    upstream_commit(h, "workbench/note.txt", "two\n", "Fix the page")
+    upstream_commit(h, "workbench/note.py", "two\n", "Fix the page")
     app.updates.fetch()
     assert app.update() == {"ok": True}
     assert "Restart it: press Ctrl-C" in app.notices["restart"]["text"]
