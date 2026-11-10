@@ -61,8 +61,25 @@ class Problem(Exception):
         self.status, self.title, self.text = status, title, text
 
 
-def handle(method: str, path: str, query: dict, repo) -> tuple[int, str, bytes]:
-    """(status, content type, body) for one request."""
+class Redirect(Exception):
+    def __init__(self, to: str):
+        super().__init__(to)
+        self.to = to
+
+
+def respond(method: str, path: str, query: dict, repo) -> tuple[int, str, bytes, dict]:
+    """handle(), with headers: (status, content type, body, headers). A page that only sends
+    the browser on (/open) comes back as a 303 with a Location header, so it never stays in
+    the browser's history and Back works. The homework page uses this when it can."""
+    try:
+        return (*handle(method, path, query, repo, _raise=True), {})
+    except Redirect as r:
+        return 303, HTML, redirect(r.to).encode(), {"Location": r.to}
+
+
+def handle(method: str, path: str, query: dict, repo, _raise: bool = False) -> tuple[int, str, bytes]:
+    """(status, content type, body) for one request. A redirect comes back as a page that sends
+    the browser on by itself (see respond() for a real one)."""
     repo = Path(repo)
     query = query or {}
     if method not in ("GET", "HEAD"):
@@ -78,6 +95,10 @@ def handle(method: str, path: str, query: dict, repo) -> tuple[int, str, bytes]:
             raise Problem(404, "No such page", f"The results viewer has no page at {e(path)}.")
         body = page(repo, {k: (v[0] if isinstance(v, list) else v) for k, v in query.items()})
         return 200, HTML, body.encode("utf-8")
+    except Redirect as r:
+        if _raise:
+            raise
+        return 200, HTML, redirect(r.to).encode()
     except Problem as p:
         return p.status, HTML, shell(p.title, f"<h1>{e(p.title)}</h1><p>{p.text}</p>"
                                      f"<p>{a(link('/'), 'See every run you have')}</p>").encode()
@@ -158,20 +179,22 @@ def dollars(x: float, places: int = 4) -> str:
     return f"${x:.{places}f}"
 
 
-def verdict_cell(row: dict | None) -> str:
-    """A verdict with a plain mark for whether it matched the label."""
+def verdict_cell(row: dict | None, nn: str = "the dataset's label", long: bool = False) -> str:
+    """A verdict with a mark for whether it matches the label, and the same in words: in full
+    on a claim's page, "matches" or "does not match" in a table (whose legend says the rest)."""
     o = R.outcome(row)
     if o == "notrun":
         return '<span class="o notrun">not run yet</span>'
+    ok = o == "correct"
     if o == "error":
-        return ('<span class="o wrong"><span class="mk" aria-hidden="true">✗</span>'
-                '<span class="sr">did not match: </span>stopped with an error</span>')
-    text = row["verdict"] if row["verdict"] is not None else "no verdict"
-    if o == "correct":
-        return (f'<span class="o correct"><span class="mk" aria-hidden="true">✓</span>'
-                f'<span class="sr">matched: </span>{e(text)}</span>')
-    return (f'<span class="o wrong"><span class="mk" aria-hidden="true">✗</span>'
-            f'<span class="sr">did not match: </span>{e(text)}</span>')
+        text = "stopped with an error"
+    else:
+        text = row["verdict"] if row["verdict"] is not None else "no verdict"
+    words = ("matches" if ok else "does not match") + (f" {nn}" if long else "")
+    cls, mk = ("correct", "✓") if ok else ("wrong", "✗")
+    sep = " · " if long else ""
+    return (f'<span class="o {cls}{" long" if long else ""}"><span class="mk" aria-hidden="true">{mk}</span>'
+            f'{e(text)}{sep}<span class="says">{words}</span></span>')
 
 
 def sources_of(items) -> set:
@@ -200,9 +223,10 @@ def matched_means(items, lead: str = "A ✓ means") -> str:
 
 
 def legend(items) -> str:
-    return (f'<p class="legend small"><span class="o correct"><span class="mk">✓</span> matched {noun(items)}</span>'
-            '<span class="o wrong"><span class="mk">✗</span> did not match</span> A missing verdict, or a '
-            'claim that stopped with an error, counts as not matching, as it does in evaluate.py.</p>')
+    nn = noun(items)
+    return (f'<p class="legend small"><span class="o correct"><span class="mk">✓</span> matches {nn}</span>'
+            f'<span class="o wrong"><span class="mk">✗</span> does not match {nn}</span> A missing verdict, or a '
+            'claim that stopped with an error, does not match, as in evaluate.py.</p>')
 
 
 def wiki_url(title: str, section: str | None = None) -> str:
@@ -402,7 +426,8 @@ VERDICT_CHOICES = {"": "any verdict", "supported-or-refuted": "supported or refu
 
 
 def outcomes(items) -> dict:
-    return {"": "any result", "matched": f"matched {noun(items)}", "unmatched": "did not match (any reason)",
+    return {"": "any result", "matched": f"matches {noun(items)}",
+            "unmatched": f"does not match {noun(items)} (any reason)",
             "none": "gave no verdict", "error": "stopped with an error", "notrun": "not run yet"}
 
 
@@ -700,6 +725,7 @@ def claims_section(run: R.Run, f: dict) -> str:
                f'{a(link("/run", dir=run.rel) + "#claims", "Clear the filters")}</div></form>')
     out.append(f'<p class="count" role="status" aria-live="polite">Showing <strong>{len(ids):,}</strong> '
                f'of {plural(len(run.ids), "claim")}.</p>')
+    nn = noun(items)
     out.append(legend(items))
     if not ids:
         out.append('<p class="empty">No claims match these filters.</p></section>')
@@ -720,7 +746,7 @@ def claims_section(run: R.Run, f: dict) -> str:
                    f'<td class="claimcell">{a(href, e(item["claim"]))}</td>'
                    f'<td class="nowrap">{e(R.label_text(item))}</td><td class="num">{e(R.hops_text(item))}</td>')
         for m in run.methods:
-            out.append(f'<td class="nowrap">{verdict_cell(run.rows[m].get(i))}</td>')
+            out.append(f'<td class="nowrap">{verdict_cell(run.rows[m].get(i), nn)}</td>')
         if m_focus:
             row = run.rows[m_focus].get(i)
             out.append(f'<td class="num">{row["steps"] if row else ""}</td>'
@@ -762,7 +788,7 @@ def claim_page(repo: Path, q: dict) -> str:
         if (m, i) in run.relabelled:
             note = ('<p class="note">The label in <code>data/</code> has changed since this run. The run '
                     f'saved this result as {"matching" if row["correct"] else "not matching"}.</p>')
-        cols.append(result_card(m, row, note, anchor_for=m))
+        cols.append(result_card(m, row, note, anchor_for=m, nn=noun([item])))
     out.append(f'<div class="cards n{len(cols)}">{"".join(cols)}</div>')
     for m in reversed(run.methods):  # the agent first: its trace is the long one
         row = run.rows[m].get(i)
@@ -824,11 +850,11 @@ def articles_html(item: dict, reads: list) -> str:
 
 
 def result_card(method: str, row: dict | None, note: str = "", anchor_for: str = "",
-                title: str | None = None, mark: bool = True) -> str:
+                title: str | None = None, mark: bool = True, nn: str = "the dataset's label") -> str:
     title = f'<h2 class="card-title">{title or "The " + e(R.method_name(method))}</h2>'
     if row is None:
         return f'<article class="card">{title}<p class="empty">No result for this claim yet.</p></article>'
-    shown = verdict_cell(row) if mark else f'<span class="o">{e(row["verdict"] or "no verdict")}</span>'
+    shown = verdict_cell(row, nn, long=True) if mark else f'<span class="o">{e(row["verdict"] or "no verdict")}</span>'
     out = [f'<article class="card">{title}<p class="verdict-line">Verdict: {shown}</p>', note]
     if row["explanation"]:
         out.append(f'<h3 class="label">Explanation</h3><p class="expl">{e(row["explanation"])}</p>')
@@ -1011,7 +1037,7 @@ def check_page(repo: Path, q: dict) -> str:
         out.append(claim_head(item, True, [("", row)] if method == "agent" else []))
         out.append(f'<p class="small">This claim is in <code>{e(name)}</code>, which gives the label above. '
                    f'{matched_means([item])}</p>')
-        card = result_card(method, row, anchor_for=method)
+        card = result_card(method, row, anchor_for=method, nn=noun([item]))
     else:
         out.append(f'<h1 class="claim">{e(row.get("claim", ""))}</h1>')
         out.append('<p class="small">This claim is in no file in <code>data/</code>, so there is no label '
@@ -1027,10 +1053,10 @@ def check_page(repo: Path, q: dict) -> str:
 
 # ------------------------------------------------------------------ two runs side by side
 
-CHANGE_KINDS = {"": "every change", "now-matched": "did not match in A, matched in B",
-                "now-unmatched": "matched in A, did not match in B",
-                "both-matched": "verdict changed, matched in both",
-                "both-unmatched": "verdict changed, did not match in both"}
+CHANGE_KINDS = {"": "every change", "now-matched": "does not match in A, matches in B",
+                "now-unmatched": "matches in A, does not match in B",
+                "both-matched": "verdict changed, matches in both",
+                "both-unmatched": "verdict changed, does not match in both"}
 
 
 def change_kind(ra: dict, rb: dict) -> str | None:
@@ -1153,7 +1179,8 @@ def compare_page(repo: Path, q: dict) -> str:
             out.append(f'<tr><td class="num">{n}</td><td class="claimcell">{a(href, e(item["claim"]))}</td>'
                        f'<td class="nowrap">{e(R.label_text(item))}</td>'
                        f'<td class="num">{e(R.hops_text(item))}</td><td class="nowrap">{e(R.method_name(m))}</td>'
-                       f'<td class="nowrap">{verdict_cell(A.rows[m][i])}</td><td class="nowrap">{verdict_cell(B.rows[m][i])}</td>'
+                       f'<td class="nowrap">{verdict_cell(A.rows[m][i], noun([item]))}</td>'
+                       f'<td class="nowrap">{verdict_cell(B.rows[m][i], noun([item]))}</td>'
                        f'<td class="nowrap">{a(href, "Open A and B")}</td></tr>')
         out.append('</tbody></table></div>')
     out.append('</section>')
@@ -1244,7 +1271,8 @@ def compare_claim(A: R.Run, B: R.Run, q: dict) -> str:
     for side, run in (("A", A), ("B", B)):
         row = run.rows[m].get(i)
         who = f"{side.lower()}-{m}"
-        card = result_card(m, row, anchor_for=who, title=f"{side}: <code>{e(run.rel)}</code>")
+        card = result_card(m, row, anchor_for=who, title=f"{side}: <code>{e(run.rel)}</code>",
+                           nn=noun([item]))
         trace = ""
         if row and row["trace"]:
             trace = trace_section(who, row, full, heading="h3", title=f"{side}'s trace", toggle=link(
@@ -1261,7 +1289,7 @@ def compare_claim(A: R.Run, B: R.Run, q: dict) -> str:
 def open_page(repo: Path, q: dict) -> str:
     raw = q.get("path", "")
     if not raw or raw.strip().rstrip("/") == "runs":
-        return redirect(link("/"))
+        return go(link("/"))
     if any(ch in raw for ch in "*?["):
         hits = R.safe_glob(repo, raw)
         if not hits:
@@ -1274,24 +1302,31 @@ def open_page(repo: Path, q: dict) -> str:
     root_real = (repo / "runs").resolve()
     if path.is_dir():
         if path == root_real:
-            return redirect(link("/"))
+            return go(link("/"))
         if R.is_run(path, root_real):
-            return redirect(link("/run", dir=rel))
-        return redirect(link("/") + "#" + anchor(rel))
+            return go(link("/run", dir=rel))
+        return go(link("/") + "#" + anchor(rel))
     if path.name == "lookups.jsonl":
-        return redirect(link("/") + "#" + anchor(rel))
+        return go(link("/") + "#" + anchor(rel))
     if path.suffix == ".json" and R.CACHE.get(path, R.load_check) is not None:
-        return redirect(link("/check", file=rel))
+        return go(link("/check", file=rel))
     if R.is_run(path.parent, root_real):  # a results file, report.txt or run.json
-        return redirect(link("/run", dir=rel.rsplit("/", 1)[0]))
+        return go(link("/run", dir=rel.rsplit("/", 1)[0]))
     folder = rel.rsplit("/", 1)[0]
-    return redirect(link("/") + ("#" + anchor(folder) if folder != "runs" else ""))
+    return go(link("/") + ("#" + anchor(folder) if folder != "runs" else ""))
+
+
+def go(to: str):
+    raise Redirect(to)
 
 
 def redirect(to: str) -> str:
+    """A page that sends the browser on: by script with location.replace (so Back skips it),
+    and by a refresh after one second if scripts are off."""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
-            f'<meta http-equiv="refresh" content="0; url={e(to)}"><title>Opening…</title></head>'
-            f'<body><p><a href="{e(to)}">Open the results</a></p></body></html>')
+            f'<meta http-equiv="refresh" content="1; url={e(to)}"><title>Opening the results</title></head>'
+            f'<body><p><a id="go" href="{e(to)}">Open the results</a></p>'
+            f'<script src="{e(link("/static/go.js"))}"></script></body></html>')
 
 
 def nothing_yet(rel: str) -> str:

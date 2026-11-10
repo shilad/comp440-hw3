@@ -377,8 +377,8 @@ def test_compare_two_runs(repo):
     assert "A has 5 claims and B has 4 claims. This page compares the 4 claims both have." in words
     # A on the shared 4: h1, h2, h3 correct, h4 wrong -> 3 of 4. B: h1, h2, h4 correct -> 3 of 4.
     assert "3 of 4 (75.0%) 3 of 4 (75.0%) no change" in words
-    assert "did not match in A, matched in B: 1 matched in A, did not match in B: 1 verdict changed, " \
-           "matched in both: 1 verdict changed, did not match in both: 0" in words
+    assert "does not match in A, matches in B: 1 matches in A, does not match in B: 1 verdict changed, " \
+           "matches in both: 1 verdict changed, does not match in both: 0" in words
     assert len(re.findall(r">Open A and B<", page)) == 3
     page = get(repo, "/results/compare?a=runs/part2&b=runs/part3/after-eval&kind=now-unmatched")[2]
     assert len(re.findall(r">Open A and B<", page)) == 1 and "Delta is a town" in page
@@ -438,7 +438,7 @@ def test_open_sends_each_path_to_its_page(repo):
     def target(path):
         status, _, page = get(repo, "/results/open?path=" + path)
         assert status == 200
-        m = re.search(r'http-equiv="refresh" content="0; url=([^"]+)"', page)
+        m = re.search(r'http-equiv="refresh" content="\d; url=([^"]+)"', page)
         return html.unescape(m.group(1)) if m else None
 
     assert target("runs/part2") == "/results/run?dir=runs%2Fpart2"
@@ -502,7 +502,7 @@ def test_every_route_mounted_and_alone(repo, prefix):
 
 
 def test_static_files_load_nothing_from_the_network():
-    for name in ("viewer.css", "viewer.js"):
+    for name in ("viewer.css", "viewer.js", "go.js"):
         text = (Path(app.__file__).parent / "static" / name).read_text()
         assert not re.search(r"@import|url\(|fetch\(|XMLHttpRequest|https?://", text), name
 
@@ -546,6 +546,9 @@ def test_standalone_server_uses_next_free_port(repo):
             assert response.status == 200
             assert "default-src 'none'" in response.headers["Content-Security-Policy"]
             assert b"runs/part2" in response.read()
+        # /open answers with a real redirect here, which urllib (like a browser) follows.
+        with urllib.request.urlopen(url.replace("/run?dir=", "/open?path="), timeout=10) as response:
+            assert response.status == 200 and response.url.endswith("/run?dir=runs%2Fpart2")
     finally:
         server.shutdown()
         server.server_close()
@@ -701,6 +704,35 @@ def test_pages_use_the_homework_words(repo):
         for bad in (r"\bhops?\b", r"\btool calls?\b", r"\bcorrect\b", r"\bwrong\b", r"\bmethods?\b",
                     r"used all its steps"):
             assert not re.search(bad, words, re.I), (route, bad)
+
+
+def test_open_is_a_real_redirect_through_respond(repo):
+    status, ctype, body, headers = app.respond("GET", "/open", {"path": ["runs/part2"]}, repo)
+    assert status == 303 and headers == {"Location": "/results/run?dir=runs%2Fpart2"}
+    assert b"location" not in body.lower() or b"go.js" in body  # the page itself still works without the header
+    status, _, _, headers = app.respond("GET", "/run", {"dir": ["runs/part2"]}, repo)
+    assert status == 200 and headers == {}
+    assert app.respond("GET", "/open", {"path": ["../x"]}, repo)[0] == 400
+    # The page handle() gives instead sends the browser on by script (replacing itself in the
+    # history, so Back works) and, with scripts off, by a refresh after one second.
+    page = app.handle("GET", "/open", {"path": ["runs/part2"]}, repo)[2].decode()
+    assert '<a id="go" href="/results/run?dir=runs%2Fpart2">' in page and "/results/static/go.js" in page
+    js = app.handle("GET", "/static/go.js", {}, repo)
+    assert js[0] == 200 and b"location.replace" in js[2]
+
+
+def test_marks_are_said_in_words(repo):
+    page = get(repo, "/results/run?dir=runs/part2")[2]
+    row = re.search(r'<tr id="row-h4">.*?</tr>', page, re.S).group(0)
+    # h4: the no-tools baseline says refuted and the one-search baseline doesn't say (both match
+    # "not supported"); the agent says supported (does not match).
+    assert text_of(row).count("does not match") == 1 and text_of(row).count(" matches") == 2
+    words = text_of(get(repo, "/results/claim?dir=runs/part2&id=h4")[2])
+    assert "Verdict: ✗ supported · does not match the dataset's label" in words
+    assert "Verdict: ✓ doesn't say · matches the dataset's label" in words
+    write_jsonl(repo / "runs" / "part3" / "before" / "agent.jsonl", [result("agent", "mine-1", "refuted")])
+    words = text_of(get(repo, "/results/claim?dir=runs/part3/before&id=mine-1")[2])
+    assert "Verdict: ✗ refuted · does not match your verdict" in words
 
 
 def test_report_txt_and_run_json_open_their_run(repo):

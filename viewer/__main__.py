@@ -34,8 +34,10 @@ def make_handler(repo: Path):
 
         def respond(self, send_body: bool):
             url = urlsplit(self.path)
-            status, ctype, body = app.handle(self.command, url.path, parse_qs(url.query), repo)
+            status, ctype, body, headers = app.respond(self.command, url.path, parse_qs(url.query), repo)
             self.send_response(status)
+            for k, v in headers.items():
+                self.send_header(k, v)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
