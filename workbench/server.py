@@ -74,7 +74,9 @@ class App:
         self.reload_lock = threading.Lock()
         self.push_lock = threading.Lock()
         self.push_due = 0.0                  # when to try a push again; 0 for never
-        self.pushed: bool | None = None      # whether the last push went through
+        self.pushed: bool | None = None      # True only when every commit is on origin
+        self.commits = 0                     # commits the page has made, so a push knows if one came since
+        self.push_state = threading.Lock()   # guards `pushed` and `commits` together
         self.retry_at = 0.0                  # after a commit that failed, when to try again
         self.idle = None                     # what `git status` showed after the last commit
         self.stamp = self.file_stamp()
@@ -304,7 +306,9 @@ class App:
                 return False
             self.notice("save", None)
             self.after_commit()
-            self.pushed = None if self.a.push else self.pushed
+            with self.push_state:
+                self.commits += 1
+                self.pushed = None if self.a.push else self.pushed   # a commit is waiting for its push
             say(f"Committed “{message}”.")
             self.push_soon()
             return True
@@ -382,18 +386,29 @@ class App:
         so in one sentence, and tries again every few minutes."""
         if not self.own_repo():
             return
-        if not self.push_lock.acquire(blocking=False):
+        if not self.push_lock.acquire(blocking=False):   # a push is running: push again after it
             self.push_due = time.time() + 10
             return
         try:
+            started, commits = time.time(), self.commits
             env = {}
             if not os.environ.get("GIT_SSH_COMMAND") and self.git("config", "core.sshCommand").returncode:
                 env["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes"   # never wait for a passphrase
             r = self.git("push", "-q", "origin", "HEAD", timeout=600, env=env)
             if r.returncode == 0:
-                self.pushed, self.push_due = True, 0.0
+                # A commit made while this push ran may not be in it: push again until none waits.
+                waiting = self.git("rev-list", "--count", "HEAD", "--not", "--remotes=origin").stdout.strip()
+                with self.push_state:
+                    done = waiting == "0" and self.commits == commits
+                    if done:
+                        self.pushed = True
+                        if self.push_due <= started:    # never clear a retry set while this push ran
+                            self.push_due = 0.0
+                    else:
+                        self.pushed = None
+                        self.push_due = time.time() + 3
                 self.notice("push", None)
-                say("Pushed to GitHub.")
+                say("Pushed to GitHub." if done else "Pushed to GitHub; a newer commit goes next.")
             else:
                 self.pushed, self.push_due = False, time.time() + RETRY_PUSH
                 say(f"The push didn't go through: {(r.stderr or r.stdout).strip()[-300:]}")

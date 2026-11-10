@@ -7,6 +7,7 @@ student's fork, and saved Claude Code conversations under a temporary CLAUDE_CON
 
 import json
 import socket
+import time
 import subprocess
 import sys
 import threading
@@ -499,6 +500,48 @@ def test_a_20_megabyte_result_file_is_committed_and_pushed_while_the_page_answer
     finally:
         srv.shutdown()
         srv.server_close()
+
+
+def test_a_commit_made_during_a_push_is_pushed_after_it(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "SETTLE", 0)
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    real, entered, go, first = server.git, threading.Event(), threading.Event(), []
+
+    def slow_first_push(repo, *args, **kw):
+        if args[:1] == ("push",) and not first:          # the first push reads HEAD, then waits
+            first.append(real(repo, "rev-parse", "HEAD").stdout.strip())
+            entered.set()
+            go.wait(10)
+            return real(repo, "push", "-q", "origin", f"{first[0]}:refs/heads/main", **kw)
+        return real(repo, *args, **kw)
+
+    monkeypatch.setattr(server, "git", slow_first_push)
+    monkeypatch.setattr(server.App, "push_soon", lambda self: None)   # pushes only when the test says
+    finish_part0(h.student)
+    app.commit_finished_parts()                             # commit A: "Part 0 done"
+    pushing = threading.Thread(target=app.push)
+    pushing.start()
+    assert entered.wait(10)
+    (h.student / "WRITEUP.md").write_text(FILLED.replace("it guessed", "it guessed, I think"))
+    app.commit_changes()                                    # commit B, while A's push is running
+    app.push()                                              # the call push_soon makes: busy, so later
+    seen = [app.state()["push"]["ok"]]
+    go.set()
+    pushing.join(10)
+    seen.append(app.state()["push"]["ok"])
+    assert subjects(h.fork, "main")[0] == "Part 0 done"      # only A went with the first push
+    assert app.push_due > 0                                 # B's push is scheduled, not forgotten
+    monkeypatch.setattr(server.App, "push_soon", lambda self: self.push())
+    for _ in range(100):                                    # the saving loop, until the retry fires
+        app.tick()
+        seen.append(app.state()["push"]["ok"])
+        if subjects(h.fork, "main")[0] == "Part 0 updated":
+            break
+        time.sleep(0.2)
+    assert subjects(h.fork, "main")[:2] == ["Part 0 updated", "Part 0 done"]
+    assert seen[:2] == [None, None] and True not in seen[:-1] and seen[-1] is True
+    assert app.push_due == 0.0
 
 
 def test_a_push_that_fails_keeps_the_commit_and_says_how_to_push(tmp_path):
