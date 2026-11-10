@@ -132,7 +132,9 @@ after the `>`.
 
 **Hint:** You type all the columns. Claude can show you each claim's first words and the agent's
 verdict in the chat. Claude will not say whether the quoted evidence supports a verdict, because that
-judgment is what this step is about.
+judgment is what this step is about. Some of the dataset's claims are worded oddly, because people
+made them by rewriting other claims. Take a claim as it is written, and if you cannot tell what it
+asserts, say so in its row.
 
 ## 2d. Find where Wikipedia has changed
 
