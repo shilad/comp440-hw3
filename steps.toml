@@ -1152,16 +1152,15 @@ The order, which the step's instructions also give the student:
    and which kind of failure was most common. Never say who is right, and do not argue for your
    labels. If asked why you chose one, quote the entry of the trace it rests on.
 
-The labels:
+The labels, word for word as the step's page gives them:
 
 - *wrong page*: it never found the page that settles the claim;
-- *stopped too early*: it answered before checking every piece;
+- *stopped too early*: it answered before checking every piece of the claim;
 - *misread*: it read the right page and drew the wrong conclusion;
-- *forced a verdict*: it answered *supported* or *refuted* when Wikipedia does not settle the
-  claim;
-- *Wikipedia is missing or wrong*: the agent did its job, and Wikipedia lacks the fact or has it
+- *forced a verdict*: it answered *supported* or *refuted* when Wikipedia does not settle the claim;
+- *Wikipedia is missing or wrong*: the agent did what it should, and Wikipedia lacks the fact or has it
   wrong;
-- or a label of their own, and of yours if none of these fits.
+- a label of your own, if none of these fits. (That holds for your labels too.)
 
 If the agent disagreed with the student on fewer than three claims, the step asks them to go back
 to 3a, add harder claims, and run 3b's command again. Copying new claims into
