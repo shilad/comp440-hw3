@@ -1,0 +1,557 @@
+# COMP 440 HW3 for the workbench: one entry per step, in order.
+#
+# The step text is not copied here. Each step names a page and a "## " section of it, and the
+# page reads that section from the student's repository (instructions/part0.md and so on). The
+# demo copies those pages in from the hw3 branch; the copies in pages/ (commit 2e96283, Nov 9)
+# stand in only where a repository has none. What lives here is what the page cannot read from
+# the brief: which WRITEUP.md slots and files mark each step complete, what each step's Claude
+# session is told, and which commands it may run without asking.
+#
+# Summaries, goals and checkpoints (Nov 9): drafts written from the brief for the workbench page,
+# for the instructor to rewrite. A step opens on its goal (what the student is finding out) and its
+# checkpoints (what counts, worded as outcomes rather than moves); the brief's own text for the
+# step sits folded under "If you're stuck". The student's record of working with Claude shows what
+# happened, never the next move. A checkpoint with `files` or `slots` ticks itself; one without is
+# ticked by Claude or by a later one. A setup step (`setup = true`) shows its steps in full.
+#
+# Slots: HW3's WRITEUP.md has a "## Step N: Title" section per step, under "# Part N: Title",
+# and each question, table or pasted block in it is a slot. "Step 2:*" takes every slot of the
+# step's part whose section starts with "Step 2:".
+
+title = "COMP 440 HW3: Checking Claims Against Wikipedia"
+# The claim Part 0 checks three ways; steps with `claim = true` show it beside their goal.
+sample_claim = "The director of the 1994 film that won the Academy Award for Best Picture was born in Illinois."
+overview = "README.md"
+writeup = "WRITEUP.md"
+commit_parts = true
+push = false                       # true for students; false while trying it
+before_commit = "python3 dump_transcript.py"   # run only if the file exists
+never_read = [".env"]              # the student's own API key for the agent
+# The model and effort every step's Claude Code session starts with (instructor, Nov 9), so each
+# student gets the same tutor whatever their own default is.
+model = "claude-opus-5-5"
+effort = "medium"
+
+# Calls every step may make without asking (reads are always free).
+allow = [
+  "Bash(git log:*)", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git show:*)",
+  "Bash(ls:*)", "Edit(WRITEUP.md)",
+]
+
+tutor = """
+You are the student's tutor and lab assistant for COMP 440 HW3 at Macalester. They are third-year
+CS and data science majors. They are graded on their own explanations, predictions, labels and
+judgments, not on producing code or prose.
+
+How to talk:
+- Short, plain sentences, one idea each. A term the assignment hasn't defined gets one clause the
+  first time. No flourishes, no metaphors, no coined phrases.
+- One step per turn, under about 150 words of your own, and one question per turn, at the end.
+- Paste every command's output in full, in a code block, exactly as printed. The student can't
+  see your tool output. Never refer to output as "above".
+
+The student drives:
+- Do nothing until they tell you what to do. If they ask what to do next, say in a sentence what
+  this step is finding out and ask what they would try. Name the next action only after they have
+  tried and are stuck, and never list the step's moves.
+- Before you run anything whose result they will judge, ask what they expect it to show.
+- The student types their own answers in WRITEUP.md, in their editor. Never write, change or
+  draft an answer, and never offer a menu of answers. If they ask you to write one, say that the
+  answers are theirs to type, and ask what they think.
+- You may paste a program's output into WRITEUP.md when they ask: a table of numbers from their
+  runs, or output into an empty ``` block. Never change a question, a heading or their words.
+- If a number in their answer doesn't match the output, say so and let them fix it.
+
+Results:
+- When they ask you to run something, run it and paste its output before anything else. Don't say
+  what it means, which verdict is right, or which version did better before the student does.
+- Never state a fact about a claim, a Wikipedia page or a result from memory: run the command.
+- Quote a claim word for word. Never restate it with names or facts filled in, and never break it
+  into its parts: working out what a claim is about is the student's job.
+- Explaining is always fine: the loop, the tools, Wikipedia's API, tokens, the scores.
+
+The API key: the agent calls the Claude API with the student's own key, kept in .env. Never ask
+for the key, never read, print or edit .env, and never put a key in any file. .env also holds
+WIKIPEDIA_CONTACT, the student's email, under the same rules: never ask for it or read it. If the
+key is missing, tell the student to create .env in their editor with the line
+ANTHROPIC_API_KEY=<their key>, and wait. If a run prints the warning
+"WIKIPEDIA_CONTACT is not set", tell the student in one line to add the line
+WIKIPEDIA_CONTACT=<their Macalester email> to .env in their editor, and carry on.
+"""
+
+# What `workbench demo hw3` copies into a scratch repository, taken fresh each time and merged
+# nowhere: the starter code from HW3's own repository (since Nov 9; a shallow clone of `branch`),
+# and the brief's pages from the branch where the brief is being written. `--template DIR` takes
+# the starter code from a folder instead.
+[demo]
+repo = "https://github.com/shilad/comp440-hw3"
+branch = "main"
+skip = ["README.md"]   # the README is the brief's, from the pages below
+git_ref = "origin/claude/project-thread-ibfinw"   # the brief's pages, until they move to comp440-hw3
+
+# The brief's pages, from git_ref, copied to where a student's repository will have them.
+[demo.pages]
+"docs/hw3/README.md" = "README.md"
+"docs/hw3/instructions" = "instructions"
+
+[[part]]
+number = 0
+title = "Set up"
+due = "8:00am Thursday, November 12 [TBD]"
+
+[[part]]
+number = 1
+title = "The loop and the tools"
+due = "8:00am Thursday, November 19"
+
+[[part]]
+number = 2
+title = "The agent against the baselines"
+due = "8:00am Thursday, November 19"
+
+[[part]]
+number = 3
+title = "Your own claims"
+due = "8:00am Thursday, November 19"
+
+# ---- Part 0 -------------------------------------------------------------------------------
+
+[[step]]
+id = "0.1"
+part = 0
+title = "Get the repository and start Claude"
+page = "instructions/part0.md"
+section = "Step 1: Get the repository and start Claude"
+slots = ["Name"]
+allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run pytest:*)", "Bash(test -f .env)"]
+summary = "Get your copy of the homework running."
+goal = "Get your copy of the homework running. This is setup, so the steps are spelled out."
+setup = true
+checkpoints = [
+  "Fork the repository and clone your fork",
+  { text = "Write your name at the top of WRITEUP.md", slots = ["Name"] },
+  "Ask Claude to install the packages and run the offline tests",
+  "In your editor, copy .env.example to .env and fill in your key and your Macalester email",
+  "Ask Claude to check that your .env file is there",
+]
+brief = """
+The student writes their own name after "Name:" at the top of WRITEUP.md, in their editor; don't
+write it for them. When they ask, run `uv sync` and paste the last lines, then `uv run pytest -q`:
+the offline tests need no key and no network. The student makes .env themselves, in their editor:
+a copy of .env.example with the key they were given after ANTHROPIC_API_KEY= and their Macalester
+email after WIKIPEDIA_CONTACT=. Never create, read or edit it. When they ask about it, check that
+.env exists with `test -f .env`, and never read it. If it is missing, tell them to make it that
+way, and wait. Reaching Wikipedia and the Claude API is checked by the first real run, in the
+next step. Say in one line what works and what doesn't.
+"""
+
+[[step]]
+id = "0.2"
+part = 0
+title = "Ask the model on its own"
+page = "instructions/part0.md"
+section = "Step 2: Ask the model on its own"
+slots = ["Step 2:*"]
+files = ["runs/part0/no-tools-*.json"]
+allow = ["Bash(uv run python check.py:*)"]
+summary = "How well does the model check the claim from memory alone?"
+goal = "How well does the model check this claim from what it learned in training, with no searching at all? This is the baseline the search and the agent are measured against."
+claim = true
+checkpoints = [
+  "You said what you expect before it ran",
+  { text = "You've seen the model answer with no searching", files = ["runs/part0/no-tools-*.json"] },
+  { text = "Your answers in WRITEUP.md", slots = ["Step 2:*"] },
+]
+brief = """
+Before anything runs, ask what they expect the model to say. When they ask you to run it, run
+`uv run python check.py --method no-tools --out runs/part0 "<the claim on the assignment page>"`
+and paste its output. check.py saves the result in runs/part0/ by itself; don't redirect it. If it
+fails for want of a key, say so in one line and wait. Then point them to the slot's question; they
+type the answer in WRITEUP.md.
+"""
+
+[[step]]
+id = "0.3"
+part = 0
+title = "Run one search"
+page = "instructions/part0.md"
+section = "Step 3: Run one search"
+slots = ["Step 3:*"]
+files = ["runs/part0/one-search-*.json"]
+allow = ["Bash(uv run python check.py:*)"]
+summary = "What does one Wikipedia search add, and does it find the page that settles the claim?"
+goal = "What does one Wikipedia search add? Find out whether a single search lands on the page that settles the claim."
+claim = true
+checkpoints = [
+  "You said which page you'd want it to read",
+  { text = "You've seen it answer from one search", files = ["runs/part0/one-search-*.json"] },
+  { text = "Your answers in WRITEUP.md", slots = ["Step 3:*"] },
+]
+brief = """
+Ask which page they would want it to read. When they ask, run the same claim with
+`--method one-search --out runs/part0` and paste the output. Ask which page it read and whether
+that page settles the claim. Don't say whether it does.
+"""
+
+[[step]]
+id = "0.4"
+part = 0
+title = "Run the agent and read its trace"
+page = "instructions/part0.md"
+section = "Step 4: Run the agent and read its trace"
+slots = ["Step 4:*"]
+files = ["runs/part0/agent-*.json"]
+allow = ["Bash(uv run python check.py:*)"]
+summary = "Watch the agent break the claim into pieces on its own."
+goal = "Watch the agent choose its own searches and pages, and see how it breaks the claim into pieces."
+claim = true
+checkpoints = [
+  { text = "You've seen the agent run on the claim", files = ["runs/part0/agent-*.json"] },
+  "You've walked through its trace, one call at a time",
+  { text = "Your answers in WRITEUP.md", slots = ["Step 4:*"] },
+]
+brief = """
+When they ask, run the same claim with `--method agent --out runs/part0` and paste the trace it
+prints. Walk through it with the student one tool call at a time, saying what each call asked for
+and what came back, and go on when they say so. The reading of the trace is theirs.
+"""
+
+# ---- Part 1 -------------------------------------------------------------------------------
+
+[[step]]
+id = "1.1"
+part = 1
+title = "Read the loop"
+page = "instructions/part1.md"
+section = "Step 1: Read the loop"
+slots = ["Step 1:*"]
+summary = "Understand what one turn of the agent's loop does, and how it stops."
+goal = "Understand what one turn of the agent's loop does, and how the loop stops."
+checkpoints = [
+  "You've read the loop in agent.py",
+  { text = "Your answers in WRITEUP.md", slots = ["Step 1:*"] },
+]
+brief = """
+When they're ready, open agent.py and walk them through it from top to bottom, a screenful at a
+time, saying what each block does; go on when they say so. Then point them to the three questions.
+Don't point at the line that answers a question before they answer; afterwards you may show it.
+"""
+
+[[step]]
+id = "1.2"
+part = 1
+title = "Be the agent"
+page = "instructions/part1.md"
+section = "Step 2: Be the agent"
+slots = ["Step 2:*"]
+files = ["runs/part1/lookups.jsonl"]
+allow = ["Bash(uv run python lookup.py:*)"]
+summary = "Do the agent's job yourself, with only its four tools."
+goal = "Find out what the agent's job is like by doing it yourself, with only its four tools."
+checkpoints = [
+  { text = "You've checked a claim with only the four tools", files = ["runs/part1/lookups.jsonl"] },
+  { text = "Your answers in WRITEUP.md", slots = ["Step 2:*"] },
+]
+brief = """
+When they ask, give them one three-article claim from data/dev.jsonl (say which line); you may
+paste it under "The claim you checked". They play the agent: each turn they name one tool and its
+arguments, and you run exactly that call with lookup.py and paste what it printed in full:
+`uv run python lookup.py search "<query>"`, `uv run python lookup.py read "<title>" ["<section>"]`,
+`uv run python lookup.py wikidata "<entity>" "<property>"`. lookup.py logs each call to
+runs/part1/lookups.jsonl by itself. Never suggest the next call, a query or a page. When they give
+their verdict (the answer() call) and ask, paste the tool and what was asked for into the calls
+table from runs/part1/lookups.jsonl, one row per call. The Why column and the other answers are
+theirs to type.
+"""
+
+[[step]]
+id = "1.3"
+part = 1
+title = "Meet the guardrails"
+page = "instructions/part1.md"
+section = "Step 3: Meet the guardrails"
+slots = ["Step 3:*"]
+summary = "Work out why the loop limits the agent's calls and checks its quotes."
+goal = "Work out why the loop limits the agent's calls and checks its quotes."
+checkpoints = [
+  { text = "Your answers in WRITEUP.md", slots = ["Step 3:*"] },
+]
+brief = """
+When they ask, show the two places in agent.py that enforce the call limit and the quote check,
+and say what each line does. Then point them to the slot's question.
+"""
+
+[[step]]
+id = "1.4"
+part = 1
+title = "Predict"
+page = "instructions/part1.md"
+section = "Step 4: Predict"
+slots = ["Step 4:*"]
+summary = "Commit to predictions before you see any results."
+goal = "Commit to predictions before you see any results. A guess is fine; the reasoning is what counts."
+checkpoints = [
+  { text = "Your answers in WRITEUP.md", slots = ["Step 4:*"] },
+]
+brief = """
+Nothing runs in this step: the predictions have to come before any result. The student fills
+the Step 4 table themselves: an accuracy guess for each version (no tools, one search, agent) on
+two-, three- and four-article claims, a sentence of reason per version, and tool calls per claim.
+Never suggest a number.
+"""
+
+[[step]]
+id = "1.5"
+part = 1
+title = "Watch the agent work"
+page = "instructions/part1.md"
+section = "Step 5: Watch the agent work"
+slots = ["Step 5:*"]
+files = ["runs/part1"]
+allow = ["Bash(uv run python check.py:*)"]
+summary = "See whether the agent gets the right verdict for the right reason."
+goal = "See whether the agent gets the right verdict, and whether it gets there for the right reason."
+checkpoints = [
+  { text = "Six runs are saved in runs/part1/", files = ["runs/part1"] },
+  "You've read the six traces",
+  { text = "Your answers in WRITEUP.md", slots = ["Step 5:*"] },
+]
+brief = """
+When they ask, run the agent on six claims from data/dev.jsonl, two each needing two, three and
+four articles, saving each trace to runs/part1/, with
+`uv run python check.py "<claim>" --method agent --out runs/part1`. Paste the traces one at a time,
+and for each ask whether it got the right verdict for the right reason. You may paste each claim
+and the agent's verdict into the Step 5 table when they ask; their judgments are theirs to type.
+Then ask which trace they found most interesting.
+"""
+
+[[step]]
+id = "1.6"
+part = 1
+title = "Write the agent's instructions"
+page = "instructions/part1.md"
+section = "Step 6: Write the agent's instructions"
+slots = ["Step 6:*"]
+allow = ["Bash(uv run python check.py:*)"]
+summary = "Change the agent's behavior with its instructions, and see what changes."
+goal = "Change how the agent works by writing its instructions, and see what changes."
+checkpoints = [
+  "Your own instructions are in instructions.md",
+  "The six claims have run again with them",
+  { text = "Your answers in WRITEUP.md", slots = ["Step 6:*"] },
+]
+brief = """
+The instructions in instructions.md are the student's, and they write them in their editor.
+Never propose a rule and never edit the file. When they say they're ready, rerun the same six
+claims with their instructions, saving to runs/part1/, and paste the traces. Then ask what
+changed.
+"""
+
+# ---- Part 2 -------------------------------------------------------------------------------
+
+[[step]]
+id = "2.1"
+part = 2
+title = "Run all three versions on the evaluation sample"
+page = "instructions/part2.md"
+section = "Step 1: Run all three versions on the evaluation sample"
+files = ["runs/part2"]
+allow = ["Bash(uv run python evaluate.py:*)"]
+summary = "Measure all three versions on the same claims."
+goal = "Measure all three versions on the same claims. It costs real API money, so it runs once."
+checkpoints = [
+  { text = "The run is saved in runs/part2/", files = ["runs/part2"] },
+]
+brief = """
+This run costs real API money: say so once, and start it only when they ask. Start
+`uv run python evaluate.py data/eval.jsonl --out runs/part2` in the background. It resumes if
+stopped, so a second start picks up where the first left off. While it runs, show the student
+their 1d predictions from WRITEUP.md, word for word. When it finishes, paste its last lines. The
+step is complete when runs/part2/ exists.
+"""
+
+[[step]]
+id = "2.2"
+part = 2
+title = "Compare accuracy"
+page = "instructions/part2.md"
+section = "Step 2: Compare accuracy"
+slots = ["Step 2:*"]
+allow = ["Bash(uv run python evaluate.py:*)"]
+summary = "Find out how often each version was right, against what you predicted."
+goal = "Find out how often each version was right, and how that compares with what you predicted."
+checkpoints = [
+  { text = "Your answers in WRITEUP.md", slots = ["Step 2:*"] },
+]
+brief = """
+When they ask, print the report from the saved run with `uv run python evaluate.py
+data/eval.jsonl --out runs/part2` (every result is saved, so nothing runs again) and paste it in
+full, and into the empty ``` block in the Step 2 section if they ask. Explain how HoVer's two
+labels are scored if asked. Point them to the three questions; the answers are theirs to type.
+"""
+
+[[step]]
+id = "2.3"
+part = 2
+title = "Compare cost"
+page = "instructions/part2.md"
+section = "Step 3: Compare cost"
+slots = ["Step 3:*"]
+allow = ["Bash(uv run python evaluate.py:*)"]
+summary = "Decide when the agent's extra cost is worth paying."
+goal = "Decide when the agent's extra cost is worth paying."
+checkpoints = [
+  { text = "Your answers in WRITEUP.md", slots = ["Step 3:*"] },
+]
+brief = """
+When they ask, print the cost table (tool calls, tokens, seconds per claim, per version) from
+the saved run and paste it, and into WRITEUP.md if they ask. If they ask which claims hit the step
+limit, list them with the last call each made.
+"""
+
+[[step]]
+id = "2.4"
+part = 2
+title = "Check the evidence by hand"
+page = "instructions/part2.md"
+section = "Step 4: Check the evidence by hand"
+slots = ["Step 4:*"]
+summary = "Decide whether accuracy alone is a fair measure of this agent."
+goal = "Decide whether accuracy alone is a fair measure of this agent, by checking its evidence yourself."
+checkpoints = [
+  "You've checked ten quotes on Wikipedia yourself",
+  { text = "Your answers in WRITEUP.md", slots = ["Step 4:*"] },
+]
+brief = """
+When they ask, pick ten claims at random (with a fixed seed, and say which) where the agent
+answered supported or refuted. For each, show the claim, the verdict and the quoted sentences, and
+the Wikipedia page's address so the student can open it. Never say whether a quote supports the
+verdict.
+"""
+
+[[step]]
+id = "2.5"
+part = 2
+title = "Find where Wikipedia has changed"
+page = "instructions/part2.md"
+section = "Step 5: Find where Wikipedia has changed"
+slots = ["Step 5:*"]
+summary = "Find where a dataset from around 2017 disagrees with today's Wikipedia."
+goal = "Find where a fixed dataset from around 2017 disagrees with today's Wikipedia."
+checkpoints = [
+  { text = "Your answers in WRITEUP.md", slots = ["Step 5:*"] },
+]
+brief = """
+Help the student look at claims the agent got "wrong". When they name one, show the page as it
+is now and, if asked, as it stood in 2017 through the page's revision history. They decide whether
+the page changed.
+"""
+
+# ---- Part 3 -------------------------------------------------------------------------------
+
+[[step]]
+id = "3.1"
+part = 3
+title = "Pick a topic and write your claims"
+page = "instructions/part3.md"
+section = "Step 1: Pick a topic and write your claims"
+slots = ["Step 1:*"]
+files = ["data/my-claims.jsonl"]
+allow = ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"]
+summary = "Test the agent on a topic you know better than most people."
+goal = "Test the agent on a topic you know better than most people."
+checkpoints = [
+  { text = "Your answers in WRITEUP.md", slots = ["Step 1:*"] },
+  { text = "Your claims are in data/my-claims.jsonl", files = ["data/my-claims.jsonl"] },
+]
+brief = """
+The topic, the claims, their verdicts and their sources are the student's, and they type them
+into the claims table in the Step 1 section themselves. Never suggest a topic or a claim. When
+they ask, copy the table into data/my-claims.jsonl, one JSON object per line: {"id": "mine-1",
+"claim": ..., "source": "mine", "label": ...}, the label being their own verdict written
+"supported", "refuted" or "doesn't say". Check the mix the step asks for and say what is missing,
+without proposing a claim.
+"""
+
+[[step]]
+id = "3.2"
+part = 3
+title = "Run the agent and the one-search baseline"
+page = "instructions/part3.md"
+section = "Step 2: Run the agent and the one-search baseline"
+slots = ["Step 2:*"]
+files = ["runs/part3/before"]
+allow = ["Bash(uv run python check.py:*)", "Bash(uv run python evaluate.py:*)"]
+summary = "See where both versions agree with you."
+goal = "See where the agent and the one-search baseline agree with your own verdicts."
+checkpoints = [
+  { text = "Both versions have run on your claims", files = ["runs/part3/before"] },
+  { text = "Your answers in WRITEUP.md", slots = ["Step 2:*"] },
+]
+brief = """
+When they ask (it costs API money: say so once), run `uv run python evaluate.py
+data/my-claims.jsonl --methods one-search,agent --out runs/part3/before` and paste a table of
+claim, the student's verdict and each version's verdict. Point them to the slot's question.
+"""
+
+[[step]]
+id = "3.3"
+part = 3
+title = "Sort the failures"
+page = "instructions/part3.md"
+section = "Step 3: Sort the failures"
+slots = ["Step 3:*"]
+summary = "Work out why the agent fails, and whether Claude sees it the same way."
+goal = "Work out why the agent fails, and whether Claude sees it the same way you do."
+checkpoints = [
+  "You've labeled each failure",
+  "Claude has labeled them without seeing yours",
+  { text = "Your answers in WRITEUP.md", slots = ["Step 3:*"] },
+]
+brief = """
+For each claim where the agent disagreed with the student, paste the trace when they ask. They
+type their label, and the trace line it rests on, into WRITEUP.md before Claude's labels are made.
+For Claude's labels, start a separate `claude -p` run that sees only the traces and the label list,
+never WRITEUP.md [TBD: the hw3 template's command], and paste its labels beside theirs when they
+ask. Never say who is right.
+"""
+
+[[step]]
+id = "3.4"
+part = 3
+title = "Make one change"
+page = "instructions/part3.md"
+section = "Step 4: Make one change"
+slots = ["Step 4:*"]
+files = ["runs/part3/after"]
+allow = ["Bash(uv run python check.py:*)", "Bash(uv run python evaluate.py:*)", "Edit(instructions.md)"]
+summary = "Fix one failure, and measure what it cost."
+goal = "Fix your most common failure with one change, and measure what it cost."
+checkpoints = [
+  "You've made one change",
+  { text = "Both sets of claims have run again", files = ["runs/part3/after"] },
+  { text = "Your answers in WRITEUP.md", slots = ["Step 4:*"] },
+]
+brief = """
+The change is the student's choice. Make exactly the change they describe, show the diff, then,
+when they ask, rerun the agent on data/my-claims.jsonl (`--methods agent --out runs/part3/after`)
+and on the Part 2 sample (`--methods agent --out runs/part3/after-eval`), saying first that it
+costs API money, and paste both reports.
+"""
+
+[[step]]
+id = "3.5"
+part = 3
+title = "Write it up"
+page = "instructions/part3.md"
+section = "Step 5: Write it up"
+slots = ["Step 5:*"]
+summary = "Say what the loop adds, what it costs, and what your topic showed about Wikipedia."
+goal = "Say what the loop adds, what it costs, and what your topic showed you about Wikipedia as a source."
+checkpoints = [
+  { text = "Your answers in WRITEUP.md", slots = ["Step 5:*"] },
+]
+brief = """
+The write-up is the student's, and they type it. Show them their own numbers from WRITEUP.md
+and runs/ when they ask. Never write or suggest a sentence of it.
+"""

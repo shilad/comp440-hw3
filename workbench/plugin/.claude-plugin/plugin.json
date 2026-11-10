@@ -1,0 +1,5 @@
+{
+  "name": "workbench",
+  "version": "0.1.0",
+  "description": "Lets a homework step's Claude Code session tell the workbench page what it is doing: a status line, a simple diagram, and done for a step with nothing to write."
+}

@@ -1,0 +1,376 @@
+// The workbench page, for the student. The assignment's parts, each with a sentence or two on what
+// it is for, and under each its steps (0a, 0b, ...). A step opens to show what the student is
+// finding out and what counts (left: the goal, the checkpoints, and the brief's own text folded
+// under "If you're stuck"), and their record of working on it with Claude (right: what they
+// expected, what they asked, what Claude ran and what came back, ending on the open question),
+// with links to what the step produced and the command that opens its Claude Code session.
+// The record shows what happened, never the next move. A setup step shows its steps in full.
+// The current step starts open; every other step shows its summary and every other part its
+// description. The page polls the local server; nothing here talks to Claude.
+
+const $ = (s, el = document) => el.querySelector(s);
+const byId = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let A = null;               // the assignment
+let S = null;               // the latest /api/state
+const SESS = {};            // step id -> its latest /api/session snapshot
+const openParts = new Set(), openSteps = new Set();
+const detailSteps = new Set();   // steps whose record shows every message and command
+
+// ---- a small Markdown renderer for the brief's text: headings, lists, code, tables, emphasis ----
+function inline(s) {
+  return esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>")
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, "$1");
+}
+function md(text) {
+  const lines = String(text || "").split("\n");
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^\s*```/.test(l)) {
+      const buf = []; i++;
+      while (i < lines.length && !/^\s*```/.test(lines[i])) buf.push(lines[i++].replace(/^ {2,4}/, ""));
+      i++; out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`); continue;
+    }
+    const h = l.match(/^(#{1,4})\s+(.*)/);
+    if (h) { out.push(`<h4>${inline(h[2])}</h4>`); i++; continue; }
+    if (/^\s*\|.*\|\s*$/.test(l)) {
+      const rows = [];
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) rows.push(lines[i++]);
+      const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+      const body = rows.filter((r) => !/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      out.push("<table>" + body.map((r, k) => "<tr>" + cells(r).map((c) => k ? `<td>${inline(c)}</td>` : `<th>${inline(c)}</th>`).join("") + "</tr>").join("") + "</table>");
+      continue;
+    }
+    if (/^\s*([-*]|\d+\.)\s+/.test(l)) {
+      let html = ""; const stack = [];
+      while (i < lines.length && !/^\s*```/.test(lines[i]) && (/^\s*([-*]|\d+\.)\s+/.test(lines[i]) || (/^\s{2,}\S/.test(lines[i]) && stack.length))) {
+        const m = lines[i].match(/^(\s*)([-*]|\d+\.)\s+(.*)/);
+        if (!m) { html += " " + inline(lines[i].trim()); i++; continue; }
+        const ind = m[1].length, tag = /\d/.test(m[2]) ? "ol" : "ul";
+        while (stack.length && ind < stack[stack.length - 1].ind) html += `</li></${stack.pop().tag}>`;
+        if (!stack.length || ind > stack[stack.length - 1].ind) { html += `<${tag}>`; stack.push({ ind, tag }); }
+        else html += "</li>";
+        html += `<li>${inline(m[3])}`; i++;
+      }
+      while (stack.length) html += `</li></${stack.pop().tag}>`;
+      out.push(html); continue;
+    }
+    if (/^>\s?/.test(l)) {
+      const buf = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) buf.push(lines[i++].replace(/^>\s?/, ""));
+      out.push(`<blockquote>${inline(buf.join(" "))}</blockquote>`); continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const buf = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\s*```|\s*[-*]\s|\s*\d+\.\s|\s*\||>)/.test(lines[i])) buf.push(lines[i++]);
+    if (!buf.length) buf.push(lines[i++]);
+    out.push(`<p>${inline(buf.join(" "))}</p>`);
+  }
+  return out.join("\n");
+}
+
+// Replace an element's HTML only when it changed, so polling keeps the student's place.
+function paint(el, html) {
+  if (!el || el._html === html) return false;
+  el.innerHTML = html; el._html = html;
+  return true;
+}
+
+async function get(path) { const r = await fetch(path); return r.json(); }
+
+// ---- small helpers -------------------------------------------------------------------------
+const stepOf = (id) => A.steps.find((s) => s.id === id);
+const infoOf = (id) => S.steps.find((x) => x.id === id);
+const labelOf = (id) => stepOf(id)?.label || id;
+const due = (p) => String(p?.due || "").replace(/ \[TBD\]/, "");
+const shortDue = (p) => due(p).replace(/^\d{1,2}:\d{2}(am|pm) /, "");
+const rel = (path) => (path && path.startsWith(A.repo + "/") ? path.slice(A.repo.length + 1) : path);
+const trim = (t, n) => { t = String(t || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
+
+function stepClass(st) {
+  if (st.complete) return "done";
+  if (st.id === S.now) return "current";
+  return st.locked ? "locked" : "ready";
+}
+function badge(st) {
+  if (st.complete) return '<span class="badge done">Done</span>';
+  if (st.id === S.now) return '<span class="badge turn">Your turn</span>';
+  if (st.locked) return `<span class="badge">Opens after ${st.waiting_on.map(labelOf).join(", ")}</span>`;
+  return '<span class="badge">Ready</span>';
+}
+
+// ---- the skeleton: parts and steps, built once ----------------------------------------------
+function build() {
+  const [course] = A.title.split(":");
+  byId("course").textContent = A.title.includes(":") ? course : "";
+  byId("title").textContent = A.title.includes(":") ? A.title.slice(A.title.indexOf(":") + 1).trim() : A.title;
+  document.title = A.title;
+  byId("lede").textContent = A.lede || "";
+  byId("parts").innerHTML = A.parts.map((p) => `
+    <section class="part" id="part-${p.number}">
+      <button class="part-head" data-part="${p.number}" aria-expanded="false" aria-controls="steps-${p.number}" type="button">
+        <span class="part-title"><span class="no">Part ${p.number}</span>${esc(p.title)}</span>
+        <span class="part-meta nums" id="meta-${p.number}"></span><span class="chev"></span></button>
+      ${p.desc ? `<p class="part-desc">${esc(p.desc)}</p>` : ""}
+      <ol class="steps" id="steps-${p.number}" hidden>${A.steps.filter((s) => s.part === p.number).map((s) => `
+        <li class="step" id="step-${s.label}">
+          <button class="step-head" data-step="${s.id}" aria-expanded="false" aria-controls="body-${s.label}" type="button">
+            <span class="dot"></span>
+            <span class="step-title"><span class="id">${esc(s.label)}</span>${esc(s.title)}</span>
+            <span class="badge-slot" id="badge-${s.label}"></span><span class="chev"></span></button>
+          ${s.summary ? `<p class="step-sum">${esc(s.summary)}</p>` : ""}
+          <div class="step-body" id="body-${s.label}" hidden>
+            <div class="col">${leftCol(s)}</div>
+            <div class="col record" id="pg-${s.label}"></div>
+          </div></li>`).join("")}</ol>
+    </section>`).join("");
+}
+
+function leftCol(s) {
+  const plain = s.setup || !s.goal;   // a setup step, or a step with no goal yet: the brief's text in full
+  return (plain ? `<span class="label">What you do</span><div class="doc">${md(s.body)}</div>`
+    : `<span class="label">What you're finding out</span><p class="goal">${esc(s.goal)}</p>
+       ${s.claim && A.sample_claim ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : ""}`)
+    + `<div class="counts" id="dw-${s.label}"></div>`
+    + (!plain && s.body ? `<details class="stuck"><summary>If you're stuck</summary><div class="stuck-body doc">${md(s.body)}</div></details>` : "");
+}
+
+// ---- what changes: progress, state, the open steps -------------------------------------------
+function update() {
+  const n = S.steps.filter((x) => x.complete).length;
+  byId("bar").style.width = `${(100 * n / S.steps.length).toFixed(1)}%`;
+  byId("count").textContent = `${n} of ${S.steps.length} steps done`;
+  const now = S.now && stepOf(S.now);
+  paint(byId("next"), now ? `Now: <a href="#step-${now.label}" id="jump">${esc(now.label)}, ${esc(now.title)}</a>` : "Every step is done.");
+  const part = now && A.parts.find((p) => p.number === now.part);
+  byId("due").textContent = part?.due ? `Part ${part.number} is due ${due(part)}` : "";
+
+  for (const p of A.parts) {
+    const mine = S.steps.filter((x) => x.part === p.number), done = mine.filter((x) => x.complete).length;
+    const saved = S.committed.includes(p.number);
+    byId(`meta-${p.number}`).textContent = (saved ? `Committed as “Part ${p.number} done”` : done ? `${done} of ${mine.length} done` : `${mine.length} steps`)
+      + (p.due && !saved ? ` · due ${shortDue(p)}` : "");
+    const open = openParts.has(p.number);
+    $(`[data-part="${p.number}"]`).setAttribute("aria-expanded", String(open));
+    byId(`steps-${p.number}`).hidden = !open;
+  }
+  for (const s of A.steps) {
+    const st = infoOf(s.id), open = openSteps.has(s.id), li = byId(`step-${s.label}`);
+    li.className = `step ${stepClass(st)}${open ? " open" : ""}`;
+    $(".dot", li).textContent = st.complete ? "✓" : "";
+    paint(byId(`badge-${s.label}`), badge(st));
+    $(".step-head", li).setAttribute("aria-expanded", String(open));
+    byId(`body-${s.label}`).hidden = !open;
+    if (open && SESS[s.id]) {
+      paint(byId(`dw-${s.label}`), counts(s, st, SESS[s.id].record));
+      paint(byId(`pg-${s.label}`), recordCol(s, st, SESS[s.id]));
+    }
+  }
+}
+
+// What counts: the step's checkpoints. One that the student's answers complete shows each question
+// and their answer; the rest show what they say. A setup step lists only those it shows here.
+function counts(s, st, rec) {
+  const row = (ok, text, sub, mine) => `<div class="check ${ok ? "ok" : ""}"><span class="tick">${ok ? "✓" : "○"}</span>
+      <div><span class="q">${esc(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
+  const rows = rec.checkpoints.filter((c) => !s.setup || c.auto).flatMap((c) => c.slots.length
+    ? c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),
+        x.filled ? trim(x.answer, 400) : `Not written yet. Type it in WRITEUP.md, under ${s.label}.`, x.filled))
+    : [row(c.done, c.text, c.files.join(", "), false)]);
+  if (!rows.length && st.manual) rows.push(row(st.complete, "You have done what the step asks. Claude ticks it.", "", false));
+  return rows.length ? `<span class="label">What counts</span>${rows.join("")}` : "";
+}
+
+function stateLine(ss) {
+  const lastYou = Math.max(0, ...ss.events.filter((e) => e.kind === "student").map((e) => e.t));
+  if (ss.state === "asking") return "Claude is asking for your OK in the terminal.";
+  if (ss.status && ss.status.t > lastYou) return ss.status.text + ".";
+  if (ss.state === "your turn") return "Waiting for you, in the terminal. Claude does nothing until you tell it to.";
+  if (ss.state === "working") return `Claude is working: ${ss.now}.`;
+  if (ss.state === "thinking") return "Claude is thinking.";
+  return ss.now || "";
+}
+
+function fileLink(path, text) {
+  return `<button class="linkbtn" data-file="${esc(path)}" type="button">${esc(text || path)}</button>`;
+}
+
+// The record, read top to bottom as plain sentences in one style: a tick for a checkpoint reached, a
+// dot for anything else, a circle for the open question. By default only the step's milestones
+// (checkpoints reached, what the student predicted, what came back); one click shows every
+// message and command, and the conversation link has the whole transcript.
+const line = (mark, html) => `<li class="ln ${mark}"><span class="mk"></span><span>${html}</span></li>`;
+const ink = (t) => `<span class="ink">${esc(t)}</span>`;
+const after = (n) => n === null || n === undefined ? "" : n === 0 ? ", with no lookups" : `, after ${n} lookup${n === 1 ? "" : "s"}`;
+
+function recordSummary(rec) {
+  return rec.summary.flatMap((x) => {
+    if (x.kind === "predicted") return [line("plain", `You predicted ${ink(x.text)}.`)];
+    if (x.kind === "result") return [line("plain", `It said ${ink(x.verdict)}${after(x.lookups)}.${x.file ? " " + fileLink(x.file, "See the output.") : ""}`),
+      ...(x.reached || []).map((t) => line("tick", esc(t) + "."))];
+    if (x.kind === "reached") return [line("tick", esc(x.text) + ".")];
+    return [];
+  });
+}
+
+// "Ran check.py" reads as "Claude ran check.py"; a command known only by its description, such as
+// "Find the claim", reads as "Claude ran a command to find the claim".
+function claudeDid(label) {
+  const lower = label.replace(/^(\w)/, (c) => c.toLowerCase());
+  return /^(Ran|Read|Edited|Searched|Listed|Looked|Installed|Committed|Pushed|Checked|Updated|Used|Fetched|Refused)\b/.test(label)
+    ? `Claude ${esc(lower)}` : `Claude ran a command to ${esc(lower)}`;
+}
+
+function recordDetail(rec) {
+  return rec.entries.flatMap((x) => {
+    const out = [];
+    if (x.kind === "expected") out.push(line("plain", `You predicted: ${ink("“" + trim(x.text || x.verdict, 300) + "”")}`));
+    if (x.kind === "asked") out.push(line("plain", `You said: ${ink("“" + trim(x.text, 300) + "”")}`));
+    if (x.kind === "ran") out.push(line("plain", `${claudeDid(x.text)}${x.status === "error" ? ", and it failed" : ""}.`));
+    if (x.kind === "said") out.push(line("plain", `It said ${ink(x.verdict)}${after(x.lookups)}.${x.reason ? ` Its reason: ${esc(trim(x.reason, 300))}` : ""}`));
+    (x.reached || []).forEach((t) => out.push(line("tick", esc(t) + ".")));
+    return out;
+  });
+}
+
+function recordList(s, rec) {
+  const detail = detailSteps.has(s.id);
+  const items = detail ? recordDetail(rec) : recordSummary(rec);
+  const now = rec.now;
+  if (now.question) items.push(line("ring", `Now: <strong class="ink">${esc(now.question)}</strong> ${esc(now.how)}`));
+  else if (now.todo) items.push(line("ring", `Still to reach: ${ink(now.todo)}.`));
+  else items.push(line("tick", "Step done."));
+  const c = rec.counts, n = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`;
+  const toggle = c.messages || c.commands
+    ? `<button class="linkbtn" data-detail="${s.id}" type="button">${detail ? "Show only the milestones" : `Show every message and command (${n(c.messages, "message")}, ${n(c.commands, "command")})`}</button>` : "";
+  return (detail && rec.earlier ? `<p>${rec.earlier} earlier entries are in the conversation.</p>` : "")
+    + `<ul class="lines">${items.join("")}</ul>${toggle}`;
+}
+
+function links(s, ss) {
+  const files = new Set();
+  for (const e of ss.events) {
+    if (e.kind === "tool" && (e.category === "read" || e.category === "write") && e.detail) {
+      const r = rel(e.detail);
+      if (r && !r.startsWith("/") && !r.startsWith(".workbench") && r !== "WRITEUP.md") files.add(r);
+    }
+  }
+  ss.record.entries.forEach((x) => x.file && files.add(x.file));
+  ss.record.checkpoints.forEach((c) => c.files.forEach((f) => files.add(f)));
+  const items = [`<li><button class="linkbtn" data-convo="${s.id}" type="button">The conversation</button></li>`,
+    `<li>${fileLink("WRITEUP.md")}</li>`, ...[...files].slice(0, 6).map((f) => `<li>${fileLink(f)}</li>`)];
+  return `<div class="files"><span class="label">From this step</span><ul>${items.join("")}</ul></div>`;   // one row of links
+}
+
+function command(label, cmd) {
+  return `<div class="cmd"><span class="label">${label}</span>
+    <div class="cmd-row"><code title="${esc(cmd)}">${esc(cmd)}</code><button class="copy" data-copy="${esc(cmd)}" type="button">Copy</button></div>
+    <span class="small">Paste it into a terminal in your homework folder.</span></div>`;
+}
+
+function recordCol(s, st, ss) {
+  const when = st.waiting_on.map(labelOf).join(", ");
+  const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command) : "";
+  if (s.setup) {
+    const steps = `<ol class="plainsteps">${ss.record.checkpoints.filter((c) => c.n).map((c) => `<li class="${c.done ? "done" : ""}">${esc(c.text)}</li>`).join("")}</ol>`;
+    return `<div class="record-head"><span class="label">Setup steps</span><span class="state">${esc(st.complete ? "Done." : ss.started ? stateLine(ss) : st.locked ? `Opens when you finish ${when}.` : "Not started.")}</span></div>
+      ${steps}${ss.started ? links(s, ss) : ""}${cmd}`;
+  }
+  if (!ss.started) {
+    const state = st.locked ? `Empty. This step's Claude opens when you finish ${when}.` : "Empty. Start this step's Claude in a terminal.";
+    return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(state)} What you predict, what you ask it, and what comes back will be recorded here.</span></div>${cmd}`;
+  }
+  return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(stateLine(ss))}</span></div>
+    ${recordList(s, ss.record)}${links(s, ss)}${cmd}`;
+}
+
+// ---- the panel a link opens: the conversation, or a file --------------------------------------
+let lastFocus = null;
+function showPanel(title, html, from) {
+  byId("panel-title").textContent = title;
+  byId("panel-body").innerHTML = html;
+  byId("panel").hidden = false; byId("scrim").hidden = false;
+  lastFocus = from; byId("panel-close").focus();
+}
+function closePanel() {
+  byId("panel").hidden = true; byId("scrim").hidden = true;
+  if (lastFocus) lastFocus.focus();
+}
+function conversation(ss) {
+  return ss.events.map((e) => {
+    if (e.kind === "student" && e.opening) return `<span class="note">Started in the terminal with “${esc(e.text)}”</span>`;
+    if (e.kind === "student") return `<div class="msg you"><span class="label">You</span>${md(e.text)}</div>`;
+    if (e.kind === "claude") return `<div class="msg claude"><span class="label">Claude</span>${md(e.text)}</div>`;
+    if (e.kind === "tool") return `<p class="tool">Claude ${esc(e.label.replace(/^(\w)/, (c) => c.toLowerCase()))}${e.detail ? `: <code>${esc(trim(e.detail, 160))}</code>` : ""}</p>`;
+    if (e.kind === "note") return `<span class="note">${esc(e.text)}</span>`;
+    if (e.kind === "permission") return `<span class="note">Claude asked for your OK in the terminal: ${esc(e.label)}</span>`;
+    return "";
+  }).join("") || '<p class="small">Nothing yet.</p>';
+}
+
+// ---- wiring ----------------------------------------------------------------------------------
+document.addEventListener("click", async (ev) => {
+  const part = ev.target.closest("[data-part]");
+  if (part) { const n = +part.dataset.part; openParts.has(n) ? openParts.delete(n) : openParts.add(n); update(); return; }
+  const step = ev.target.closest("[data-step]");
+  if (step) {
+    const id = step.dataset.step;
+    if (openSteps.has(id)) openSteps.delete(id); else { openSteps.add(id); await pollStep(id); }
+    update(); return;
+  }
+  if (ev.target.id === "jump") { ev.preventDefault(); return goNow(); }
+  const detail = ev.target.closest("[data-detail]");
+  if (detail) { const id = detail.dataset.detail; detailSteps.has(id) ? detailSteps.delete(id) : detailSteps.add(id); update(); return; }
+  const convo = ev.target.closest("[data-convo]");
+  if (convo) { const id = convo.dataset.convo; await pollStep(id); return showPanel(`${labelOf(id)}: the conversation`, conversation(SESS[id]), convo); }
+  const file = ev.target.closest("[data-file]");
+  if (file) {
+    const r = await get(`/api/file?path=${encodeURIComponent(file.dataset.file)}`);
+    return showPanel(file.dataset.file, r.error ? `<p class="small">${esc(r.error)}</p>`
+      : `<pre class="file">${esc(r.text)}</pre>${r.cut ? '<p class="small">The file is longer; this is its start.</p>' : ""}`, file);
+  }
+  const copy = ev.target.closest("[data-copy]");
+  if (copy) {
+    try { await navigator.clipboard.writeText(copy.dataset.copy); copy.textContent = "Copied"; }
+    catch (_) {
+      const code = copy.parentElement.querySelector("code"), r = document.createRange();
+      r.selectNodeContents(code); getSelection().removeAllRanges(); getSelection().addRange(r); copy.textContent = "Selected";
+    }
+    setTimeout(() => { copy.textContent = "Copy"; }, 1500);
+  }
+});
+byId("panel-close").addEventListener("click", closePanel);
+byId("scrim").addEventListener("click", closePanel);
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !byId("panel").hidden) closePanel(); });
+
+function goNow() {
+  const s = S.now && stepOf(S.now);
+  if (!s) return;
+  openParts.add(s.part); openSteps.add(s.id);
+  pollStep(s.id).then(() => { update(); byId(`step-${s.label}`).scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); });
+}
+
+async function pollStep(id) { SESS[id] = await get(`/api/session/${id}`); }
+async function refresh() {
+  S = await get("/api/state");
+  await Promise.all([...openSteps].map(pollStep));
+  update();
+}
+
+(async function boot() {
+  A = await get("/api/assignment");
+  S = await get("/api/state");
+  build();
+  const first = S.now ? stepOf(S.now) : null;
+  if (first) { openParts.add(first.part); openSteps.add(first.id); await pollStep(first.id); }
+  else if (A.parts.length) openParts.add(A.parts[0].number);
+  update();
+  setInterval(refresh, 2000);
+})();
