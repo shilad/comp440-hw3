@@ -8,8 +8,8 @@ should take about 50 minutes.
 
 ## 2a. Compare accuracy
 
-**What you're finding out:** How often each of the three versions matched the dataset's label on the
-200 evaluation claims, and how that compares with your predictions from 1e.
+In this step you find out how often each of the three versions matched the dataset's label on the 200
+evaluation claims. You compare those numbers with your predictions from 1e.
 
 **Words in this step:** *the three versions*: the no-tools baseline (the model, Claude Haiku, answers
 from memory), the one-search baseline (one search, one page, then an answer) and the agent (the program
@@ -53,8 +53,8 @@ report, and the three answers have text after the `>`.
 
 ## 2b. Compare cost
 
-**What you're finding out:** What the agent costs compared with the one-search baseline, and when that
-extra cost is worth paying.
+In this step you find out what the agent costs compared with the one-search baseline. You also decide
+when that extra cost is worth paying.
 
 **Words in this step:** *lookup*: one call to `search`, `read` or `wikidata`; the loop allows at most 12
 for one claim. *token*: the unit the API counts text in and charges by, about three quarters of a word.
@@ -84,8 +84,8 @@ totals, and "The agent used all 12 lookups on N claims.", where "N claims" links
 
 ## 2c. Check the evidence yourself
 
-**What you're finding out:** Whether the agent's quoted evidence really supports its verdicts, and so
-whether accuracy alone is a fair measure of the agent.
+In this step you find out whether the agent's quoted evidence really supports its verdicts. That tells
+you whether accuracy alone is a fair measure of the agent.
 
 The loop already checks that every quoted sentence appears in something the agent read. A quote can be
 real and still not support the verdict. For a verdict of *refuted*, the question is whether the quotes
@@ -150,7 +150,7 @@ Part 2 is 35% of the homework. At a minimum I am looking for the following:
 This is extra credit, and it has no step on the homework page. Do it after Part 2, in any Claude
 session you like (the homework page can take you back to 2c's), or with none.
 
-**What you're finding out:** What it means to judge a system that reads today's Wikipedia against
+In this extra credit you find out what it means to judge a system that reads today's Wikipedia against
 labels made from the Wikipedia of 2017.
 
 HoVer labeled its claims from Wikipedia as it was in 2017; the agent reads it as it is today. So some

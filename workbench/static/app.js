@@ -1,6 +1,6 @@
 // The workbench page, for the student. The assignment's parts, each with a sentence or two on what
-// it is for, and under each its steps (0a, 0b, ...). A step opens to show what the student is
-// finding out and what counts (left: the goal, the checkpoints, and the brief's own text folded
+// it is for, and under each its steps (0a, 0b, ...). A step opens to show what it is
+// for and its tasks (left: the goal, the checkpoints, and the brief's own text folded
 // under "If you're stuck"), and their record of working on it with Claude (right: what they
 // expected, what they asked, what Claude ran and what came back, ending on the open question),
 // with links to what the step produced and the command that opens its Claude Code session.
@@ -148,7 +148,7 @@ function minutes(s) {
 function leftCol(s) {
   const plain = s.setup || !s.goal;   // a setup step, or a step with no goal yet: the brief's text in full
   return (plain ? `<span class="label">What you do</span><div class="doc">${md(s.body)}</div>`
-    : `<span class="label">What you're finding out</span><p class="goal">${esc(s.goal)}</p>
+    : `<p class="goal">${esc(s.goal)}</p>
        ${s.claim && A.sample_claim ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : ""}`)
     + `<div class="counts" id="dw-${s.label}"></div>`
     + (!plain && s.body ? `<details class="stuck"><summary>If you're stuck</summary><div class="stuck-body doc">${md(s.body)}</div></details>` : "");
@@ -198,17 +198,17 @@ function update() {
   }
 }
 
-// What counts: the step's checkpoints. One that the student's answers complete shows each question
-// and their answer; the rest show what they say. A setup step lists only those it shows here.
+// Tasks: the step's checkpoints. One that the student's answers complete shows each question
+// and their answer; the rest show their task, a full sentence saying what to do. A setup step lists only those it shows here.
 function counts(s, st, rec) {
   const row = (ok, text, sub, mine) => `<div class="check ${ok ? "ok" : ""}"><span class="tick">${ok ? "✓" : "○"}</span>
       <div><span class="q">${codeText(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
   const rows = rec.checkpoints.filter((c) => !s.setup || c.auto).flatMap((c) => c.slots.length
     ? c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),
         x.filled ? trim(x.answer, 400) : (x.todo || `Not written yet. Type it in WRITEUP.md, under ${s.label}.`), x.filled))
-    : [row(c.done, c.text, c.files.join(", "), false)]);
+    : [row(c.done, c.task || c.text, c.files.join(", "), false)]);
   if (!rows.length && st.manual) rows.push(row(st.complete, "You have done what the step asks. Claude ticks it.", "", false));
-  return rows.length ? `<span class="label">What counts</span>${rows.join("")}` : "";
+  return rows.length ? `<span class="label">Tasks</span>${rows.join("")}` : "";
 }
 
 function stateLine(ss) {
@@ -320,7 +320,7 @@ function recordCol(s, st, ss) {
   const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command, ss.model_flags)
     + yourself(s) : "";
   if (s.setup) {
-    const steps = `<ol class="plainsteps">${ss.record.checkpoints.filter((c) => c.n).map((c) => `<li class="${c.done ? "done" : ""}">${codeText(c.text)}</li>`).join("")}</ol>`;
+    const steps = `<ol class="plainsteps">${ss.record.checkpoints.filter((c) => c.n).map((c) => `<li class="${c.done ? "done" : ""}">${codeText(c.task || c.text)}</li>`).join("")}</ol>`;
     return `<div class="record-head"><span class="label">Setup steps</span><span class="state">${esc(st.complete ? "Done." : ss.started ? stateLine(ss) : st.locked ? `Opens when you finish ${when}.` : "Not started.")}</span></div>
       ${steps}${ss.started ? links(s, ss) : ""}${cmd}`;
   }

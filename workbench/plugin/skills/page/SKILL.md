@@ -5,8 +5,8 @@ description: Tell the homework page, which the student has open beside this term
 
 # Updating the homework page
 
-The student has a web page open beside this terminal. For each step it shows what counts (the
-step's checkpoints) and the student's record of working on it: what they expected, what they asked
+The student has a web page open beside this terminal. For each step it shows the step's tasks (its
+checkpoints) and the student's record of working on it: what they expected, what they asked
 you to do, what you ran and what came back. The page fills most of it in by itself, from your
 session and from the student's files. This skill tells it three more things. Each is one command,
 and each runs without asking. `<step>` is your step's label, such as `0b`; your instructions name it.

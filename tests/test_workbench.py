@@ -435,7 +435,7 @@ def test_a_code_span_in_a_question_shows_as_code_and_nothing_else_is_markup():
     source = next(line for line in js.splitlines() if line.startswith("const codeText ="))
     assert "esc(s).replace(" in source                       # escaped first, then the code spans
     for site in ('<span class="q">${codeText(text)}</span>', "codeText(now.question)", "codeText(now.todo)",
-                 'line("tick", codeText(x.text) + ".")', "${codeText(c.text)}</li>"):
+                 'line("tick", codeText(x.text) + ".")', "${codeText(c.task || c.text)}</li>"):
         assert site in js, site
     import glob
     import shutil

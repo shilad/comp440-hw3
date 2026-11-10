@@ -8,8 +8,8 @@ before you look inside any of them. It should take about 50 minutes.
 
 ## 0a. Get your copy running
 
-**What this step is for:** Getting the homework running on your laptop, so the later steps can reach
-Wikipedia and the Claude API.
+In this step you get the homework running on your laptop, so the later steps can reach Wikipedia and the
+Claude API.
 
 **Words in this step:** *Claude*: your Claude Code session, your tutor and lab assistant; each step has
 its own. *`.env`*: the file that holds your API key and your email; only you edit it.
@@ -65,9 +65,9 @@ can read them.
 
 ## 0b. Ask the model with no tools
 
-**What you're finding out:** How well the model checks a claim from memory alone, with no lookups.
-This is the no-tools baseline, the simplest of the three versions (no tools, one search, the agent)
-you will compare.
+In this step you find out how well the model checks a claim from memory alone, with no lookups. This is
+the no-tools baseline, the simplest of the three versions (no tools, one search, the agent) you will
+compare.
 
 The claim you check in Part 0:
 
@@ -109,8 +109,8 @@ your key comes right after `ANTHROPIC_API_KEY=` in `.env`. Never paste the key i
 
 ## 0c. Give it one search
 
-**What you're finding out:** What one Wikipedia search adds, and whether it lands on a page that
-settles the claim.
+In this step you find out what one Wikipedia search adds. You also see whether the search lands on a page
+that settles the claim.
 
 The claim you check in Part 0:
 
@@ -159,8 +159,7 @@ and both answers have text after the `>`.
 
 ## 0d. Run the agent and read its trace
 
-**What you're finding out:** How the agent gets from the claim to a verdict when it chooses its own
-lookups.
+In this step you find out how the agent gets from the claim to a verdict when it chooses its own lookups.
 
 The claim you check in Part 0:
 

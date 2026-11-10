@@ -7,8 +7,10 @@
 #
 # What this file holds is what the pages cannot say:
 #   - summary: one sentence, shown while the step is closed.
-#   - goal: what the student is finding out, shown when the step is open.
-#   - checkpoints: what counts as done, in order. A checkpoint with `files` or `slots` ticks by
+#   - goal: what the step is for, in full sentences, shown when the step is open.
+#   - checkpoints: what counts as done, in order. `text` is the outcome, which the student's record
+#     shows once it is reached. `task` is the same thing as a task, a full sentence, which the page
+#     lists under "Tasks". A checkpoint with `files` or `slots` ticks by
 #     itself when those files exist or those answers are typed. One without either is ticked by
 #     the step's Claude session, and also shows as ticked once any later checkpoint is.
 #   - slots: the answers in WRITEUP.md that complete the step. "0b.*" means every answer, table
@@ -395,12 +397,12 @@ slots = ["Name"]
 files = [".env", "runs/part0/setup-check.txt"]
 allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"]
 summary = "Get your copy of the homework running, with your name in WRITEUP.md and your key in .env."
-goal = "Getting the homework running on your laptop, so the later steps can reach Wikipedia and the Claude API."
+goal = "In this step you get the homework running on your laptop, so the later steps can reach Wikipedia and the Claude API."
 checkpoints = [
-  { text = "In a terminal tab of your own, in the homework's folder, run cp .env.example .env, to make your own .env", files = [".env"] },
-  { text = "Type your name after Name: at the top of WRITEUP.md, and save", slots = ["Name"] },
-  "Start this step's Claude session with the command on this page, in that tab, and answer Claude Code's question about trusting the folder",
-  { text = "Fill in .env in your editor (your API key and your Macalester email) and save; then ask Claude to run the set-up check, until it says everything is ready", files = ["runs/part0/setup-check.txt"] },
+  { text = "In a terminal tab of your own, in the homework's folder, run cp .env.example .env, to make your own .env", task = "In a terminal tab of your own, in the homework's folder, run cp .env.example .env to make your own .env.", files = [".env"] },
+  { text = "Type your name after Name: at the top of WRITEUP.md, and save", task = "Type your name after Name: at the top of WRITEUP.md, and save the file.", slots = ["Name"] },
+  { text = "Start this step's Claude session with the command on this page, in that tab, and answer Claude Code's question about trusting the folder", task = "Start this step's Claude session with the command on this page, in that tab, and answer Claude Code's question about trusting the folder." },
+  { text = "Fill in .env in your editor (your API key and your Macalester email) and save; then ask Claude to run the set-up check, until it says everything is ready", task = "Fill in .env in your editor (your API key and your Macalester email) and save it. Then ask Claude to run the set-up check, until it says everything is ready.", files = ["runs/part0/setup-check.txt"] },
 ]
 brief = '''
 This is the set-up step, so you may take the student through its actions in order. Before this
@@ -455,10 +457,10 @@ slots = ["0b.*"]
 files = ["runs/part0/no-tools-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See how well the model checks the claim from memory alone."
-goal = "How well the model checks a claim from memory alone, with no lookups. This is the no-tools baseline, the simplest of the three versions (no tools, one search, the agent) you will compare."
+goal = "In this step you find out how well the model checks a claim from memory alone, with no lookups. This is the no-tools baseline, the simplest of the three versions (no tools, one search, the agent) you will compare."
 checkpoints = [
-  "You said what you expect the model to say",
-  { text = "The no-tools baseline's answer is saved in runs/part0/", files = ["runs/part0/no-tools-*.json"] },
+  { text = "You said what you expect the model to say", task = "Tell Claude what you expect the model to say." },
+  { text = "The no-tools baseline's answer is saved in runs/part0/", task = "Ask Claude to run the no-tools baseline on the claim. Its answer is saved in runs/part0/.", files = ["runs/part0/no-tools-*.json"] },
   { text = "Your answers are in WRITEUP.md", slots = ["0b.*"] },
 ]
 brief = '''
@@ -497,10 +499,10 @@ slots = ["0c.*"]
 files = ["runs/part0/one-search-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See what one Wikipedia search adds, and whether it lands on a page that settles the claim."
-goal = "What one Wikipedia search adds, and whether it lands on a page that settles the claim."
+goal = "In this step you find out what one Wikipedia search adds. You also see whether the search lands on a page that settles the claim."
 checkpoints = [
-  "You said which page you would want it to read",
-  { text = "The one-search baseline's answer is saved in runs/part0/", files = ["runs/part0/one-search-*.json"] },
+  { text = "You said which page you would want it to read", task = "Tell Claude which page you would want the search to read." },
+  { text = "The one-search baseline's answer is saved in runs/part0/", task = "Ask Claude to run the one-search baseline on the claim. Its answer is saved in runs/part0/.", files = ["runs/part0/one-search-*.json"] },
   { text = "Your answers are in WRITEUP.md", slots = ["0c.*"] },
 ]
 brief = '''
@@ -540,10 +542,10 @@ slots = ["0d.*"]
 files = ["runs/part0/agent-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See how the agent gets from the claim to a verdict when it chooses its own lookups."
-goal = "How the agent gets from the claim to a verdict when it chooses its own lookups."
+goal = "In this step you find out how the agent gets from the claim to a verdict when it chooses its own lookups."
 checkpoints = [
-  { text = "The agent's run is saved in runs/part0/", files = ["runs/part0/agent-*.json"] },
-  "You have read the trace, one entry at a time",
+  { text = "The agent's run is saved in runs/part0/", task = "Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.", files = ["runs/part0/agent-*.json"] },
+  { text = "You have read the trace, one entry at a time", task = "Read the trace, one entry at a time." },
   { text = "Your answers are in WRITEUP.md", slots = ["0d.*"] },
 ]
 brief = '''
@@ -597,10 +599,10 @@ files = ["runs/part1/loop-check.txt"]
 hide_results = true
 allow = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loop.py --use-reference)", "Bash(uv run pytest:*)"]
 summary = "Write the agent's loop yourself, in my_loop.py, until every rule of the check passes."
-goal = "What an agent is made of, by writing its loop yourself: ask the model, run the lookups it chooses, send back what they return, and stop."
+goal = "In this step you find out what an agent is made of, by writing its loop yourself. The loop asks the model, runs the lookups it chooses, sends back what they return, and stops."
 checkpoints = [
-  "You have read agent.py: the four tools, the evidence check and finish()",
-  { text = "Your loop in my_loop.py passes every rule of the check, or you have chosen to keep the reference loop", files = ["runs/part1/loop-check.txt"] },
+  { text = "You have read agent.py: the four tools, the evidence check and finish()", task = "Read agent.py: the four tools, the evidence check and finish()." },
+  { text = "Your loop in my_loop.py passes every rule of the check, or you have chosen to keep the reference loop", task = "Write your loop in my_loop.py until it passes every rule of the check, or choose to keep the reference loop.", files = ["runs/part1/loop-check.txt"] },
   { text = "Your answers are in WRITEUP.md", slots = ["1a.*"] },
 ]
 brief = '''
@@ -728,11 +730,11 @@ slots = ["1b.*"]
 files = ["runs/part1/lookups.jsonl"]
 allow = ["Bash(uv run python lookup.py:*)"]
 summary = "Check two claims yourself, using only the agent's four tools."
-goal = "What the agent's job is like, by doing it yourself with only its four tools, before you watch it."
+goal = "In this step you do the agent's job yourself, with only its four tools, before you watch the agent do it. You find out what that job is like."
 checkpoints = [
-  { text = "Your first lookup is saved in runs/part1/lookups.jsonl", files = ["runs/part1/lookups.jsonl"] },
-  "You have a verdict on the first claim",
-  "You have a verdict on the second claim, or have used 12 lookups on it",
+  { text = "Your first lookup is saved in runs/part1/lookups.jsonl", task = "Make your first lookup. It is saved in runs/part1/lookups.jsonl.", files = ["runs/part1/lookups.jsonl"] },
+  { text = "You have a verdict on the first claim", task = "Reach a verdict on the first claim." },
+  { text = "You have a verdict on the second claim, or have used 12 lookups on it", task = "Reach a verdict on the second claim, or use 12 lookups on it." },
   { text = "Your table and answers are in WRITEUP.md", slots = ["1b.*"] },
 ]
 brief = '''
@@ -808,10 +810,10 @@ slots = ["1c.*"]
 files = ["runs/part1/before/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
 summary = "Run the agent on the 12 development claims and read three of its traces closely."
-goal = "Whether the agent reaches the dataset's label on the 12 development claims, and whether it gets there for a good reason."
+goal = "In this step you find out whether the agent reaches the dataset's label on the 12 development claims. You also judge whether it gets there for a good reason."
 checkpoints = [
-  { text = "The agent's run on the 12 development claims is saved", files = ["runs/part1/before/report.txt"] },
-  "You have read three traces closely in the results viewer: one each for 2, 3 and 4 articles, the one for 3 being claim 2 from 1b",
+  { text = "The agent's run on the 12 development claims is saved", task = "Ask Claude to run the agent on the 12 development claims.", files = ["runs/part1/before/report.txt"] },
+  { text = "You have read three traces closely in the results viewer: one each for 2, 3 and 4 articles, the one for 3 being claim 2 from 1b", task = "Read three traces closely in the results viewer. Pick one each for 2, 3 and 4 articles, and make the one for 3 articles claim 2 from 1b." },
   { text = "Your table and answer are in WRITEUP.md", slots = ["1c.*"] },
 ]
 brief = '''
@@ -869,11 +871,11 @@ slots = ["1d.*"]
 files = ["runs/part1/after/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
 summary = "Write the agent's instructions, and see how its traces change."
-goal = "How much the agent's behavior depends on its instructions."
+goal = "In this step you find out how much the agent's behavior depends on its instructions."
 checkpoints = [
-  "Your own instructions are in instructions.md, and say: how to break a claim into pieces; when to use wikidata; when to stop; when to answer \"doesn't say\"",
-  { text = "The second run on the 12 development claims is saved", files = ["runs/part1/after/report.txt"] },
-  "You have compared the two runs in the results viewer",
+  { text = "Your own instructions are in instructions.md, and say: how to break a claim into pieces; when to use wikidata; when to stop; when to answer \"doesn't say\"", task = "Write your own instructions in instructions.md. They must say how to break a claim into pieces, when to use wikidata, when to stop, and when to answer \"doesn't say\"." },
+  { text = "The second run on the 12 development claims is saved", task = "Ask Claude to run the agent on the 12 development claims again.", files = ["runs/part1/after/report.txt"] },
+  { text = "You have compared the two runs in the results viewer", task = "Compare the two runs in the results viewer." },
   { text = "Your answers are in WRITEUP.md", slots = ["1d.*"] },
 ]
 brief = '''
@@ -939,9 +941,9 @@ run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --out runs
 # Show no link to the results while the run goes: predictions come first.
 hide_results = true
 summary = "Start the full run in your own terminal tab, and write your predictions while it runs."
-goal = "Starting the run on the 200 evaluation claims, and writing down your predictions before you see any results."
+goal = "In this step you start the run on the 200 evaluation claims. You write down your predictions before you see any results."
 checkpoints = [
-  { text = "The full run has started", files = ["runs/part2/no-tools.jsonl"] },
+  { text = "The full run has started", task = "Start the full run yourself, in your own terminal tab.", files = ["runs/part2/no-tools.jsonl"] },
   { text = "Your predictions and answer are in WRITEUP.md", slots = ["1e.*"] },
 ]
 brief = '''
@@ -987,10 +989,10 @@ slots = ["2a.*"]
 files = ["runs/part2/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)"]
 summary = "See how often each version matched the dataset's label, and compare that with your predictions."
-goal = "How often each of the three versions matched the dataset's label on the 200 evaluation claims, and how that compares with your predictions from 1e."
+goal = "In this step you find out how often each of the three versions matched the dataset's label on the 200 evaluation claims. You compare those numbers with your predictions from 1e."
 checkpoints = [
-  { text = "The full run is finished", files = ["runs/part2/report.txt"] },
-  "You have opened the run in the results viewer",
+  { text = "The full run is finished", task = "Check that the full run has finished.", files = ["runs/part2/report.txt"] },
+  { text = "You have opened the run in the results viewer", task = "Open the run in the results viewer." },
   { text = "The report and your answers are in WRITEUP.md", slots = ["2a.*"] },
 ]
 brief = '''
@@ -1037,9 +1039,9 @@ minutes = 12
 slots = ["2b.*"]
 allow = ["Bash(uv run python evaluate.py:*)"]
 summary = "See what the agent costs compared with one search, and decide when that is worth paying."
-goal = "What the agent costs compared with the one-search baseline, and when that extra cost is worth paying."
+goal = "In this step you find out what the agent costs compared with the one-search baseline. You also decide when that extra cost is worth paying."
 checkpoints = [
-  "You have looked for claims where the agent used all 12 lookups",
+  { text = "You have looked for claims where the agent used all 12 lookups", task = "Look for claims where the agent used all 12 lookups." },
   { text = "Your answers are in WRITEUP.md", slots = ["2b.*"] },
 ]
 brief = '''
@@ -1069,9 +1071,9 @@ minutes = 20
 slots = ["2c.*"]
 allow = ["Bash(uv run python lookup.py:*)"]
 summary = "Check whether the agent's quoted evidence really supports its verdicts, for five claims."
-goal = "Whether the agent's quoted evidence really supports its verdicts, and so whether accuracy alone is a fair measure of the agent."
+goal = "In this step you find out whether the agent's quoted evidence really supports its verdicts. That tells you whether accuracy alone is a fair measure of the agent."
 checkpoints = [
-  "You have checked the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\"",
+  { text = "You have checked the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\"", task = "Check the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\"." },
   { text = "Your table and answers are in WRITEUP.md", slots = ["2c.*"] },
 ]
 brief = '''
@@ -1117,10 +1119,10 @@ slots = ["3a.*"]
 files = ["data/my-claims.jsonl"]
 allow = ["Edit(data/my-claims.jsonl)", "Write(data/my-claims.jsonl)"]
 summary = "Write at least eight claims of your own, on a topic you know well."
-goal = "Building your own set of test claims, on a topic you know better than most people."
+goal = "In this step you build your own set of test claims, on a topic you know better than most people."
 checkpoints = [
   { text = "Your topic and at least eight claims are in WRITEUP.md", slots = ["3a.*"] },
-  { text = "Your claims are copied into data/my-claims.jsonl", files = ["data/my-claims.jsonl"] },
+  { text = "Your claims are copied into data/my-claims.jsonl", task = "Ask Claude to copy your claims into data/my-claims.jsonl.", files = ["data/my-claims.jsonl"] },
 ]
 brief = '''
 The topic, the claims, their verdicts and their sources are the student's. Never suggest a topic,
@@ -1164,9 +1166,9 @@ slots = ["3b.*"]
 files = ["runs/part3/before/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
 summary = "Run the agent and the one-search baseline on your claims, and see where they agree with you."
-goal = "Where the agent and the one-search baseline agree with your own verdicts on your claims."
+goal = "In this step you find out where the agent and the one-search baseline agree with your own verdicts on your claims."
 checkpoints = [
-  { text = "Both versions have run on your claims", files = ["runs/part3/before/report.txt"] },
+  { text = "Both versions have run on your claims", task = "Ask Claude to run the one-search baseline and the agent on your claims.", files = ["runs/part3/before/report.txt"] },
   { text = "Your answers are in WRITEUP.md", slots = ["3b.*"] },
 ]
 brief = '''
@@ -1200,11 +1202,11 @@ minutes = 25
 slots = ["3c.*"]
 allow = ["Bash(uv run python evaluate.py:*)", "Edit(data/my-claims.jsonl)"]
 summary = "Label why the agent failed on your claims, then compare your labels with Claude's."
-goal = "Why the agent fails on your claims, and whether Claude reads the same failures the same way you do."
+goal = "In this step you find out why the agent fails on your claims. You also see whether Claude reads the same failures the same way you do."
 checkpoints = [
-  "You have labeled each failure in your table, with the line of the trace that shows it",
-  "Claude has given its own labels, without seeing yours",
-  "Claude's labels are in the last column of your table",
+  { text = "You have labeled each failure in your table, with the line of the trace that shows it", task = "Label each failure in your table, with the line of the trace that shows it." },
+  { text = "Claude has given its own labels, without seeing yours", task = "Ask Claude to label the same claims. It gives its labels without seeing yours." },
+  { text = "Claude's labels are in the last column of your table", task = "Put Claude's labels in the last column of your table." },
   { text = "Your answers are in WRITEUP.md", slots = ["3c.*"] },
 ]
 brief = '''
@@ -1285,11 +1287,11 @@ slots = ["3d.*"]
 files = ["runs/part3/after/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Edit(instructions.md)"]
 summary = "Make one change aimed at the most common failure, and measure what it does."
-goal = "Whether one change aimed at your most common failure fixes it, on your own claims."
+goal = "In this step you make one change aimed at your most common failure. You find out whether it fixes that failure on your own claims."
 checkpoints = [
-  "You have made one change",
-  { text = "The agent has run again on your claims", files = ["runs/part3/after/report.txt"] },
-  "You have compared the two runs in the results viewer",
+  { text = "You have made one change", task = "Make one change." },
+  { text = "The agent has run again on your claims", task = "Ask Claude to run the agent on your claims again, with the change.", files = ["runs/part3/after/report.txt"] },
+  { text = "You have compared the two runs in the results viewer", task = "Compare the two runs in the results viewer." },
   { text = "Your answers are in WRITEUP.md", slots = ["3d.*"] },
 ]
 brief = '''
@@ -1345,7 +1347,7 @@ section = "3e. Write it up"
 minutes = 23
 slots = ["3e.*"]
 summary = "Say what the agent's loop adds, what it costs, and what your topic showed you about Wikipedia."
-goal = "Saying what you learned, in your own words."
+goal = "In this step you say what you learned, in your own words."
 checkpoints = [
   { text = "Your write-up and how you used AI are in WRITEUP.md", slots = ["3e.*"] },
 ]

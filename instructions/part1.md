@@ -9,8 +9,8 @@ minutes for the full run, which goes on by itself while you do other things.
 
 ## 1a. Write the loop
 
-**What you're finding out:** What an agent is made of, by writing its loop yourself: ask the model, run
-the lookups it chooses, send back what they return, and stop.
+In this step you find out what an agent is made of, by writing its loop yourself. The loop asks the
+model, runs the lookups it chooses, sends back what they return, and stops.
 
 This is the one step where you write code. Everything around the loop is written for you; the loop is
 yours. Four files are part of this step:
@@ -160,8 +160,8 @@ all its steps.
 
 ## 1b. Be the agent
 
-**What you're finding out:** What the agent's job is like, by doing it yourself with only its four
-tools, before you watch it.
+In this step you do the agent's job yourself, with only its four tools, before you watch the agent do it.
+You find out what that job is like.
 
 I'd like you to do this before you watch the agent do it. You'll read its traces much more closely once
 you've made the same choices yourself.
@@ -236,8 +236,8 @@ how to read its output.
 
 ## 1c. Watch the agent work
 
-**What you're finding out:** Whether the agent reaches the dataset's label on the 12 development claims,
-and whether it gets there for a good reason.
+In this step you find out whether the agent reaches the dataset's label on the 12 development claims. You
+also judge whether it gets there for a good reason.
 
 **Words in this step:** *the development claims*: the 12 claims in `data/dev.jsonl`. *the number of
 articles*: how many Wikipedia articles a claim needs (2, 3 or 4). *the dataset's label*: the label that HoVer, the public dataset these claims come from, gives
@@ -292,7 +292,7 @@ in "Claim contains" and press Enter. The dataset's labels were made by people, f
 
 ## 1d. Write the agent's instructions
 
-**What you're finding out:** How much the agent's behavior depends on its instructions.
+In this step you find out how much the agent's behavior depends on its instructions.
 
 **Words in this step:** *`instructions.md`*: the agent's instructions, which the program sends to the
 model (Claude Haiku) on every turn of the loop. It starts with three sentences that name the job, the
@@ -356,8 +356,8 @@ the agent is told is your decision.
 
 ## 1e. Start the full run, and predict
 
-**What this step is for:** Starting the run on the 200 evaluation claims, and writing down your
-predictions before you see any results.
+In this step you start the run on the 200 evaluation claims. You write down your predictions before you
+see any results.
 
 **Words in this step:** *the three versions*: the no-tools baseline (the model answers from memory), the
 one-search baseline (one search, one page, then an answer) and the agent. A version gets a claim right

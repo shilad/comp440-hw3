@@ -44,10 +44,10 @@ PARTS = {
 }
 ALL_STEPS = [step for _, _, steps in PARTS.values() for step in steps]
 
-# Each step's section of a page uses these labels, in this order. The four marked True are required;
-# the others appear only where a step needs them.
+# Each step's section of a page opens with a paragraph of full sentences saying what the step is for,
+# with no label over it. After it come these labels, in this order. The three marked True are
+# required; the others appear only where a step needs them.
 LABELS = [
-    ("**What you're finding out:**", True),
     ("**Words in this step:**", False),
     ("**What to do:**", True),
     ("**What you'll see:**", False),
@@ -57,18 +57,8 @@ LABELS = [
     ("**Hint:**", False),
 ]
 
-# Steps that are not an investigation open with "What this step is for:" instead of "What you're
-# finding out:". It takes the first label's place, so it is required in these four and nowhere else.
-FIRST_LABEL = "**What you're finding out:**"
-STEP_IS_FOR = "**What this step is for:**"
-STEP_IS_FOR_STEPS = {"0a", "1e", "3a", "3e"}
-
-
-def labels_for(step):
-    """The label list for one step, with its own first label."""
-    if step[:2] in STEP_IS_FOR_STEPS:
-        return [(STEP_IS_FOR if label == FIRST_LABEL else label, required) for label, required in LABELS]
-    return LABELS
+# The two labels the opening paragraph used to carry. No page uses them now.
+OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**"]
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
@@ -170,11 +160,13 @@ def test_every_writeup_question_is_in_the_steps_page_word_for_word(step):
 @pytest.mark.parametrize("step", ALL_STEPS)
 def test_every_step_section_has_its_labels_once_and_in_order(step):
     page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
-    labels = labels_for(step)
+    labels = LABELS
     missing = [label for label, required in labels if required and label not in page]
     assert not missing, f"{step} is missing {missing}"
-    other = STEP_IS_FOR if labels is LABELS else FIRST_LABEL
-    assert other not in page, f"{step} should not use {other}"
+    old = [label for label in OLD_FIRST_LABELS if label in page]
+    assert not old, f"{step} should not use {old}"
+    opening = page.strip().split("\n\n")[0]
+    assert opening.startswith("In this step you ") and opening.rstrip().endswith("."), f"{step} opens with: {opening[:60]}"
     twice = [label for label, _ in labels if page.count(label) > 1]
     assert not twice, f"{step} has these labels more than once: {twice}"
     places = [page.find(label) for label, _ in labels if label in page]

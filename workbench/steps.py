@@ -37,7 +37,7 @@ class Step:
     page: str | None = None      # or take the body from a Markdown page...
     section: str | None = None   # ...the part under this "## " heading
     summary: str = ""            # a sentence, shown while the step is closed
-    goal: str = ""               # what the student is finding out, shown when it is open
+    goal: str = ""               # what the step is for, in full sentences, shown when it is open
     setup: bool = False          # a setup step: its text and checkpoints show as plain steps
     claim: bool = False          # show the assignment's sample claim beside the goal
     # A command the student runs in a terminal tab of their own (a long run), shown in a second
@@ -47,14 +47,16 @@ class Step:
     # What counts: the step's checkpoints, in order, worded as outcomes, not moves. Each is a
     # string, or a table with `text` and the `files` or `slots` that tick it by themselves; one with
     # neither is ticked by Claude, through the page skill, or by any later checkpoint being ticked.
+    # A table's `task` says the same thing as a task; the page lists it under "Tasks".
     checkpoints: list = field(default_factory=list)
 
 
 @dataclass
 class Checkpoint:
-    text: str
+    text: str                    # the outcome, as the student's record shows it once reached
     files: list[str] = field(default_factory=list)
     slots: list[str] = field(default_factory=list)
+    task: str = ""               # the same thing as a task, a full sentence, as the page lists it
 
 
 def run_yourself(s: Step) -> dict | None:

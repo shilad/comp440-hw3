@@ -77,7 +77,7 @@ You used all of these in earlier homeworks:
 ## How this homework works
 
 - The homework page lists every step, 0a to 3e, and ticks each one when it is done. For each step it
-  shows what you're finding out and what counts as done. Under "If you're stuck" it shows the step's
+  shows what the step is for and its tasks. Under "If you're stuck" it shows the step's
   full instructions, from the pages in `instructions/`. Open it for every step, stuck or not: it has
   the exact commands and what I am looking for. Step 0a, the set-up step, shows them in full.
 - Each step has its own Claude session: a Claude Code session that is your tutor and lab assistant for

@@ -8,8 +8,7 @@ take about 1 hour and 50 minutes.
 
 ## 3a. Pick a topic and write your claims
 
-**What this step is for:** Building your own set of test claims, on a topic you know better than most
-people.
+In this step you build your own set of test claims, on a topic you know better than most people.
 
 **Words in this step:** *claim*: one sentence that is either true or false. *your verdict*:
 *supported* if the claim is true and *refuted* if it is false, according to the source you trust, not
@@ -61,8 +60,8 @@ it will tell you if your claims are missing part of the mix.
 
 ## 3b. Run the agent on your claims
 
-**What you're finding out:** Where the agent and the one-search baseline agree with your own verdicts
-on your claims.
+In this step you find out where the agent and the one-search baseline agree with your own verdicts on
+your claims.
 
 **Words in this step:** *the agent*: the program in `agent.py` and its loop, in which the model (Claude Haiku,
 the small Claude model that the agent and both baselines call) picks the next lookup, reads what comes
@@ -99,7 +98,7 @@ answers have text after the `>`.
 
 ## 3c. Sort the failures
 
-**What you're finding out:** Why the agent fails on your claims, and whether Claude reads the same
+In this step you find out why the agent fails on your claims. You also see whether Claude reads the same
 failures the same way you do.
 
 **Words in this step:** *failure*: a claim where the agent's verdict differs from yours. *trace*: the
@@ -160,8 +159,8 @@ uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out 
 
 ## 3d. Make one change
 
-**What you're finding out:** Whether one change aimed at your most common failure fixes it, on your own
-claims.
+In this step you make one change aimed at your most common failure. You find out whether it fixes that
+failure on your own claims.
 
 **What to do:**
 
@@ -207,7 +206,7 @@ agent reads it again for every claim.
 
 ## 3e. Write it up
 
-**What this step is for:** Saying what you learned, in your own words.
+In this step you say what you learned, in your own words.
 
 **What to do:**
 

@@ -96,6 +96,7 @@ def student_text(a: stepmod.Assignment) -> list[tuple[str, str]]:
     for s in a.steps:
         out += [(f"{s.id} title", s.title), (f"{s.id} summary", s.summary), (f"{s.id} goal", s.goal)]
         out += [(f"{s.id} checkpoint {i}", c.text) for i, c in enumerate(stepmod.checkpoints(s), 1)]
+        out += [(f"{s.id} task {i}", c.task) for i, c in enumerate(stepmod.checkpoints(s), 1) if c.task]
     return out
 
 
@@ -274,6 +275,22 @@ def test_only_1a_and_1e_hide_their_results():
     assert not [i for i, s in steps.items() if i not in ("1a", "1e") and "hide_results" in s]
 
 
+def test_every_task_the_page_lists_is_a_full_sentence(a):
+    """Under "Tasks" the page lists each checkpoint that has no answers of its own by its task. Each
+    is a full sentence: it starts with a capital letter and ends with a full stop. A checkpoint
+    that the student's answers tick shows its questions instead, so it needs no task."""
+    bad = []
+    for s in a.steps:
+        if not re.match(r"In this step you .*\.$", s.goal):
+            bad.append(f"{s.id} goal: {s.goal}")
+        for i, c in enumerate(stepmod.checkpoints(s), 1):
+            if c.slots:
+                continue
+            if not (c.task and c.task[0].isupper() and c.task.endswith(".")):
+                bad.append(f"{s.id} checkpoint {i}: {c.task!r}")
+    assert not bad, "\n".join(bad)
+
+
 # Steps whose goal differs from the page's first line on purpose, with the reason.
 GOAL_DIFFERS = {}
 
@@ -287,7 +304,6 @@ def test_goals_say_what_the_pages_say(a):
             continue
         section = stepmod.body(s, a, REPO)
         first = " ".join(section.strip().split("\n\n")[0].split())
-        first = re.sub(r"^\*\*(What you're finding out|What this step is for):\*\*\s*", "", first)
         if first != s.goal:
             differ.append(f"{s.id}:\n  page: {first}\n  goal: {s.goal}")
     assert not differ, "\n".join(differ)

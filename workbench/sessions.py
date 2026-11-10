@@ -326,7 +326,7 @@ class StepSession:
         marks = {r.get("n"): r["t"] for r in pages if r["kind"] in ("checkpoint", "milestone")}
         cps, done_at, covered = [], [], set()
         for i, c in enumerate(checkpoints(s), 1):
-            item = {"n": i, "text": c.text, "auto": bool(c.files or c.slots), "files": [], "slots": []}
+            item = {"n": i, "text": c.text, "task": c.task or c.text, "auto": bool(c.files or c.slots), "files": [], "slots": []}
             t = None
             if c.files or c.slots:
                 found = [str(f.relative_to(repo)) for pat in c.files for f in present(repo, pat)]
@@ -712,7 +712,7 @@ What you do in this step:
 
 {s.brief.strip()}
 
-What counts in this step, which the page shows the student as checkpoints:
+What counts in this step. The page lists these for the student under "Tasks", each worded as a task:
 {counts_text}
 {"This is a setup step: you may walk the student through its steps in order." if s.setup else
 "These are what the student reaches, not a list of moves. Never read them out as steps."}
