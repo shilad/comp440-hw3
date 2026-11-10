@@ -138,18 +138,24 @@ chat without opening `WRITEUP.md`, so it has not seen yours. It will not say whi
 
 - One row for each claim where the agent's verdict differs from yours: the claim's number from your 3a table, your label, and the line of the trace that shows it. Type your labels before you ask Claude for its own. Then ask Claude to add its labels to the last column, or type them in yourself.
 - Where did you and Claude disagree, and who do you think is right?
-- Which kind of failure was most common?
+- Which kind of failure was most common? If no kind repeats, say which failure you will aim at in 3d, and why.
 
 **You're done when:** The homework page ticks 3c: every row of the table is filled, Claude's labels
 included, and both answers have text after the `>`.
 
-**If something goes wrong:** If the agent disagreed with you on fewer than three claims, there isn't
-enough to sort. Add harder claims to your 3a table. Go back to 3a's Claude session (the homework page
-shows the command that returns to it) and ask Claude to add them to `data/my-claims.jsonl`. Then go back
-to 3b's session and ask Claude to run 3b's command again, update your answers under 3b, and start this
-step again from action 2. Add new claims rather than rewording old ones: a run keeps its saved result
-for each claim number, so a reworded claim would not be checked again. The command checks only the new
-claims:
+**If something goes wrong:** Two failures are enough to go on. If the agent disagreed with you on fewer
+than two claims, there isn't enough to sort, and you need harder claims:
+
+1. Type two or three new claims as new rows at the end of your 3a table in `WRITEUP.md`. Add new claims
+   rather than rewording old ones: a run keeps its saved result for each claim number, so a reworded
+   claim would not be checked again.
+2. On the homework page, open step 3a, which is marked Done. It shows the command that takes you back
+   to 3a's Claude session. Type `/exit` in your terminal, paste that command, and ask Claude to add the
+   new claims to `data/my-claims.jsonl`.
+3. In the same way, go back to step 3b's session and ask Claude to run 3b's command again (it is below).
+   It checks only the new claims.
+4. Update your answers under 3b, come back to this step's session in the same way, and start again from
+   action 2.
 
 ```
 uv run python evaluate.py data/my-claims.jsonl --methods one-search,agent --out runs/part3/before
@@ -224,8 +230,8 @@ and under `### How I used AI`:
 - How did you use AI in this homework, what did you check yourself, and what is one decision you made on your own?
 
 **You're done when:** The homework page ticks 3e: all three answers have text after the `>`. That
-finishes Part 3, so the page commits your work as `Part 3 done` and pushes it to your fork. Then submit,
-as the Submitting section of the README says.
+finishes Part 3, so the page commits your work as `Part 3 done` and pushes it to your fork. The page does
+not hand your homework in: submit it yourself, as the Submitting section of the README says.
 
 **Hint:** An answer can be as long as you need, but keep it in one block with no blank line inside it,
 since a blank line ends the answer. To start a new paragraph, put a line with just `>` between the two.

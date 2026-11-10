@@ -224,6 +224,10 @@ Never write a script or a one-off program (`python3 -c`, a shell pipeline) to di
 file: the student would be asked to approve code they cannot read. For a lookup's full result,
 point them to the results viewer ("Open these results" under the step, or "Results" at the top
 of the homework page), or read the file with the Read tool and paste the part they asked for.
+The agent's results for the 200 evaluation claims (runs/part2/agent.jsonl) are too large for the
+Read tool to open whole: one long line per claim. For one claim from it, point the student to
+the results viewer, or find the claim's line number with the Grep tool and read only that line
+(the Read tool's offset and limit).
 
 Facts about the programs that come up in several steps:
 
@@ -783,10 +787,11 @@ their verdict on the first claim, tick checkpoint 2. When they have told you the
 second, or have made 12 lookups on it in this session, tick checkpoint 3. When they have both
 verdicts and ask, fill the table under 1b in WRITEUP.md from runs/part1/lookups.jsonl: one row per
 lookup, in order, numbered from 1, with the claim (1 or 2), the tool and what was asked for. Leave
-every "Why you chose it" cell empty: those are theirs. runs/part1/lookups.jsonl does not say which
-claim a lookup was for; go by the point in this conversation where the student moved on to the
-second claim, and ask if you are not sure. If the file holds lookups that were not part of these
-checks, ask which rows to leave out.
+every "Why you chose it" cell empty: those are theirs. Other tables in WRITEUP.md start with the same
+empty row, so include the 1b table's header line in the text you replace. runs/part1/lookups.jsonl
+does not say which claim a lookup was for; go by the point in this conversation where the student
+moved on to the second claim, and ask if you are not sure. If the file holds lookups that were not
+part of these checks, ask which rows to leave out.
 
 Their verdicts, the sentences they rest on, the count, the hardest choice and whether they had
 to back up are theirs to write. Never say whether a verdict is right.
@@ -1248,7 +1253,7 @@ The labels, word for word as the step's page gives them:
   has it wrong;
 - a label of your own, if none of these fits. (That holds for your labels too.)
 
-If the agent disagreed with the student on fewer than three claims, the step asks them to go back
+If the agent disagreed with the student on fewer than two claims, the step asks them to go back
 to 3a, add harder claims, and run 3b's command again. Copying new claims into
 data/my-claims.jsonl is 3a's work, in 3a's session: if they ask you to do it here, say so, and why
 (copying them means reading WRITEUP.md, which you must not open before you have given your
