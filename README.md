@@ -70,7 +70,7 @@ You used all of these in earlier homeworks:
 
 - The homework page lists every step, 0a to 3e, and ticks each one when it is done. For each step it
   shows what you're finding out and what counts as done. Under "If you're stuck" it shows the step's
-  full instructions, from the pages in `instructions/`.
+  full instructions, from the pages in `instructions/`. Step 0a, the set-up step, shows them in full.
 - Each step has its own Claude session: a Claude Code session that is your tutor and lab assistant for
   that step. The homework page shows the command that starts it, with a **Copy** button. Open a new
   terminal tab, go into the homework's folder, paste the command and press Enter. When you finish a
