@@ -13,6 +13,44 @@ import shlex
 from pathlib import Path
 
 SCRIPT = re.compile(r"\b(?:uv run )?python3?\s+(?:-m\s+)?([\w./-]+\.py|[\w.]+)")
+PAGE_CALL = re.compile(r"^(?:uv run )?python3?\s+\S*page\.py\b")   # the `page` skill's own script
+
+
+def pieces(cmd: str) -> list[str]:
+    """The commands in a chained one, split at &&, || and ; and at line breaks, but never inside
+    quotes. A pipe stays inside its piece."""
+    out, buf, quote, i = [], [], None, 0
+    while i < len(cmd):
+        c = cmd[i]
+        if c == "\\" and i + 1 < len(cmd) and quote != "'":
+            buf.append(cmd[i:i + 2])
+            i += 2
+            continue
+        if quote:
+            quote = None if c == quote else quote
+            buf.append(c)
+        elif c in "'\"":
+            quote = c
+            buf.append(c)
+        elif cmd.startswith(("&&", "||"), i):
+            out.append("".join(buf))
+            buf = []
+            i += 1
+        elif c in ";\n":
+            out.append("".join(buf))
+            buf = []
+        else:
+            buf.append(c)
+        i += 1
+    out.append("".join(buf))
+    return [x.strip() for x in out if x.strip()]
+
+
+def without_page_calls(cmd: str) -> str:
+    """A shell command with its calls to the page's own script taken out; "" if that was all.
+    Claude often chains a status update with a real run (`python3 .workbench/page.py 0b expected
+    "supported" && uv run python check.py ...`), and the run must stay in the student's record."""
+    return " && ".join(x for x in pieces(cmd) if not PAGE_CALL.match(x))
 
 
 def short(path: str, repo: Path) -> str:

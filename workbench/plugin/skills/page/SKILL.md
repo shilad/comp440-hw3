@@ -1,9 +1,9 @@
 ---
 name: page
-description: Tell the homework workbench page, which the student has open beside this terminal, what this session is doing. Post a one-line status when what you are doing changes, note what the student expects before a run, and tick each checkpoint of the step that you tick yourself once the student has reached it. Use it throughout every workbench step session.
+description: Tell the homework page, which the student has open beside this terminal, what this session is doing. Post a one-line status when what you are doing changes, note what the student expects before a run, and tick each checkpoint of the step that you tick yourself once the student has reached it. Use it throughout every homework step session.
 ---
 
-# Updating the workbench page
+# Updating the homework page
 
 The student has a web page open beside this terminal. For each step it shows what counts (the
 step's checkpoints) and the student's record of working on it: what they expected, what they asked

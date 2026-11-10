@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Homework Workbench</title>
+<title>Homework page</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap">
@@ -12,6 +12,7 @@
 <body>
 <header class="top">
   <div class="wrap">
+    <div class="notices" id="notices"></div>
     <div class="label" id="course"></div>
     <h1 id="title">Loading…</h1>
     <p class="lede" id="lede"></p>
@@ -19,6 +20,7 @@
       <span class="meter"><span class="bar"><i id="bar"></i></span><span class="nums" id="count"></span></span>
       <span class="next" id="next"></span>
       <span id="due"></span>
+      <a href="/results/" target="_blank" rel="noopener">Results</a>
     </div>
   </div>
 </header>
@@ -26,8 +28,8 @@
 <main class="wrap" id="parts"></main>
 
 <footer class="foot"><div class="wrap">You type your own answers in <code>WRITEUP.md</code>, in your editor.
-Claude can paste a program's output there when you ask. Each part is committed by itself when you
-finish its last step.</div></footer>
+Claude can paste a program's output there when you ask. The page commits each part by itself when you
+finish its last step, with your Claude conversations in <code>TRANSCRIPT.md</code>.</div></footer>
 
 <div class="scrim" id="scrim" hidden></div>
 <aside class="panel" id="panel" hidden role="dialog" aria-modal="true" aria-labelledby="panel-title">
