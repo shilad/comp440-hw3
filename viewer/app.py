@@ -298,7 +298,7 @@ def home(repo: Path, q: dict) -> str:
     if runs:
         out.append(f'<p class="small">{matched_means([it for r in runs.values() for it in r.items.values()] or [{}], "<em>Matched</em> means")}</p>')
     if len(runs) > 1:
-        out.append(f'<p>{a(link("/compare"), "Compare two runs side by side")}</p>')
+        out.append(f'<p>{a(link("/compare"), "Compare two runs")}</p>')
     for part in (0, 1, 2, 3, None):
         ev = sorted((r for r in runs if R.part_of(r) == part), key=R.homework_order)
         ch = [r for r in checks if R.part_of(r) == part]
@@ -616,7 +616,7 @@ def accuracy_table(methods: list, sts: dict, groups: list, caption: str, b_sts: 
         return tuple((st["labels"] if kind == "label" else st["groups"]).get(g, (0, 0)))
 
     if b_sts is None:
-        head = "".join(f'<th scope="col">{e(R.method_name(m))}</th>' for m in methods)
+        head = "".join(f'<th scope="col">The {e(R.method_name(m))}</th>' for m in methods)
     else:
         head = '<th scope="col">A</th><th scope="col">B</th><th scope="col">B minus A</th>'
     out = [f'<div class="scroll"><table class="grid nums"><caption>{caption}</caption><thead><tr>'
