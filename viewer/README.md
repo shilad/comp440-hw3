@@ -5,8 +5,8 @@ files, never changes them, and makes no network calls. Reload a page to see new 
 
 ## Open it
 
-- From the homework page: the **Results** pages are at `/results/` on the same address, and a
-  step that saves results has a link to them.
+- From the homework page: click **Results**, or the **Open these results** link on a step that
+  saves results. The pages are at `/results/` on the homework page's address.
 - On its own, from the repository's folder, when the homework page is not running:
 
   ```
@@ -20,14 +20,14 @@ files, never changes them, and makes no network calls. Reload a page to see new 
 
 | Page | What it shows |
 |---|---|
-| **Your runs** | Every evaluation run (when it was made, which methods, how many claims are done, how many were correct), every single check from `check.py`, and the lookups you made by hand. |
-| **One run** | The same accuracy table `evaluate.py` prints, by the number of articles a claim needs; cost per claim and in total; the claims that failed or gave no verdict; then every claim in a table you can filter and sort. |
-| **One claim** | The claim and its label, each method's verdict, explanation, quoted evidence, tokens, cost and time side by side, and the agent's trace one call at a time. Each quote is highlighted where it appears in what the agent read. Previous and Next keep your filters. |
+| **Your runs** | Everything in `runs/`, part by part: the single checks from Part 0, your lookups by hand from step 1b, and each run (when it was made, which versions, how many claims are done, how many verdicts matched the label). |
+| **One run** | The same accuracy table `evaluate.py` prints, by the number of articles a claim needs and by the dataset's label; cost per claim and in total; the claims with no verdict; then every claim in a table you can filter and sort. A run without `report.txt` is marked as not finished. |
+| **One claim** | The claim, the dataset's label, the articles the dataset lists for it (and which ones the agent read), and each version's verdict, explanation, quoted evidence, tokens, cost and time side by side. Below, the agent's trace one lookup at a time, with each quote highlighted where it appears in what the agent read. Previous and Next keep your filters. |
 | **One check** | The same, for one file saved by `check.py`. |
-| **Two runs** | Two runs side by side (for example the agent before and after a change): accuracy and cost in each, the difference, and every claim whose verdict changed, with both traces. |
+| **Compare two runs** | Two runs side by side (for example the agent before and after a change): accuracy and cost in each, the difference, and every claim whose verdict changed, with both traces. |
 
-*Correct* means only that a verdict matches the dataset's label. For your own claims, the label
-is the verdict you gave.
+A ✓ means a verdict matched the dataset's label (for your own claims, your verdict). It says
+nothing more than that.
 
 ## Files
 
