@@ -274,7 +274,7 @@ def test_only_1e_hides_its_results():
 
 
 # Steps whose goal differs from the page's first line on purpose, with the reason.
-GOAL_DIFFERS = {"0b": "the goal names the three versions (orchestrator, Round 2, 0b-2); the page does not yet"}
+GOAL_DIFFERS = {}
 
 
 def test_goals_say_what_the_pages_say(a):

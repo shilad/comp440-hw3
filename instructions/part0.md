@@ -66,7 +66,8 @@ can read them.
 ## 0b. Ask the model with no tools
 
 **What you're finding out:** How well the model checks a claim from memory alone, with no lookups.
-This is the first baseline, the no-tools baseline.
+This is the no-tools baseline, the simplest of the three versions (no tools, one search, the agent)
+you will compare.
 
 The claim you check in Part 0:
 

@@ -410,7 +410,7 @@ slots = ["0b.*"]
 files = ["runs/part0/no-tools-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "See how well the model checks the claim from memory alone."
-goal = "How well the model checks this claim from memory alone, with no lookups. This is the first baseline, the simplest of the three versions (no tools, one search, the agent) you will compare."
+goal = "How well the model checks a claim from memory alone, with no lookups. This is the no-tools baseline, the simplest of the three versions (no tools, one search, the agent) you will compare."
 checkpoints = [
   "You said what you expect the model to say",
   { text = "The no-tools baseline's answer is saved in runs/part0/", files = ["runs/part0/no-tools-*.json"] },
