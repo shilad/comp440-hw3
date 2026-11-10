@@ -105,7 +105,9 @@ or *doesn't say* counts as *not supported*.
 5. Open the first claim. Read each sentence the agent quoted where it is highlighted in what the agent
    read, and decide whether it supports the agent's verdict.
 6. Open the live Wikipedia page from the claim's page whenever you're unsure.
-7. Fill in that claim's row of the table, then do the same for the other nine.
+7. Fill in that claim's row of the table, then do the same for the other nine. You can ask Claude to
+   fill in the first three columns (the number, the claim's first few words and the agent's verdict);
+   the last two are yours.
 8. Answer the two questions.
 
 Claude can read more of a page for you with one of these commands, but it will not say whether a quote
