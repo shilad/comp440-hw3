@@ -366,7 +366,7 @@ def test_compare_two_runs(repo):
     assert "A has 5 claims and B has 4 claims. This page compares the 4 claims both have." in words
     # A on the shared 4: h1, h2, h3 correct, h4 wrong -> 3 of 4. B: h1, h2, h4 correct -> 3 of 4.
     assert "3 of 4 (75.0%) 3 of 4 (75.0%) no change" in words
-    assert "wrong in A, correct in B: 1; correct in A, wrong in B: 1; verdict changed, correct in both: 1; " \
+    assert "wrong in A, correct in B: 1 correct in A, wrong in B: 1 verdict changed, correct in both: 1 " \
            "verdict changed, wrong in both: 0" in words
     assert len(re.findall(r">Open A and B<", page)) == 3
     page = get(repo, "/results/compare?a=runs/part2&b=runs/part3/after-eval&kind=now-wrong")[2]

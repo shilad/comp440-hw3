@@ -326,6 +326,16 @@ def tidy(row: dict) -> dict:
     return out
 
 
+def made_time(path: Path) -> float:
+    """When a file was made: its birth time where the system keeps one (macOS does), otherwise
+    its last change."""
+    try:
+        st = path.stat()
+    except OSError:
+        return 0.0
+    return getattr(st, "st_birthtime", None) or st.st_mtime
+
+
 def file_time(path: Path) -> float:
     try:
         st = path.stat()
@@ -414,6 +424,7 @@ class Run:
         self.rows: dict[str, dict] = {}
         self.bad: dict[str, int] = {}
         self.mtime = 0.0
+        self.started = float("inf")
         for f in result_files(path, (repo / "runs").resolve()):
             loaded = CACHE.get(f, load_results)
             if loaded is None:
@@ -423,6 +434,8 @@ class Run:
             self.rows[method] = {i: dict(r) for i, r in loaded[0].items()}
             self.bad[method] = loaded[1]
             self.mtime = max(self.mtime, file_time(f))
+            self.started = min(self.started, made_time(f))
+        self.started = self.started if self.rows else 0.0
         self.methods = sorted(self.rows, key=method_key)
         seen: dict[str, None] = {}
         for m in self.methods:

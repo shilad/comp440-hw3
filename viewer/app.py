@@ -242,7 +242,7 @@ def home(repo: Path, q: dict) -> str:
     else:
         out.append(f'<p class="small">{CORRECT_MEANS}</p>')
         out.append('<div class="scroll"><table class="grid"><thead><tr><th scope="col">Folder</th>'
-                   '<th scope="col">Last saved</th><th scope="col">Method</th>'
+                   '<th scope="col">Made</th><th scope="col">Method</th>'
                    '<th scope="col">Claims done</th><th scope="col">Correct</th></tr></thead><tbody>')
         for rel in evals:
             path, rel = R.safe_path(repo, rel)
@@ -258,7 +258,8 @@ def home(repo: Path, q: dict) -> str:
                     note = ' <span class="small">(may still be running)</span>' if (
                         run.recently_changed() and not run.finished()) else ""
                     head = (f'<th scope="rowgroup" rowspan="{span}">{a(link("/run", dir=rel), e(rel))}'
-                            f'</th><td rowspan="{span}" class="nums">{when(run.mtime)}{note}</td>')
+                            f'</th><td rowspan="{span}" class="nums">{when(run.started)}<br>'
+                            f'<span class="small">last saved {when(run.mtime)}</span>{note}</td>')
                 done = f"{st['n']:,} of {total:,}" if total else f"{st['n']:,}"
                 out.append(f'<tr class="{"first" if k == 0 else ""}">{head}<td>{e(R.method_name(m))}</td>'
                            f'<td class="nums">{done}</td><td class="nums">{frac(st["correct"], st["n"])}</td></tr>')
@@ -431,9 +432,9 @@ def run_facts(run: R.Run) -> str:
     total = run.total()
     if run.file:
         out.append(f'<p>Claims from <code>{e(run.file[0])}</code> ({plural(run.file[1], "claim")}). '
-                   f'Last saved {when(run.mtime)}.</p>')
+                   f'Made {when(run.started)}, last saved {when(run.mtime)}.</p>')
     else:
-        out.append(f'<p>{plural(len(run.ids), "claim")}. Last saved {when(run.mtime)}.</p>')
+        out.append(f'<p>{plural(len(run.ids), "claim")}. Made {when(run.started)}, last saved {when(run.mtime)}.</p>')
     missing = sum(1 for i in run.ids if "source" not in run.items[i])
     if missing:
         out.append(f'<p class="note">{plural(missing, "claim")} {"is" if missing == 1 else "are"} in no '
@@ -994,7 +995,9 @@ def compare_page(repo: Path, q: dict) -> str:
     shown = [c for c in changes if (not kind_f or c[2] == kind_f) and (not meth_f or c[1] == meth_f)]
     out.append('<section aria-labelledby="h-changes"><h2 id="h-changes" tabindex="-1">Claims that changed</h2>')
     out.append('<p>A claim is listed when its verdict, or whether it counted as correct, differs between '
-               'A and B. ' + "; ".join(f"{CHANGE_KINDS[k]}: {n:,}" for k, n in counts.items()) + '.</p>')
+               'A and B.</p><ul class="kinds">' + "".join(
+                   f'<li>{a(link("/compare", a=A.rel, b=B.rel, kind=k, m=meth_f) + "#h-changes", CHANGE_KINDS[k])}: '
+                   f'{n:,}</li>' for k, n in counts.items()) + '</ul>')
     out.append(f'<form class="filters" method="get" action="{e(link("/compare"))}#h-changes"><div class="row">'
                f'<input type="hidden" name="a" value="{e(A.rel)}"><input type="hidden" name="b" value="{e(B.rel)}">'
                + select("kind", "Change", CHANGE_KINDS, kind_f)
@@ -1014,7 +1017,7 @@ def compare_page(repo: Path, q: dict) -> str:
         for i, m, kind in shown:
             item = A.items[i]
             href = link("/compare", a=A.rel, b=B.rel, id=i, m=m, kind=kind_f, mf=meth_f)
-            out.append(f'<tr><td class="claimcell">{e(item["claim"])}</td><td class="nowrap">{e(R.label_text(item))}</td>'
+            out.append(f'<tr><td class="claimcell">{a(href, e(item["claim"]))}</td><td class="nowrap">{e(R.label_text(item))}</td>'
                        f'<td class="num">{e(R.hops_text(item))}</td><td class="nowrap">{e(R.method_name(m))}</td>'
                        f'<td class="nowrap">{verdict_cell(A.rows[m][i])}</td><td class="nowrap">{verdict_cell(B.rows[m][i])}</td>'
                        f'<td class="nowrap">{a(href, "Open A and B")}</td></tr>')
