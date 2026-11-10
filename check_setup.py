@@ -29,6 +29,7 @@ def filled_in():
 def wikipedia_problem():
     """None if a Wikipedia search works, or a sentence saying what went wrong."""
     import wiki
+    wiki._warned = True  # the WIKIPEDIA_CONTACT line above already says whether the email is filled in
     try:
         wiki.search("Macalester College")
     except Exception as error:  # any failure is reported the same way
