@@ -119,7 +119,9 @@ The labels:
    homework page shows for 3c.
 2. Ask Claude to label every claim where the agent's verdict differs from yours, and to save its labels
    in `runs/part3/claude-labels.md` without showing them to you. Claude labels first, before yours
-   exist, so that neither set of labels can steer the other.
+   exist, so that neither set of labels can steer the other. Claude Code may show the start of the file
+   in the terminal as Claude writes it: skip past it, and don't open the file until your labels are
+   typed.
 3. Open **Results** at the top of the homework page, open the run `runs/part3/before`, and filter the
    claims table to the claims where the agent's verdict did not match yours.
 4. Open each of those claims and read its trace one lookup at a time.
