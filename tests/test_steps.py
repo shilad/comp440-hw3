@@ -44,7 +44,7 @@ EXPECTED = {
     "1a": (1, "1a. Read the loop", [], [], 30),
     "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 25),
     "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 15),
-    "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 35),
+    "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 28),
     "1e": (1, "1e. Start the full run, and predict", ["runs/part2/no-tools.jsonl"], EVALUATE, 15),
     "2a": (2, "2a. Compare accuracy", ["runs/part2/report.txt"], EVALUATE, 18),
     "2b": (2, "2b. Compare cost", [], EVALUATE, 12),

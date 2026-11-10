@@ -296,8 +296,7 @@ with what each returned.
 5. Click "Step 1d: runs/part1/before with runs/part1/after" and read "Accuracy".
 6. Under "Claims that changed", click "Open A and B" to read a claim's two traces side by side.
 7. Open a few claims whose verdict stayed the same, in each run, to see whether their lookups changed.
-8. Each time you change `instructions.md` again, ask Claude to run the same command with `--fresh`.
-9. Answer the two questions in `WRITEUP.md`.
+8. Answer the two questions in `WRITEUP.md`.
 
 At a minimum your instructions must say:
 
@@ -309,18 +308,11 @@ At a minimum your instructions must say:
 Add to the three sentences already in `instructions.md`, or rewrite them, but keep what they say about
 finishing with `answer` and the three verdict words.
 
-**What you'll see:** For the first run with your instructions, Claude runs this command. It takes about
-a minute and costs about 2 cents, or more if your instructions make the agent do more:
+**What you'll see:** For the run with your instructions, Claude runs this command. It takes about a
+minute and costs about 2 cents, or more if your instructions make the agent do more:
 
 ```
 uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after
-```
-
-A run never checks a claim again once its result is saved, so after each later change Claude runs the
-same command with `--fresh`, which replaces the folder's saved results with a new run:
-
-```
-uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after --fresh
 ```
 
 **What to write:** In `WRITEUP.md`, under 1d:
@@ -331,12 +323,19 @@ uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after 
 **You're done when:** The homework page ticks 1d: `runs/part1/after/report.txt` exists, and both
 answers have text after the `>`.
 
-**If something goes wrong:** If the comparison says "A and B used the same version of the agent", your
-change to `instructions.md` was not in the second run. Save the file, then ask Claude to run the
-command with `--fresh`.
+**If something goes wrong:**
 
-**Hint:** You can do this however you want, but I recommend writing short, direct rules and changing
-one thing at a time. It is hard to tell what helped when you change everything at once. The model does
+- The comparison says "A and B used the same version of the agent": your change to `instructions.md`
+  was not in the second run. Save the file, then ask Claude to run the command with `--fresh`.
+- You changed `instructions.md` after the run: a run never checks a claim again once its result is
+  saved, so ask Claude to run the same command with `--fresh` at the end, which replaces this folder's
+  saved results with a new run:
+
+  ```
+  uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after --fresh
+  ```
+
+**Hint:** You can do this however you want, but I recommend writing short, direct rules. The model does
 not give the same answer every time, so 12 claims are too few to prove a change helped: read the
 traces, not only the score. Claude will not write or suggest text for `instructions.md`, because what
 the agent is told is your decision.

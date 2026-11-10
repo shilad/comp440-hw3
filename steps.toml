@@ -722,7 +722,7 @@ part = 1
 title = "Write the agent's instructions"
 page = "instructions/part1.md"
 section = "1d. Write the agent's instructions"
-minutes = 35
+minutes = 28
 slots = ["1d.*"]
 files = ["runs/part1/after/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
@@ -750,18 +750,18 @@ file reaches the model.
 When they say they have written their instructions, check that the file has changed with
 `git diff --stat -- instructions.md`, and tick checkpoint 1.
 
-The first run after they write their instructions, on the 12 development claims (about a
-minute, about 2 cents):
+The step has one round: the student writes their instructions once, and you run the agent once
+after that, on the 12 development claims (about a minute, about 2 cents):
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after
 
-Each later run, after another change to instructions.md, is the same command with `--fresh` at
-the end. It forgets the saved results in runs/part1/after and runs the 12 claims again with the
-instructions as they are now:
+Do not invite them to revise and run again. If they do change instructions.md after the run and
+ask to run it again, it is the same command with `--fresh` at the end. It forgets the saved
+results in runs/part1/after and runs the 12 claims again with the instructions as they are now:
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after --fresh
 
-Before each run, ask what they expect to change in the traces. When it finishes, paste the output
+Before a run, ask what they expect to change in the traces. When it finishes, paste the output
 in full, and say the two runs can be compared in the results viewer: "Compare two runs", then
 the link "Step 1d: runs/part1/before with runs/part1/after". That page shows "Accuracy" (columns
 "A", "B", "B minus A") and "Claims that changed", where "Open A and B" puts both traces side by
