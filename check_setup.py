@@ -6,6 +6,8 @@ key and Wikipedia.
 It prints one line for each thing it checks. It never prints your key or your
 email: only whether each line of .env is filled in. Checking the key sends one
 very short request to the Claude API, which costs a small fraction of a cent.
+When everything is ready it saves the lines it printed as
+runs/part0/setup-check.txt, which is how the homework page knows step 0a is done.
 """
 
 import sys
@@ -14,6 +16,7 @@ from pathlib import Path
 from dotenv import dotenv_values, load_dotenv
 
 ENV = Path(__file__).parent / ".env"
+SAVED = Path(__file__).parent / "runs" / "part0" / "setup-check.txt"
 
 
 def filled_in():
@@ -49,45 +52,58 @@ def key_problem():
 
 
 def main():
+    SAVED.unlink(missing_ok=True)  # an earlier "ready" no longer counts until this check passes
     if not ENV.exists():
         print("NOT READY  There is no .env file. In your editor, copy .env.example to .env "
               "and fill in both lines.")
         return 1
-    print("ok         .env file found")
+    printed = []
+
+    def say(line):
+        print(line)
+        printed.append(line)
+
+    say("ok         .env file found")
     ready = True
     lines = filled_in()
     if lines["ANTHROPIC_API_KEY"]:
-        print("ok         ANTHROPIC_API_KEY is filled in")
+        say("ok         ANTHROPIC_API_KEY is filled in")
     else:
         ready = False
-        print("NOT READY  ANTHROPIC_API_KEY is empty. In your editor, paste the key I sent you "
-              "after ANTHROPIC_API_KEY= in .env.")
+        say("NOT READY  ANTHROPIC_API_KEY is empty. In your editor, paste the key I sent you "
+            "after ANTHROPIC_API_KEY= in .env.")
     if lines["WIKIPEDIA_CONTACT"]:
-        print("ok         WIKIPEDIA_CONTACT is filled in")
+        say("ok         WIKIPEDIA_CONTACT is filled in")
     else:
         ready = False
-        print("NOT READY  WIKIPEDIA_CONTACT is empty. In your editor, put your Macalester email "
-              "after WIKIPEDIA_CONTACT= in .env.")
+        say("NOT READY  WIKIPEDIA_CONTACT is empty. In your editor, put your Macalester email "
+            "after WIKIPEDIA_CONTACT= in .env.")
 
     load_dotenv(ENV)  # so the two checks below use your key and your contact
     problem = wikipedia_problem()
     if problem is None:
-        print("ok         Wikipedia answered a search")
+        say("ok         Wikipedia answered a search")
     else:
         ready = False
-        print(f"NOT READY  Wikipedia did not answer a search ({problem})")
+        say(f"NOT READY  Wikipedia did not answer a search ({problem})")
 
     if lines["ANTHROPIC_API_KEY"]:
         problem = key_problem()
         if problem is None:
-            print("ok         the Claude API accepted your key")
+            say("ok         the Claude API accepted your key")
         else:
             ready = False
-            print(f"NOT READY  {problem}")
+            say(f"NOT READY  {problem}")
 
-    print("\nEverything is ready." if ready
-          else "\nNot ready yet. Fix each line marked NOT READY, then run this again.")
-    return 0 if ready else 1
+    if not ready:
+        print("\nNot ready yet. Fix each line marked NOT READY, then run this again.")
+        return 1
+    say("\nEverything is ready.")
+    # The homework page counts step 0a as done once this file exists. It holds the
+    # lines printed above and nothing from .env.
+    SAVED.parent.mkdir(parents=True, exist_ok=True)
+    SAVED.write_text("\n".join(printed) + "\n")
+    return 0
 
 
 if __name__ == "__main__":
