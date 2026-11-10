@@ -189,3 +189,11 @@ details.stuck[open] summary::before { content: "− "; }
 .ln .linkbtn { font-size: inherit; }
 .lines + .linkbtn { justify-self: start; }
 .ln.tick > span:last-child { color: var(--ok); }
+
+/* What the top of the page tells the student: an update, a push that didn't go through */
+.notices { display: grid; gap: 10px; }
+.notices:empty { display: none; }
+.notice { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 8px; padding: 10px 14px; color: var(--ink); display: grid; gap: 6px; justify-items: start; }
+.notice.update, .notice.updated { border-left-color: var(--link); }
+.notice p, .notice ul, .notice pre { margin: 0; }
+.notice ul { padding-left: 20px; color: var(--muted); }

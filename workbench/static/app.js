@@ -6,7 +6,10 @@
 // with links to what the step produced and the command that opens its Claude Code session.
 // The record shows what happened, never the next move. A setup step shows its steps in full.
 // The current step starts open; every other step shows its summary and every other part its
-// description. The page polls the local server; nothing here talks to Claude.
+// description. The page polls the local server; nothing here talks to Claude. At the top, the
+// notices: an update to the homework (with its Update button), a push that didn't go through, a
+// folder that isn't the student's own fork. When the steps file or the brief's pages change, the
+// page rebuilds itself.
 
 const $ = (s, el = document) => el.querySelector(s);
 const byId = (id) => document.getElementById(id);
@@ -143,7 +146,17 @@ function leftCol(s) {
 }
 
 // ---- what changes: progress, state, the open steps -------------------------------------------
+// What the top of the page tells the student: one plain sentence each, and the Update button.
+function notices() {
+  return (S.notices || []).map((x) => `<div class="notice ${esc(x.kind)}"><p>${esc(x.text)}</p>`
+    + (x.items ? `<ul>${x.items.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : "")
+    + (x.code ? `<pre><code>${esc(x.code)}</code></pre>` : "")
+    + (x.button ? `<button class="copy" data-update type="button">${esc(x.button)}</button>` : "")
+    + "</div>").join("");
+}
+
 function update() {
+  if (!byId("notices").querySelector("[data-update][disabled]")) paint(byId("notices"), notices());
   const n = S.steps.filter((x) => x.complete).length;
   byId("bar").style.width = `${(100 * n / S.steps.length).toFixed(1)}%`;
   byId("count").textContent = `${n} of ${S.steps.length} steps done`;
@@ -155,7 +168,8 @@ function update() {
   for (const p of A.parts) {
     const mine = S.steps.filter((x) => x.part === p.number), done = mine.filter((x) => x.complete).length;
     const saved = S.committed.includes(p.number);
-    byId(`meta-${p.number}`).textContent = (saved ? `Committed as “Part ${p.number} done”` : done ? `${done} of ${mine.length} done` : `${mine.length} steps`)
+    const pushed = S.push && S.push.on && S.push.ok ? " and pushed to GitHub" : "";
+    byId(`meta-${p.number}`).textContent = (saved ? `Committed as “Part ${p.number} done”${pushed}` : done ? `${done} of ${mine.length} done` : `${mine.length} steps`)
       + (p.due && !saved ? ` · due ${shortDue(p)}` : "");
     const open = openParts.has(p.number);
     $(`[data-part="${p.number}"]`).setAttribute("aria-expanded", String(open));
@@ -265,19 +279,26 @@ function links(s, ss) {
   ss.record.entries.forEach((x) => x.file && files.add(x.file));
   ss.record.checkpoints.forEach((c) => c.files.forEach((f) => files.add(f)));
   const items = [`<li><button class="linkbtn" data-convo="${s.id}" type="button">The conversation</button></li>`,
+    ...(ss.results ? [`<li>${resultsLink(ss)}</li>`] : []),
     `<li>${fileLink("WRITEUP.md")}</li>`, ...[...files].slice(0, 6).map((f) => `<li>${fileLink(f)}</li>`)];
   return `<div class="files"><span class="label">From this step</span><ul>${items.join("")}</ul></div>`;   // one row of links
 }
 
-function command(label, cmd) {
+// The step's results in the results viewer, which decides what to show for the file.
+function resultsLink(ss) {
+  return `<a href="/results/open?path=${encodeURIComponent(ss.results)}" target="_blank" rel="noopener">Open these results</a>`;
+}
+
+function command(label, cmd, flags) {
   return `<div class="cmd"><span class="label">${label}</span>
     <div class="cmd-row"><code title="${esc(cmd)}">${esc(cmd)}</code><button class="copy" data-copy="${esc(cmd)}" type="button">Copy</button></div>
-    <span class="small">Paste it into a terminal in your homework folder.</span></div>`;
+    <span class="small">Paste it into a terminal in your homework folder.</span>
+    ${flags ? `<span class="small">If Claude says the model is not available, delete <code>${esc(flags)}</code> from the command and run it again.</span>` : ""}</div>`;
 }
 
 function recordCol(s, st, ss) {
   const when = st.waiting_on.map(labelOf).join(", ");
-  const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command) : "";
+  const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command, ss.model_flags) : "";
   if (s.setup) {
     const steps = `<ol class="plainsteps">${ss.record.checkpoints.filter((c) => c.n).map((c) => `<li class="${c.done ? "done" : ""}">${esc(c.text)}</li>`).join("")}</ol>`;
     return `<div class="record-head"><span class="label">Setup steps</span><span class="state">${esc(st.complete ? "Done." : ss.started ? stateLine(ss) : st.locked ? `Opens when you finish ${when}.` : "Not started.")}</span></div>
@@ -285,7 +306,7 @@ function recordCol(s, st, ss) {
   }
   if (!ss.started) {
     const state = st.locked ? `Empty. This step's Claude opens when you finish ${when}.` : "Empty. Start this step's Claude in a terminal.";
-    return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(state)} What you predict, what you ask it, and what comes back will be recorded here.</span></div>${cmd}`;
+    return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(state)} What you predict, what you ask it, and what comes back will be recorded here.</span></div>${ss.results ? `<p class="small">${resultsLink(ss)}</p>` : ""}${cmd}`;
   }
   return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(stateLine(ss))}</span></div>
     ${recordList(s, ss.record)}${links(s, ss)}${cmd}`;
@@ -336,6 +357,13 @@ document.addEventListener("click", async (ev) => {
     return showPanel(file.dataset.file, r.error ? `<p class="small">${esc(r.error)}</p>`
       : `<pre class="file">${esc(r.text)}</pre>${r.cut ? '<p class="small">The file is longer; this is its start.</p>' : ""}`, file);
   }
+  const upd = ev.target.closest("[data-update]");
+  if (upd) {
+    upd.disabled = true; upd.textContent = "Updating…";
+    try { await fetch("/api/update", { method: "POST" }); } catch (_) { /* the notices say what happened */ }
+    upd.disabled = false;
+    return refresh();
+  }
   const copy = ev.target.closest("[data-copy]");
   if (copy) {
     try { await navigator.clipboard.writeText(copy.dataset.copy); copy.textContent = "Copied"; }
@@ -360,6 +388,11 @@ function goNow() {
 async function pollStep(id) { SESS[id] = await get(`/api/session/${id}`); }
 async function refresh() {
   S = await get("/api/state");
+  if (S.version !== A.version) {   // the steps file or a page changed: rebuild, keeping what is open
+    A = await get("/api/assignment");
+    for (const id of [...openSteps]) if (!stepOf(id)) openSteps.delete(id);
+    build();
+  }
   await Promise.all([...openSteps].map(pollStep));
   update();
 }

@@ -36,7 +36,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
+import sys
 import threading
 import time
 import uuid
@@ -45,9 +47,6 @@ from pathlib import Path
 from typing import Any
 
 from . import labels
-import re
-from fnmatch import fnmatch
-
 from .steps import (Assignment, Step, body, checkpoints, filled, layout, present, read_slots, status,
                     step_keys)
 
@@ -61,6 +60,13 @@ SAVED = re.compile(r"Saved to (\S+)")
 VERDICT = re.compile(r"^Verdict: (.+)$", re.M)
 EXPLANATION = re.compile(r"^Explanation: (.+)$", re.M)
 LOOKUPS = re.compile(r"^Lookups: (\d+)", re.M)
+
+
+KEY = re.compile(r"sk-ant-[^\s\"'`<>]*")
+
+
+def when(t: float) -> str:
+    return datetime.fromtimestamp(t).astimezone().isoformat(timespec="seconds")
 
 
 def claude_home() -> Path:
@@ -194,8 +200,13 @@ class StepSession:
                     if b.get("type") == "text" and b.get("text", "").strip():
                         emit(t, "claude", text=b["text"])
                     elif b.get("type") == "tool_use":
-                        cat, label = labels.describe(b.get("name", ""), b.get("input") or {}, self.hub.repo)
                         inp = b.get("input") or {}
+                        if b.get("name") == "Bash":   # leave out the page skill's own calls, keep the rest
+                            inp = {**inp, "command": labels.without_page_calls(inp.get("command", ""))}
+                        if b.get("name") == "Bash" and not inp["command"]:
+                            cat, label = "page", "Updated the homework page"
+                        else:
+                            cat, label = labels.describe(b.get("name", ""), inp, self.hub.repo)
                         detail = inp.get("command") or inp.get("file_path") or inp.get("pattern") or ""
                         tools[b.get("id")] = emit(t, "tool", id=b.get("id"), tool=b.get("name"), category=cat,
                                                   label=label, detail=str(detail)[:400], status="running", ended=None)
@@ -255,7 +266,7 @@ class StepSession:
                 for k, answer in new.items():
                     if answer != old.get(k) and (k in old or filled(answer)):
                         emit(r["t"] + 0.001, "slot", key=k, filled=filled(answer), outside=k not in mine,
-                             label=("Wrote into" if filled(answer) else "Cleared") + f" “{k.split(' / ')[-1]}”")
+                             answer=answer, label=("Wrote into" if filled(answer) else "Cleared") + f" “{k.split(' / ')[-1]}”")
         # What Claude told the page with the `page` skill.
         said = None
         for r in self.hub.page_records(self.step.id):
@@ -298,10 +309,11 @@ class StepSession:
             self.state, self.now = "thinking", "Thinking"
         self.busy = self.state in ("thinking", "working", "asking")
 
-    def record(self) -> dict:
+    def record(self, last: int | None = 14) -> dict:
         """What counts in the step (its checkpoints, each ticked or not) and the student's record of
         working on it: what they expected, what they asked, what Claude ran and what came back, in
-        order, with each checkpoint marked where it was reached, and the question still open."""
+        order, with each checkpoint marked where it was reached, and the question still open. The
+        page shows the `last` entries; the copy saved for grading keeps them all (last=None)."""
         a, s, repo = self.hub.assignment, self.step, self.hub.repo
         label = a.label(s)
         st = next(x for x in status(a, repo, self.hub.marked()) if x["id"] == s.id)
@@ -344,7 +356,7 @@ class StepSession:
         for e in self.events:
             if e["kind"] == "student" and not e.get("opening"):
                 entries.append({"kind": "asked", "t": e["t"], "text": e["text"][:400]})
-            elif e["kind"] == "tool" and e["category"] in ("run", "write") and "page.py" not in e.get("detail", ""):
+            elif e["kind"] == "tool" and e["category"] in ("run", "write"):
                 out = e.get("output") or ""
                 saved = SAVED.search(out)
                 entries.append({"kind": "ran", "t": e["t"], "text": e["label"], "status": e["status"],
@@ -388,8 +400,9 @@ class StepSession:
         todo = next((c["text"] for c in cps if not c["done"]), None)
         now = ({"question": open_q["question"], "how": f"Write your answer in {a.writeup}, under {label}, in your editor."}
                if open_q else {"todo": todo} if todo and not st["complete"] else {"done": True})
-        return {"checkpoints": cps, "summary": summary, "entries": entries[-14:],
-                "earlier": max(0, len(entries) - 14), "now": now,
+        shown = entries if last is None else entries[-last:]
+        return {"checkpoints": cps, "summary": summary, "entries": shown,
+                "earlier": len(entries) - len(shown), "now": now,
                 "counts": {"messages": sum(x["kind"] in ("asked", "expected") for x in entries),
                            "commands": sum(x["kind"] == "ran" for x in entries)}}
 
@@ -413,15 +426,27 @@ class StepSession:
                             "file": item["files"][-1] if item["files"] else None})
         return sorted(out, key=lambda x: x["t"])
 
+    def results(self) -> str | None:
+        """The newest file of the first `files` entry that has one, for the results viewer."""
+        for pattern in self.step.files:
+            found = present(self.hub.repo, pattern)
+            if found:
+                return str(max(found, key=lambda f: f.stat().st_mtime).relative_to(self.hub.repo))
+        return None
+
     def snapshot(self) -> dict:
         self.refresh()
         locked = self.hub.locked(self.step.id)
         if not locked:
             self.prepare()
-        return {"id": self.step.id, "label": self.hub.assignment.label(self.step), "state": self.state,
+        a = self.hub.assignment
+        return {"id": self.step.id, "label": a.label(self.step), "state": self.state,
                 "now": self.now, "busy": self.busy, "totals": self.totals, "events": list(self.events),
                 "started": self.state != "not started", "status": self.status, "record": self.record(),
-                "command": None if locked else self.command(), "session_id": self.session_id}
+                "command": None if locked else self.command(), "session_id": self.session_id,
+                "model_flags": " ".join(x for x in (f"--model {a.model}" if a.model else "",
+                                                    f"--effort {a.effort}" if a.effort else "") if x),
+                "results": self.results()}
 
 
 class Hub:
@@ -437,9 +462,7 @@ class Hub:
         shutil.copyfile(GUARD, self.dir / "guard.py")
         shutil.copyfile(PAGE, self.dir / "page.py")
         shutil.copytree(PLUGIN, self.dir / "plugin", dirs_exist_ok=True)
-        (self.dir / "guard.json").write_text(json.dumps({
-            "repo": str(repo), "writeup": assignment.writeup,
-            "never_read": assignment.never_read, "refused": list(REFUSED)}, indent=2))
+        self.write_guard()
         self.state_file = self.dir / "state.json"
         self.state = json.loads(self.state_file.read_text()) if self.state_file.exists() else {}
         self.state_lock = threading.Lock()
@@ -452,8 +475,24 @@ class Hub:
         self.page: dict[str, list[dict]] = {}
         self.sessions = {s.id: StepSession(self, s) for s in assignment.steps}
 
+    def retarget(self, assignment: Assignment) -> None:
+        """Take a changed steps file without a restart: keep each step's session and its id."""
+        self.assignment = assignment
+        old, self.sessions = self.sessions, {}
+        for s in assignment.steps:
+            self.sessions[s.id] = old.get(s.id) or StepSession(self, s)
+            self.sessions[s.id].step, self.sessions[s.id].seen = s, None
+        self.write_guard()
+
+    def write_guard(self) -> None:
+        (self.dir / "guard.json").write_text(json.dumps({
+            "repo": str(self.repo), "writeup": self.assignment.writeup,
+            "never_read": self.assignment.never_read, "refused": list(REFUSED)}, indent=2))
+
     def hook(self, mode: str) -> str:
-        return f"python3 {dq(str(self.dir / 'guard.py'))} {mode}"
+        # The page's own Python runs the hook: it is there for certain, which a student's `python3`
+        # may not be, and a hook that can't start lets the call through.
+        return f"{dq(sys.executable)} {dq(str(self.dir / 'guard.py'))} {mode}"
 
     def session_id(self, step_id: str) -> str:
         with self.state_lock:
@@ -531,6 +570,44 @@ class Hub:
     def slots(self) -> dict[str, str]:
         wp = self.repo / self.assignment.writeup
         return read_slots(wp.read_text(encoding="utf-8")) if wp.exists() else {}
+
+    def save_records(self, folder: Path) -> None:
+        """What the page shows for each started step, kept in the repository for grading, one
+        JSON file per step: which checkpoints were reached, what the student predicted, asked and
+        ran, what came back, what Claude told the page, and who last wrote each answer."""
+        a, slots = self.assignment, self.slots()
+        edits: dict[str, dict] = {}       # each answer's last edit by Claude, from any step's session
+        for s in self.sessions.values():
+            s.refresh()
+            for e in s.events:
+                if e["kind"] == "slot" and e["t"] >= edits.get(e["key"], {}).get("t", 0):
+                    edits[e["key"]] = {**e, "step": a.label(s.step)}
+        for s in self.sessions.values():
+            pages = self.page_records(s.step.id)
+            if s.state == "not started" and not pages:
+                continue
+            rec, label = s.record(last=None), a.label(s.step)
+            answers = []
+            for k in step_keys(s.step, slots):
+                e, answer = edits.get(k), slots.get(k, "")
+                by = None if not filled(answer) else "the student" if not e else \
+                    f"Claude, in {e['step']}'s session" if e.get("answer") == answer else "the student, after Claude"
+                answers.append({"question": k.split(" / ")[-1], "answer": answer, "written_by": by})
+            out = {
+                "step": label, "title": s.step.title, "session_id": s.session_id,
+                "complete": all(c["done"] for c in rec["checkpoints"]),
+                "checkpoints": [{"text": c["text"], "reached": c["done"]} for c in rec["checkpoints"]],
+                "answers": answers,
+                "record": [{**{k: v for k, v in x.items() if k != "t"}, "time": when(x["t"])} for x in rec["entries"]],
+                "told_the_page": [{"time": when(r["t"]), **{k: v for k, v in r.items() if k not in ("t", "step")}}
+                                  for r in pages],
+                "turns": s.totals["turns"],
+            }
+            text = KEY.sub("[key removed]", json.dumps(out, indent=2, ensure_ascii=False)) + "\n"
+            f = folder / f"{label}.json"
+            if not (f.exists() and f.read_text(encoding="utf-8") == text):
+                folder.mkdir(exist_ok=True)
+                f.write_text(text, encoding="utf-8")
 
     def body(self, s: Step) -> str:
         return body(s, self.assignment, self.repo)

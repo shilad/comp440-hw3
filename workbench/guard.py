@@ -1,11 +1,12 @@
 """The hook every step's Claude Code session runs, copied into the student's .workbench/ folder.
 
-Standard library only, because it runs under the student's own `python3`, not the workbench's.
-Claude Code calls it with the event as JSON on standard input:
+Standard library only. The step's settings run it with the homework page's own Python (the
+repository's .venv), given by its full path. Claude Code calls it with the event as JSON on
+standard input:
 
-    python3 .workbench/guard.py pre      before each tool call
-    python3 .workbench/guard.py post     after an edit of the write-up
-    python3 .workbench/guard.py notify   when Claude Code wants the student's attention
+    <python> .workbench/guard.py pre      before each tool call
+    <python> .workbench/guard.py post     after an edit of the write-up
+    <python> .workbench/guard.py notify   when Claude Code wants the student's attention
 
 `pre` refuses commits, pushes and resets (the page makes the commits) and any call that reads,
 prints or edits a secret file such as .env; checking that the file exists is allowed. Around an

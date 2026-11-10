@@ -1,21 +1,19 @@
 """The assignment: its steps, its write-up slots, and which steps are complete.
 
-An assignment is one `steps.toml` file (see assignments/hw3/steps.toml). Completion is never
+An assignment is the `steps.toml` file at the top of the homework's repository. Completion is never
 stored: it is read from the student's repository every time, so editing WRITEUP.md by hand, in
 any editor, counts the same as Claude writing it. A step is complete when every slot it names is
-filled and every file it names exists. A step with neither is complete when the student says so.
+filled and every file it names exists. A step with neither is complete when Claude marks it done.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import re
 import subprocess
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
-
-PACKAGE = Path(__file__).resolve().parent
-BUILT_IN = PACKAGE / "assignments"
 
 MARKER = "XXXX"
 PART = re.compile(r"^## Part (\d+)")
@@ -70,7 +68,7 @@ class Assignment:
     effort: str | None = None
     commit_parts: bool = True
     push: bool = False
-    before_commit: str | None = None
+    upstream: str | None = None      # the class repository, whose main branch carries updates
     allow: list[str] = field(default_factory=list)
     never_read: list[str] = field(default_factory=list)
     overview: str | None = None
@@ -85,15 +83,28 @@ class Assignment:
         raise KeyError(step_id)
 
     def label(self, s: Step) -> str:
-        """What the page calls a step: its part's number and its letter within the part, as 3a."""
+        """What the page calls a step: its part's number and its letter within the part, as 3a.
+        A step whose id is already such a name ("0b") keeps it, so the page, the files and the
+        write-up's headings always agree."""
+        if LABEL.fullmatch(s.id):
+            return s.id
         same = [x.id for x in self.steps if x.part == s.part]
         return f"{s.part}{chr(ord('a') + same.index(s.id))}"
+
+
+LABEL = re.compile(r"\d+[a-z]")
+STEP_KEYS = {f.name for f in dataclasses.fields(Step)}
 
 
 def load(path: Path) -> Assignment:
     data = tomllib.loads(path.read_text(encoding="utf-8"))
     parts = {p["number"]: p for p in data.get("part", [])}
-    steps = [Step(**s) for s in data.get("step", [])]
+    steps = []
+    for s in data.get("step", []):
+        unknown = sorted(set(s) - STEP_KEYS)
+        if unknown:   # a key this version doesn't know is left out, never a reason to stop
+            print(f"Note: {path.name}, step {s.get('id')}: ignoring {', '.join(unknown)}")
+        steps.append(Step(**{k: v for k, v in s.items() if k in STEP_KEYS}))
     ids = [s.id for s in steps]
     if len(set(ids)) != len(ids):
         raise ValueError(f"{path}: two steps share an id")
@@ -107,7 +118,7 @@ def load(path: Path) -> Assignment:
         effort=data.get("effort") or None,
         commit_parts=data.get("commit_parts", True),
         push=data.get("push", False),
-        before_commit=data.get("before_commit") or None,
+        upstream=data.get("upstream") or None,
         allow=data.get("allow", []),
         never_read=data.get("never_read", []),
         overview=data.get("overview") or None,
@@ -134,11 +145,9 @@ def present(repo: Path, pattern: str) -> list[Path]:
 
 
 def page(a: Assignment, repo: Path, name: str) -> str | None:
-    """A Markdown page: the repository's own copy first, then the one shipped with the assignment."""
-    for base in (repo, a.source.parent / "pages" if a.source else None):
-        if base and (base / name).is_file():
-            return (base / name).read_text(encoding="utf-8")
-    return None
+    """A Markdown page of the brief, from the repository."""
+    f = repo / name
+    return f.read_text(encoding="utf-8") if f.is_file() else None
 
 
 def body(s: Step, a: Assignment, repo: Path) -> str:
@@ -162,22 +171,6 @@ def body(s: Step, a: Assignment, repo: Path) -> str:
     return "\n".join(out).strip() or f"(No section \"{s.section}\" in {s.page}.)"
 
 
-def find(name_or_path: str | None, repo: Path) -> Path:
-    """The steps file: a path, a built-in assignment's name, or the repo's own steps.toml."""
-    if name_or_path:
-        p = Path(name_or_path)
-        if p.is_file():
-            return p
-        built_in = BUILT_IN / name_or_path / "steps.toml"
-        if built_in.is_file():
-            return built_in
-        raise FileNotFoundError(f"No steps file at {name_or_path}, and no built-in assignment by that name")
-    own = repo / "steps.toml"
-    if own.is_file():
-        return own
-    raise FileNotFoundError(f"{repo} has no steps.toml; pass --steps hw3 or a path")
-
-
 # ---------------------------------------------------------------------------------------------
 # WRITEUP.md slots. Two layouts, both used by the course's templates.
 #
@@ -185,11 +178,13 @@ def find(name_or_path: str | None, repo: Path) -> Path:
 # answer is the text up to the next heading, and "**Label:** answer" lines. Blank while it reads
 # XXXX.
 #
-# Quote layout (HW3): "# Part N: Title", then "## Step N: Title" sections. Each question is a
-# paragraph followed by a line that starts with ">"; the answer is what follows the ">". A
-# Markdown table is a slot too, filled when every row that isn't empty has every cell filled, and
-# so is a fenced block that a paragraph asks Claude to paste into. A slot's key is
-# "Part N / Step N: Title / <the question>". A file with any ">" line is read in this layout.
+# Quote layout (HW3): "# Part N: Title", then one "## " section per step, whose heading starts
+# with the step's name ("## 0b. Ask the model on its own"; older copies say "## Step 2: ...").
+# Each question is a paragraph followed by a line that starts with ">"; the answer is what follows
+# the ">". A Markdown table is a slot too, filled when every row that isn't empty has every cell
+# filled, and so is a fenced block that a paragraph asks Claude to paste into. A slot's key is
+# "Part N / <section heading> / <the question>", so `slots = ["0b.*"]` takes every slot of the
+# section whose heading starts with "0b.". A file with any ">" line is read in this layout.
 
 QUOTE = re.compile(r"^>\s?(.*)$")
 PLAIN = re.compile(r"^(Name|Date):\s*(.*)$")
@@ -326,7 +321,7 @@ def slot_key(step: Step, label: str) -> str:
 
 def step_keys(step: Step, slots: dict[str, str]) -> list[str]:
     """The slot keys a step fills. A label ending in * takes every slot of the step's part that
-    starts with it, so `slots = ["Step 2:*"]` keeps working when a question is reworded."""
+    starts with it, so `slots = ["0b.*"]` keeps working when a question is reworded."""
     keys: list[str] = []
     for label in step.slots:
         if label.endswith("*"):

@@ -1,11 +1,11 @@
-"""Tell the workbench page what this step's Claude Code session is doing.
+"""Tell the homework page what this step's Claude Code session is doing.
 
     python3 .workbench/page.py STEP status "Walking through run_agent()"
     python3 .workbench/page.py STEP expected "supported"   what the student expects the run to show
     python3 .workbench/page.py STEP done N      tick checkpoint N of the step
     python3 .workbench/page.py STEP done        the whole step, for one with nothing to write
 
-The `page` skill tells Claude when to use it. It posts to the workbench server running on this
+The `page` skill tells Claude when to use it. It posts to the homework page's server running on this
 laptop, whose port the server leaves in server.json beside this file. Standard library only,
 because it runs under the student's own `python3`; the server copies it into .workbench/.
 """
@@ -51,7 +51,7 @@ def main(argv: list[str]) -> int:
         except ValueError:
             reply = {"error": f"The page answered {err.code}."}
     except (OSError, ValueError, KeyError):
-        print("The workbench page isn't running, so nothing was sent. Carry on without it.")
+        print("The homework page isn't running, so nothing was sent. Carry on without it.")
         return 1
     if reply.get("error"):
         print(reply["error"])
