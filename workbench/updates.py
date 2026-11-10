@@ -112,7 +112,7 @@ class Updates:
                 if self.git("diff", "--quiet", "--", f).returncode == 1:
                     self.git("checkout", "--", f)
             before = self.git("rev-parse", "HEAD").stdout.strip()
-            merged = self.git("merge", "--no-edit", self.ref, timeout=120)
+            merged = self.git("merge", "--no-edit", "-m", "Take the class repository's updates", self.ref, timeout=120)
             if merged.returncode:
                 if (self.git_dir() / "MERGE_HEAD").exists():
                     self.git("merge", "--abort")

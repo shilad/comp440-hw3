@@ -499,6 +499,7 @@ def test_an_update_is_listed_and_merged_with_uncommitted_answers(tmp_path):
     assert "fixed" in (h.student / "README.md").read_text()
     assert app.updates.missing == [] and not any(x["kind"] == "update" for x in app.current_notices())
     assert "Fix a typo in the README" in subjects(h.student)
+    assert subjects(h.student)[0] == "Take the class repository's updates"
 
 
 def test_an_update_to_a_file_with_uncommitted_edits_keeps_both(tmp_path):
