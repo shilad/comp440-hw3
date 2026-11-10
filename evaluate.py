@@ -41,17 +41,22 @@ METHODS = {"no-tools": baselines.no_tools, "one-search": baselines.one_search,
            "agent": agent.run_agent}
 
 # The files that decide how the agent behaves. A change to any of them makes a new
-# version of the agent.
+# version of the agent. So does a change to the loop in use, which is one of LOOPS.
 AGENT_FILES = ["instructions.md", "agent.py", "wiki.py"]
+# The loop's file and how the first line names it: see which_loop() in agent.py.
+LOOPS = {"yours": ("my_loop.py", "yours (my_loop.py)"),
+         "reference": ("reference_loop.py", "the reference loop (reference_loop.py)")}
 NOTES = []  # said again after the tables, where they will be seen
 
 
 def agent_version():
-    """A short fingerprint of the agent's files. It is saved with each of the
-    agent's results, so a later run can tell whether the results in a folder
-    were made by the agent as it is now."""
+    """A short fingerprint of the agent's files and of the loop in use. It is
+    saved with each of the agent's results, so a later run can tell whether the
+    results in a folder were made by the agent as it is now."""
     digest = hashlib.sha256()
-    for name in AGENT_FILES:
+    loop = agent.which_loop()
+    digest.update(loop.encode())  # even if the two loop files were the same
+    for name in AGENT_FILES + [LOOPS[loop][0]]:
         digest.update((Path(__file__).parent / name).read_bytes())
     return digest.hexdigest()[:12]
 
@@ -71,7 +76,7 @@ def check_saved_agent(out_dir, items):
     if not old:
         return
     todo = [item for item in items if item["id"] not in done]
-    why = "instructions.md, agent.py or wiki.py has changed since"
+    why = "instructions.md, agent.py, wiki.py or the agent's loop has changed since"
     if todo:
         sys.exit(f"Stopped: {out_dir} has {len(old)} saved results from an earlier version of "
                  f"your agent ({why}), and {len(todo)} still to run. Mixing the two would "
@@ -211,12 +216,14 @@ def main():
     parser.add_argument("--fresh", action="store_true",
                         help="forget this folder's saved results for these methods and run them again")
     args = parser.parse_args()
+    methods = args.methods.split(",")
+    if "agent" in methods:
+        print(f"Agent loop: {LOOPS[agent.which_loop()][1]}", flush=True)
 
     items = [json.loads(line) for line in Path(args.claims).read_text().splitlines() if line.strip()]
     items = items[: args.limit] if args.limit else items
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    methods = args.methods.split(",")
     NOTES.clear()
     if args.fresh:
         for method in methods:

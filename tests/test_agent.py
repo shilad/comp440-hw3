@@ -1,6 +1,7 @@
 """Offline tests: a scripted stand-in for Claude and for Wikipedia, so the loop,
 the step budget and the evidence check can be tested with no API key and no
-network."""
+network. The loop tested here is the reference loop (reference_loop.py); the
+check of the student's own loop is tested in test_loop_check.py."""
 
 import sys
 from pathlib import Path
@@ -10,9 +11,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import agent  # noqa: E402
 import baselines  # noqa: E402
 import evaluate  # noqa: E402
+import reference_loop  # noqa: E402
 import wiki  # noqa: E402
 
 
@@ -62,7 +63,7 @@ def test_answer_with_real_evidence_is_accepted():
                                                "He was born in Chicago,  Illinois."],
                                   "explanation": "Zemeckis was born in Chicago."}, 4)),
     ])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] == "supported"
     assert result["steps"] == 3
     assert result["tokens"] == {"input": 400, "output": 40}
@@ -81,7 +82,7 @@ def test_made_up_evidence_is_rejected():
         reply(tool_use("answer", {"verdict": "doesn't say", "evidence": [],
                                   "explanation": "The page doesn't give a birthplace."}, 3)),
     ])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] == "doesn't say"
     rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
     assert len(rejected) == 1
@@ -97,7 +98,7 @@ def test_supported_or_refuted_needs_a_quote():
         reply(tool_use("answer", {"verdict": "doesn't say", "evidence": [],
                                   "explanation": "The page doesn't give a birthplace."}, 4)),
     ])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] == "doesn't say"
     rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
     assert len(rejected) == 2
@@ -115,7 +116,7 @@ def test_evidence_as_one_string_is_checked_as_one_quote():
                                   "evidence": "directed by Robert Zemeckis",
                                   "explanation": "x"}, 3)),
     ])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
     assert len(rejected) == 1
     assert "Zemeckis was born in Ohio." in rejected[0]["result"]
@@ -127,7 +128,7 @@ def test_missing_evidence_is_an_empty_list():
     claude = ScriptedClaude([
         reply(tool_use("answer", {"verdict": "doesn't say", "explanation": "x"}, 1)),
     ])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] == "doesn't say"
     assert result["evidence"] == []
 
@@ -136,7 +137,7 @@ def test_missing_explanation_is_empty():
     claude = ScriptedClaude([
         reply(tool_use("answer", {"verdict": "doesn't say", "evidence": []}, 1)),
     ])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] == "doesn't say"
     assert result["explanation"] == ""
 
@@ -148,7 +149,7 @@ def test_missing_or_unknown_verdict_is_rejected():
         reply(tool_use("answer", {"verdict": "doesn't say", "evidence": [],
                                   "explanation": "x"}, 3)),
     ])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] == "doesn't say"
     rejected = [t for t in result["trace"] if t["result"].startswith("Answer rejected")]
     assert len(rejected) == 2
@@ -159,7 +160,7 @@ def test_rejected_answers_stop_the_agent():
     made_up = {"verdict": "supported", "evidence": ["Zemeckis was born in Ohio."],
                "explanation": "x"}
     claude = ScriptedClaude([reply(tool_use("answer", made_up, i)) for i in range(10)])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] is None
     assert "rejected 3 times" in result["explanation"]
     assert len(claude.sent) == 3
@@ -167,7 +168,7 @@ def test_rejected_answers_stop_the_agent():
 
 def test_step_budget_stops_the_agent():
     claude = ScriptedClaude([reply(tool_use("search", {"query": f"q{i}"}, i)) for i in range(10)])
-    result = agent.run_agent("claim", client=claude, max_steps=3, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, max_steps=3, lookup=fake_lookup)
     assert result["verdict"] is None
     assert result["steps"] == 3
     assert "ran out of steps" in result["explanation"]
@@ -179,7 +180,7 @@ def test_agent_can_answer_after_the_warning():
         [reply(tool_use("search", {"query": f"q{i}"}, i)) for i in range(3)]
         + [reply(tool_use("answer", {"verdict": "doesn't say", "evidence": [],
                                      "explanation": "ran short"}, 9))])
-    result = agent.run_agent("claim", client=claude, max_steps=2, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, max_steps=2, lookup=fake_lookup)
     assert result["verdict"] == "doesn't say"
     assert result["steps"] == 2
 
@@ -187,14 +188,14 @@ def test_agent_can_answer_after_the_warning():
 def test_stopping_without_answer_gets_one_reminder():
     text = NS(type="text", text="I think it's true.")
     claude = ScriptedClaude([reply(text, stop="end_turn"), reply(text, stop="end_turn")])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] is None
     assert len(claude.sent) == 2
 
 
 def test_refusal_ends_the_check():
     claude = ScriptedClaude([reply(stop="refusal")])
-    result = agent.run_agent("claim", client=claude, lookup=fake_lookup)
+    result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] is None
 
 
@@ -325,7 +326,7 @@ def test_a_claim_that_fails_is_not_saved_and_runs_again(monkeypatch, tmp_path, c
     assert "run the same command again" in capsys.readouterr().out
 
     answer = {"verdict": "doesn't say", "evidence": [], "explanation": "x"}
-    monkeypatch.setitem(evaluate.METHODS, "agent", lambda claim: agent.run_agent(
+    monkeypatch.setitem(evaluate.METHODS, "agent", lambda claim: reference_loop.run_agent(
         claim, client=ScriptedClaude([reply(tool_use("answer", answer, 1))]), lookup=fake_lookup))
     [result] = evaluate.run_method("agent", [item], tmp_path, workers=1)
     assert result["verdict"] == "doesn't say" and result["correct"]

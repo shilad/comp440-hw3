@@ -1,20 +1,20 @@
-"""The fact-checking agent: a loop around Claude.
+"""The fact-checking agent: everything but its loop.
 
-Read this file top to bottom. The whole agent is the function run_agent()
-below. Each turn of the loop:
+Read this file top to bottom. It holds the settings, the four tools the model
+can ask for, the evidence check that answers must pass, the sentences a loop
+sends back and records, and finish(), which every loop returns.
 
-  1. sends Claude the conversation so far,
-  2. runs whatever tool Claude asked for,
-  3. adds the tool's result to the conversation,
-
-and stops when Claude calls answer() with evidence that checks out, or when
-one of the limits in run_agent() ends it first.
+The loop itself is in another file. Each turn it sends the model the
+conversation so far, runs the lookups the model asked for, and adds what they
+returned to the conversation, until the model gives an answer that passes the
+evidence check or a limit ends it first. You write it in my_loop.py, in step
+1a. Until your loop passes the check (uv run python check_loop.py), the agent
+uses the reference loop in reference_loop.py. run_agent(), at the bottom of
+this file, chooses between the two.
 """
 
 import re
 from pathlib import Path
-
-import anthropic
 
 import wiki
 
@@ -131,78 +131,25 @@ def answer_problem(answer, read_so_far):
     return None
 
 
-# ---------- the loop ----------
+# ---------- what a loop sends back and records ----------
 
-def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
-    """Check one claim. Returns a dict with the verdict, the evidence, the
-    trace of every step, and the tokens used."""
-    client = client or anthropic.Anthropic()
-    system = INSTRUCTIONS.read_text()
-    messages = [{"role": "user", "content": f"Claim: {claim}"}]
-    trace, read_so_far = [], []
-    tokens = {"input": 0, "output": 0}
-    steps = 0
-    rejected = 0        # how many answers the loop has sent back
-    warned = False      # has it been told it is out of steps?
-
-    while True:
-        response = client.messages.create(
-            model=MODEL, max_tokens=16000, system=system, tools=TOOLS, messages=messages,
-        )
-        tokens["input"] += response.usage.input_tokens
-        tokens["output"] += response.usage.output_tokens
-        messages.append({"role": "assistant", "content": response.content})
-
-        if response.stop_reason == "refusal":
-            return finish(claim, None, [], "The model declined to check this claim.",
-                          trace, tokens, steps)
-
-        calls = [block for block in response.content if block.type == "tool_use"]
-        if not calls:
-            # Claude stopped without calling a tool. Remind it once how to finish.
-            if trace and trace[-1]["tool"] == "(reminder)":
-                return finish(claim, None, [], "The agent stopped without answering.",
-                              trace, tokens, steps)
-            trace.append({"tool": "(reminder)", "input": {}, "result": "Asked it to call answer()."})
-            messages.append({"role": "user", "content": "Please finish by calling answer()."})
-            continue
-
-        results = []
-        warned_before = warned
-        for call in calls:
-            if call.name == "answer":
-                answer = clean_answer(call.input)
-                problem = answer_problem(answer, read_so_far)
-                if problem is None:
-                    trace.append({"tool": "answer", "input": call.input, "result": "accepted"})
-                    return finish(claim, answer["verdict"], answer["evidence"],
-                                  answer["explanation"], trace, tokens, steps)
-                result = "Answer rejected. " + problem
-                rejected += 1
-                if rejected >= MAX_REJECTED:
-                    trace.append({"tool": "answer", "input": call.input, "result": result})
-                    return finish(claim, None, [],
-                                  f"The agent's answer was rejected {rejected} times.",
-                                  trace, tokens, steps)
-            elif steps >= max_steps:
-                if warned_before:
-                    # It was told last turn that it was out of steps: stop here.
-                    return finish(claim, None, [], "The agent ran out of steps.",
-                                  trace, tokens, steps)
-                result = f"You have used all {max_steps} steps. Call answer() now."
-                warned = True
-            else:
-                steps += 1
-                result = lookup(call.name, call.input)
-                if call.name != "search":  # snippets are too short to count as evidence
-                    read_so_far.append(result)
-            trace.append({"tool": call.name, "input": call.input, "result": result})
-            results.append({"type": "tool_result", "tool_use_id": call.id, "content": result})
-
-        messages.append({"role": "user", "content": results})
+# The exact sentences a loop uses, so that check_loop.py, the results viewer
+# and both loops agree on them.
+ACCEPTED = "accepted"                                   # the result recorded for an accepted answer
+REJECTED = "Answer rejected. "                          # followed by what answer_problem() said
+REJECTED_TOO_OFTEN = "The agent's answer was rejected {n} times."
+OUT_OF_STEPS = "You have used all {n} steps. Call answer() now."
+RAN_OUT = "The agent ran out of steps."
+REMINDER = "Please finish by calling answer()."          # sent to the model
+REMINDED = "Asked it to call answer()."                  # recorded in the trace, tool "(reminder)"
+NO_ANSWER = "The agent stopped without answering."
+DECLINED = "The model declined to check this claim."
 
 
 def finish(claim, verdict, evidence, explanation, trace, tokens, steps):
+    """What a loop returns when it stops: the verdict, the evidence, the
+    explanation, the trace, the number of lookups, and the tokens used and
+    what they cost."""
     cost = (tokens["input"] * PRICE[0] + tokens["output"] * PRICE[1]) / 1_000_000
     return {
         "claim": claim, "verdict": verdict, "evidence": evidence,
@@ -210,3 +157,28 @@ def finish(claim, verdict, evidence, explanation, trace, tokens, steps):
         "steps": steps,
         "tokens": tokens, "cost_usd": round(cost, 6),
     }
+
+
+# ---------- which loop runs ----------
+
+LOOP_CHECK = Path(__file__).parent / "runs" / "part1" / "loop-check.txt"
+
+
+def which_loop():
+    """"yours" once check_loop.py has passed the loop in my_loop.py, "reference" until then."""
+    try:
+        lines = LOOP_CHECK.read_text().splitlines()
+    except (OSError, UnicodeDecodeError):  # no file yet, or one that cannot be read
+        return "reference"
+    return "yours" if lines and lines[0] == "yours" else "reference"
+
+
+def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
+    """Check one claim with the loop in use: yours (my_loop.py) or the
+    reference loop (reference_loop.py). Returns what finish() returns."""
+    # Imported here, not at the top, because both files import from this one.
+    if which_loop() == "yours":
+        import my_loop as loop
+    else:
+        import reference_loop as loop
+    return loop.run_agent(claim, client=client, max_steps=max_steps, lookup=lookup)
