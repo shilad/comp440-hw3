@@ -36,7 +36,8 @@ made of, look up each piece, and put the pieces together. That is what you'll st
 
 You used all of these in earlier homeworks:
 
-- Claude Code, installed and signed in.
+- Claude Code, installed and signed in. Update it first, with `claude update` in a terminal: the
+  commands in this homework need a recent version.
 - `uv`, the Python package manager. Check it with `uv --version`.
 - git, and your GitHub account.
 - A text editor. You type every answer in it.
