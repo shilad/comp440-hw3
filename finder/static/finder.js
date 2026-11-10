@@ -12,9 +12,9 @@ const LABEL = { SUPPORTED: "supported", NOT_SUPPORTED: "not supported" };
 const NUMBER = { 2: "two", 3: "three", 4: "four" };
 const HELP = "If this happens again, post in #comp440-f26 on Slack.";
 const NEEDED = 112;     // the claims a student saves: 12 development claims and 100 evaluation claims
-// A topic is narrow when fewer claims than this share of 112 contain all of its words: the dataset
-// has few claims on it, so its results drift off it further down. 1 means fewer than 112.
-const NARROW = 1;
+// A topic is thin when fewer claims than this contain all of its words. The number comes from
+// measuring 19 topics: below about 200 such claims, the end of the list was mostly off the topic.
+const FEW_CLAIMS = 200;
 const KEY = "comp440-hw3-claim-finder-selection";   // where the browser keeps the selection
 
 const selection = new Map(stored());   // id -> claim, with "query": the search that found it
@@ -90,20 +90,23 @@ async function search(more = false) {
   byId("shown").textContent = `These are the first ${shown.size} of the ${answer.total} claims this search found.`;
 }
 
-// How many claims contain all of the student's words, and a calm warning when that is few.
+// How many claims contain all of the student's words, and a calm warning when that is few. For a
+// description of several words, no claim containing all of them is usual and says nothing about
+// the topic. (A one-word search that no claim contains finds nothing by keyword, and the screen
+// then says "Nothing matches these words." instead.)
 function matchesText(answer) {
   const all = answer.matches.all;
-  const rest = " Select the ones that are on your topic, and search another topic for the rest.";
-  if (all === 0 && answer.how === "keyword") {
-    return "No claim contains all of your words, so each claim below contains only some of them." + rest;
+  const severalWords = answer.query.trim().split(/\s+/).length > 1;
+  if (all === 0 && severalWords) {
+    return "No claim contains all of your words, which is usual for a description of several words. " +
+      "Read down the list, and select the claims that are on your topic.";
   }
   if (all === 0) {
-    return "No claim contains all of your words, so the claims below contain only some of them or were " +
-      "found by meaning alone." + rest;
+    return "No claim contains your word, so the claims below were found by meaning alone and may be off your topic.";
   }
-  if (all < NARROW * NEEDED) {
-    return `Only ${contain(all)} all of your words. The dataset has few claims on this topic, so the list ` +
-      "drifts off it further down." + rest;
+  if (all < FEW_CLAIMS) {
+    return `Only ${contain(all)} all of your words, so the list may drift off your topic further down. ` +
+      "Select the ones that are on your topic, and search another topic for the rest.";
   }
   return `${contain(all)} all of your words.`;
 }

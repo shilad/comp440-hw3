@@ -48,7 +48,7 @@ You used all of these in earlier homeworks:
 - A text editor. You type every answer in it.
 - Your API key. I sent you your own API key by Slack direct message. The agent calls the Claude API
   directly, not through your Claude Code account, so it needs this key. Doing the whole homework once
-  costs about 65 cents on your key. That is charged to my account for the course, not to you.
+  costs about 55 cents on your key. That is charged to my account for the course, not to you.
 
 ## Getting started
 
@@ -114,7 +114,7 @@ You used all of these in earlier homeworks:
   an answer after that, it commits the change too. I read `TRANSCRIPT.md` when I grade, so start every Claude session in the homework's folder. Don't edit
   `TRANSCRIPT.md` yourself: the page writes it again before each commit.
 - Two runs are long: the full run in step 1e takes about 10 minutes, and the run after your change in
-  step 3b about 8 minutes. You start each of them yourself, in a terminal tab of its own, because a run
+  step 3b about 6 minutes. You start each of them yourself, in a terminal tab of its own, because a run
   started by Claude stops if you close that Claude session.
 
 ## The parts
@@ -131,7 +131,7 @@ Everything is due 8:00am Tuesday, November 24.
 I expect this homework to take about 6 hours and 40 minutes in all, in four sittings: about 1 hour and
 35 minutes for Part 0, about 3 hours and 5 minutes for Part 1, about 50 minutes for Part 2, and about 1
 hour and 10 minutes for Part 3. On top of that, the full run in Part 1 takes about 10 minutes and the
-run after your change in Part 3 about 8 minutes, while you do other things.
+run after your change in Part 3 about 6 minutes, while you do other things.
 
 ## Words this homework uses
 

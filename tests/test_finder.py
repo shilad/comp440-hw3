@@ -362,6 +362,17 @@ def test_command_line_prints_three_lists_and_the_counts():
     assert re.search(r"jazz musicians: \d+ claims contain at least one of your words, and \d+ contain all", printed)
 
 
+def test_command_line_save_refuses_a_topic_that_finds_too_few(monkeypatch, tmp_path):
+    from finder import __main__ as command_line
+    monkeypatch.setattr(search, "HOMEWORK", tmp_path)
+    monkeypatch.setattr(sys, "argv", ["finder", "--save", "film", "xyzzy"])
+    with pytest.raises(SystemExit) as stopped:
+        command_line.main()
+    assert str(stopped.value) == ('The topic "xyzzy" found only 0 claims, and its share of the 112 is 56. '
+                                  "Try other words for it, or leave it out.")
+    assert not (tmp_path / "data").exists()
+
+
 def test_command_line_save_takes_an_even_share_from_each_topic(monkeypatch, tmp_path, capsys):
     from finder import __main__ as command_line
     monkeypatch.setattr(search, "HOMEWORK", tmp_path)

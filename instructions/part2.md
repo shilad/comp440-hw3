@@ -175,9 +175,9 @@ case* is the claim that came nearest, and what kept it from being clear.
 9. In that case, use the closest case you found for each remaining row, and say it is not a clear case.
 10. Type a heading `## Extra credit` at the end of `WRITEUP.md`, and under it the table and question below.
 
-**Output:** A claim's page shows "The dataset's label" at the top, and "The dataset lists these
-articles for this claim:" and "Pages it read, live on Wikipedia today:" link to today's pages. The
-results viewer cannot show older versions; Wikipedia's "View history" can. To read today's page as the
+**Output:** A claim's page shows "The dataset's label" at the top. The lists after "The dataset lists
+these articles for this claim:" and "It read these pages, and each link opens the page as it is on
+Wikipedia today:" link to today's pages. The results viewer cannot show older versions; Wikipedia's "View history" can. To read today's page as the
 agent reads it, ask Claude to run this, or run it yourself in a terminal in the homework's folder:
 
 ```

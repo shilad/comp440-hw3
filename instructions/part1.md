@@ -385,7 +385,7 @@ are in `data/eval.jsonl`.
 uv run python evaluate.py data/eval.jsonl --out runs/part2
 ```
 
-It takes about 10 minutes and costs about 27 cents on your key, which is charged to my account for the
+It takes about 10 minutes and costs about 28 cents on your key, which is charged to my account for the
 course, not to you. It runs the no-tools baseline on all 100 of your evaluation claims, then the
 one-search baseline, then the agent with your `instructions.md` from 1d. It prints a
 progress line every ten claims, ends with two tables, and is saved in `runs/part2`.

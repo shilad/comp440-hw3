@@ -110,15 +110,16 @@ phrase the dataset rarely uses, such as "the Cold War", finds few claims on it a
 for it.
 
 **Output:** The claim finder shows the claims for your search, best first, 50 at a time. Above them it
-says how many claims contain all of your words. When that number is small, it says that the dataset has
-few claims on this topic, so the list drifts off it further down. As a rule, a list stays on its topic
-when about 200 claims or more contain all of its words. About six in ten of the dataset's claims are
-labeled *supported*, so your selection will lean that way, and that is fine: saving asks only for at
-least 30 of each label. Each claim shows the dataset's label, the number of articles it needs, the
-titles of those articles with Wikipedia's one-line description of each, and its rank by keyword and by
-meaning (1 is best). A claim that one search did not find has no rank in that search. A claim you have
-selected says so, and its button says **Remove**. Your selection is kept in your browser, so another
-search or reloading the page does not lose it.
+says how many claims contain all of your words. As a rule, the list for a topic of one or two words
+stays on the topic when about 200 claims or more contain all of its words, and the screen warns you when
+fewer do. A longer description usually has no claim with all of its words, which says nothing about how
+good the list is. Either way, you judge a list by reading down it. About six in ten of the dataset's
+claims are labeled *supported*, so your selection will lean that way, and that is fine: saving asks only
+for at least 30 of each label. Each claim shows the dataset's label, the number of articles it needs,
+the titles of those articles with Wikipedia's one-line description of each, and its rank by keyword and
+by meaning (1 is best). A claim that one search did not find has no rank in that search. A claim you
+have selected says so, and its button says **Remove**. Your selection is kept in your browser, so
+another search or reloading the page does not lose it.
 
 **Save these as my claims** saves only when three things are true, and when one is not, it says which.
 You need exactly 112 claims, because that makes 12 development claims and 100 evaluation claims. At
@@ -151,6 +152,12 @@ three answers have text after the `>`.
 - Saving says you have already run the agent on your claims. To choose different claims, rename the three
   folders the message names, select and save your new claims, and do the runs of steps 1c, 1d and 1e
   again.
+- Your selection is gone after you restarted the homework page. Your browser keeps the selection for
+  the page's address, and the page came back at a different address: the number after `localhost:`
+  changed. Claims you already saved are not affected, because saving wrote them to `data/dev.jsonl` and
+  `data/eval.jsonl`. Stop the homework page with Control-C in its terminal, start it again with
+  `uv run python -m workbench --port <the old number>`, and your selection will be there; or select your
+  claims again.
 - The claim finder will not open in your browser. Ask Claude to save claims for you in the terminal with
   `uv run python -m finder --save "<topic>" "<another topic>"`, one pair of quotes for each topic. It
   saves the best 112 claims for those topics, an even share from each, half *supported* and half *not
@@ -256,7 +263,7 @@ and both answers have text after the `>`.
 - The run warns that `WIKIPEDIA_CONTACT` is not set. Add `WIKIPEDIA_CONTACT=` and your Macalester email
   to `.env`, in your editor.
 - "Open these results" isn't there. Open **Results** at the top of the homework page and, under "Part 0:
-  Set up", click the claim in the row whose Version is "one-search baseline".
+  Set up and find your claims", click the claim in the row whose Version is "one-search baseline".
 
 ## 0e. Run the agent and read its trace
 
@@ -320,7 +327,7 @@ both answers have text after the `>`. That finishes Part 0, so the page commits 
 - Wikipedia asks the program to slow down. It waits and tries again by itself. If the run stops with an
   error anyway, ask Claude to run the same command again.
 - "Open these results" isn't there. Open **Results** at the top of the homework page and, under "Part 0:
-  Set up", click the claim in the row whose Version is "agent".
+  Set up and find your claims", click the claim in the row whose Version is "agent".
 
 ## What I look for
 

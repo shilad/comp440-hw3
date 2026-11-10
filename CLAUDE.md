@@ -223,7 +223,7 @@ Facts about the programs that come up in several steps:
   they want to run again with `--fresh`; the choice is theirs.
 - Never add `--fresh` to a command for runs/part2, and never rename or delete a run folder,
   unless the student asks for exactly that after you have told them what it costs: runs/part2
-  again is about 10 minutes and about 27 cents of their key.
+  again is about 10 minutes and about 28 cents of their key.
 - The agent reads instructions.md again for every claim, so the student must not change it while
   a run is going. Say so if they mention editing it during a run.
 - The model does not give the same answer every time. Running one claim again with check.py
@@ -243,7 +243,7 @@ Facts about the programs that come up in several steps:
 ## Long runs
 
 Two runs are long: the full run in 1e, on the student's 100 evaluation claims (about 10 minutes,
-about 27 cents), and the agent's run after their change, in 3b (about 8 minutes, about 25 cents).
+about 28 cents), and the agent's run after their change, in 3b (about 6 minutes, about 21 cents).
 The student's own instructions can make a run slower and dearer, so always say "about". The student
 starts each of them in a terminal tab of their own, because a run started from this session stops if
 this session is closed. If they ask you to start one anyway, do it in the background, and say once

@@ -161,13 +161,18 @@ def test_the_screen_uses_the_names_the_student_sees():
             "Its rank is ${k} by keyword. The search by meaning did not put it among its best 1,000.",
             "Its rank is ${m} by meaning. It contains none of your words, so the search by keyword did not find it.",
             # the count of claims with all the words, and the calm sentence for a narrow topic
-            "all of your words.`",
-            "The dataset has few claims on this topic, so the list ",
-            "Select the ones that are on your topic, and search another topic for the rest.",
+            "return `${contain(all)} all of your words.`;",
+            "return `Only ${contain(all)} all of your words, so the list may drift off your topic further down. ` +\n"
+            "      \"Select the ones that are on your topic, and search another topic for the rest.\";",
+            "\"No claim contains all of your words, which is usual for a description of several words. \" +\n"
+            "      \"Read down the list, and select the claims that are on your topic.\";",
+            "\"No claim contains your word, so the claims below were found by meaning alone and may be off your topic.\"",
             # saving
             "evaluation claims in data/eval.jsonl. Every run from step 1c on uses them."):
         assert sentence in js, sentence
-    assert len(re.findall(r"^const NARROW = [\d.]+;", js, re.M)) == 1
+    assert re.findall(r"^const FEW_CLAIMS = (\d+);", js, re.M) == ["200"]       # one named threshold
+    assert "if (all < FEW_CLAIMS) {" in js and "NARROW" not in js
+    assert "The dataset has few claims" not in js and "or were found by meaning alone" not in js
     assert len(re.findall(r"^const NEEDED = 112;", js, re.M)) == 1
     # Nothing left from the versions where the screen picked the claims.
     for stale in ('id="size"', "Put them back", "150", "100 to 200", "my-topic.jsonl", "step 3b", "Part 3",

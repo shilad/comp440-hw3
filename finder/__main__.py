@@ -22,11 +22,15 @@ def show(results, heading):
 
 def best_for_topics(topics, how):
     """The best 112 claims over the topics, an even share from each (a claim found twice counts for
-    the first topic), and the topic that found each claim."""
+    the first topic), and the topic that found each claim. Refuses a topic that finds too few."""
     chosen, queries = [], []
     for number, topic in enumerate(topics):
         share = SAVED_CLAIMS // len(topics) + (1 if number < SAVED_CLAIMS % len(topics) else 0)
         picked = pick(search(topic, how), size=share, removed={claim["id"] for claim in chosen})
+        if len(picked) < share:
+            found = "1 claim" if len(picked) == 1 else f"{len(picked)} claims"
+            raise ValueError(f'The topic "{topic}" found only {found}, and its share of the 112 is '
+                             f"{share}. Try other words for it, or leave it out.")
         chosen += picked
         queries += [topic] * len(picked)
     return chosen, queries
@@ -50,8 +54,8 @@ def main():
             for how in ("keyword", "meaning", "both"):
                 show(search(topic, how), f"Best ten by {how}:")
         return
-    chosen, queries = best_for_topics(args.topics, args.how)
     try:
+        chosen, queries = best_for_topics(args.topics, args.how)
         paths = save(chosen, queries)
     except ValueError as problem:
         sys.exit(str(problem))

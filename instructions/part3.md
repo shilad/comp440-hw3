@@ -4,7 +4,7 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you sort out why the agent fails on your evaluation claims, make one change aimed at the
 most common failure, and write up what you found. It should take about 1 hour and 10 minutes, plus about
-8 minutes for the run after your change, which goes on by itself while you do other things.
+6 minutes for the run after your change, which goes on by itself while you do other things.
 
 ## 3a. Sort the failures
 
@@ -88,7 +88,7 @@ failure on your evaluation claims.
 
 **Output:** Claude makes exactly the change you describe and shows you what changed. You run
 the first command below yourself, on your 100 evaluation claims, the same claims as your full run in 1e.
-It takes about 8 minutes and costs about 25 cents on your key. If you adjust your change after seeing
+It takes about 6 minutes and costs about 21 cents on your key. If you adjust your change after seeing
 the results, run the second, whose `--fresh` replaces the folder's saved results, since a run never
 checks a saved claim again. It costs the same again:
 
