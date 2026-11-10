@@ -786,6 +786,25 @@ def test_the_limit_of_lookups_comes_from_the_run(repo, monkeypatch):
     assert "A was made with a limit" not in text_of(get(repo, "/results/compare?a=runs/b&b=runs/part3/after-eval")[2])
 
 
+def test_the_after_eval_run_appears_only_if_the_homework_has_it(repo):
+    def pages():
+        return " ".join(text_of(get(repo, url)[2]) for url in (
+            "/results/", "/results/compare", "/results/open?path=runs/part3/after-eval"))
+    # Today's step list names the run: the comparison and the hint are there.
+    (repo / "steps.toml").write_text((Path(__file__).parent.parent / "steps.toml").read_text())
+    words = pages()
+    assert "Step 3d: runs/part2 with runs/part3/after-eval" in words
+    assert "Step 3d saves the run in runs/part3/after-eval/." in words
+    # A step list without it, and no such folder: neither appears anywhere.
+    (repo / "steps.toml").write_text('[[step]]\nid = "3d"\nfiles = ["runs/part3/after/report.txt"]\n')
+    words = pages()
+    assert "after-eval" not in words.replace("Nothing is saved at runs/part3/after-eval yet.", "")
+    assert "Step 3d: runs/part3/before with runs/part3/after" in words  # the other comparisons stay
+    # The folder is there (made before an update): the comparison comes back.
+    write_jsonl(repo / "runs" / "part3" / "after-eval" / "agent.jsonl", full_rows()["agent"][:2])
+    assert "Step 3d: runs/part2 with runs/part3/after-eval" in text_of(get(repo, "/results/compare")[2])
+
+
 def test_report_txt_and_run_json_open_their_run(repo):
     (repo / "runs" / "part2" / "report.txt").write_text("tables")
     (repo / "runs" / "part2" / "run.json").write_text(json.dumps({"claims": "data/claims.jsonl"}))

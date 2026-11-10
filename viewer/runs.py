@@ -836,6 +836,33 @@ WHERE_FROM = {"runs/part0": "Steps 0b, 0c and 0d each save a check in runs/part0
               "runs/part3/after-eval": "Step 3d saves the run in runs/part3/after-eval/."}
 
 
+AFTER_EVAL = "runs/part3/after-eval"
+
+
+def has_after_eval(repo: Path) -> bool:
+    """Whether the homework still has step 3d's second run on the evaluation claims: its step list
+    names runs/part3/after-eval, or the folder exists (a run made before an update). If steps.toml
+    is missing or unreadable, assume it does."""
+    if (repo / "runs" / "part3" / "after-eval").is_dir():
+        return True
+    try:
+        return AFTER_EVAL in (repo / "steps.toml").read_text(errors="replace")
+    except OSError:
+        return True
+
+
+def comparisons(repo: Path) -> list:
+    """The comparisons the homework asks for, leaving out runs/part3/after-eval if it has no such run."""
+    keep = has_after_eval(repo)
+    return [c for c in COMPARISONS if keep or AFTER_EVAL not in c[:2]]
+
+
+def where_from(repo: Path, rel: str) -> str | None:
+    if rel == AFTER_EVAL and not has_after_eval(repo):
+        return None
+    return WHERE_FROM.get(rel)
+
+
 def part_of(rel: str) -> int | None:
     m = re.match(r"runs/part(\d)(/|$)", rel)
     return int(m.group(1)) if m else None

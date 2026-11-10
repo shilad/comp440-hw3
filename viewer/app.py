@@ -398,7 +398,7 @@ def load_run(repo: Path, rel) -> R.Run:
     path, rel = R.safe_path(repo, rel)
     if not path.exists():
         raise Problem(404, "Nothing saved there yet", f"Nothing is saved at <code>{e(rel)}</code> yet. "
-                      + part_hint(rel))
+                      + part_hint(rel, repo))
     run = R.get_run(repo, path, rel) if path.is_dir() else None
     if run is None:
         raise Problem(404, "Not an evaluation run", f"<code>{e(rel)}</code> holds no evaluation "
@@ -406,11 +406,11 @@ def load_run(repo: Path, rel) -> R.Run:
     return run
 
 
-def part_hint(rel: str) -> str:
+def part_hint(rel: str, repo: Path) -> str:
     """Which step makes what is at `rel`, from the homework's step list."""
     parts = rel.split("/")
     for n in range(len(parts), 1, -1):
-        hint = R.WHERE_FROM.get("/".join(parts[:n]))
+        hint = R.where_from(repo, "/".join(parts[:n]))
         if hint:
             return hint
     return ""
@@ -1023,7 +1023,7 @@ def check_page(repo: Path, q: dict) -> str:
     path, rel = R.safe_path(repo, q.get("file"))
     if not path.is_file():
         raise Problem(404, "Nothing saved there", f"There is no file at <code>{e(rel)}</code>. "
-                      + part_hint(rel))
+                      + part_hint(rel, repo))
     row = R.CACHE.get(path, R.load_check)
     if row is None:
         raise Problem(404, "Not a single check", f"<code>{e(rel)}</code> is not a result saved by check.py.")
@@ -1086,7 +1086,7 @@ def compare_page(repo: Path, q: dict) -> str:
         out.append('<p class="empty">No runs yet. The first one you can compare is made in step 1c.</p>')
         return shell("Compare two runs", "".join(out), ["Compare two runs"])
     if not (A and B):
-        out.append(suggested(evals))
+        out.append(suggested(evals, repo))
         return shell("Compare two runs", "".join(out), ["Compare two runs"])
     shared = [m for m in A.methods if m in B.methods]
     only_a = [m for m in A.methods if m not in B.methods]
@@ -1193,12 +1193,12 @@ def compare_page(repo: Path, q: dict) -> str:
     return shell("Compare two runs", "".join(out), ["Compare two runs"])
 
 
-def suggested(evals: list) -> str:
+def suggested(evals: list, repo: Path) -> str:
     """The comparisons the homework asks for, as links when both runs exist."""
     have = set(evals)
     out = ['<p>Pick two runs above. Run A is the one you count from. The homework asks for these '
            'comparisons:</p><ul class="kinds">']
-    for ra, rb, step in R.COMPARISONS:
+    for ra, rb, step in R.comparisons(repo):
         text = f"Step {step}: <code>{e(ra)}</code> with <code>{e(rb)}</code>"
         if ra in have and rb in have:
             out.append(f'<li>{a(link("/compare", a=ra, b=rb), text)}</li>')
@@ -1299,12 +1299,12 @@ def open_page(repo: Path, q: dict) -> str:
     if any(ch in raw for ch in "*?["):
         hits = R.safe_glob(repo, raw)
         if not hits:
-            return nothing_yet(raw)
+            return nothing_yet(raw, repo)
         path, rel = hits[0]
     else:
         path, rel = R.safe_path(repo, raw)
     if not path.exists():
-        return nothing_yet(rel)
+        return nothing_yet(rel, repo)
     root_real = (repo / "runs").resolve()
     if path.is_dir():
         if path == root_real:
@@ -1335,6 +1335,6 @@ def redirect(to: str) -> str:
             f'<script src="{e(link("/static/go.js"))}"></script></body></html>')
 
 
-def nothing_yet(rel: str) -> str:
+def nothing_yet(rel: str, repo: Path) -> str:
     return shell("Nothing saved yet", f'<h1>Nothing saved yet</h1><p>Nothing is saved at <code>{e(rel)}</code> '
-                 f'yet. {part_hint(rel)}</p>')
+                 f'yet. {part_hint(rel, repo)}</p>')
