@@ -104,7 +104,8 @@ or *doesn't say* counts as *not supported*.
    get checked.
 5. Open the first claim. Read each sentence the agent quoted where it is highlighted in what the agent
    read, and decide whether it supports the agent's verdict.
-6. Open the live Wikipedia page from the claim's page whenever you're unsure.
+6. Whenever you're unsure, use the claim page's "open the live page" link to read today's
+   Wikipedia page.
 7. Fill in that claim's row of the table, then do the same for the other nine. You can ask Claude to
    fill in the first three columns (the number, the claim's first few words and the agent's verdict);
    the last two are yours.
@@ -145,8 +146,8 @@ Wikipedia.
 1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
    homework page shows for 2d. Claude is your Claude Code session, your tutor and lab assistant.
 2. Open **Results** at the top of the homework page, then open the run `runs/part2`.
-3. In the claims table's filters, set the agent's Result to "did not match", so the table shows only
-   the claims where the agent's verdict did not match the dataset's label.
+3. In the claims table's filters, set the agent's Result to "did not match (any reason)", so the
+   table shows only the claims where the agent's verdict did not match the dataset's label.
 4. Open these claims one at a time. For each, decide whether the agent's evidence is sound and today's
    Wikipedia page disagrees with the dataset's label.
 5. To see an older version of a page, open the page on Wikipedia, choose "View history", and pick a

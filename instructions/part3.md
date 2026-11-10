@@ -120,8 +120,8 @@ that neither set of labels can steer the other.
 1. Start this step's Claude session: in a terminal tab in the homework's folder, run the command the
    homework page shows for 3c.
 2. Open **Results** at the top of the homework page, open the run `runs/part3/before`, and in the
-   claims table's filters set the agent's Result to "did not match". The table then shows the claims
-   where the agent's verdict differs from yours.
+   claims table's filters set the agent's Result to "did not match (any reason)". The table then shows
+   the claims where the agent's verdict differs from yours.
 3. Open each of those claims and read its trace one lookup at a time.
 4. Give each one label from the list above. For each, fill in a row of the table under 3c: the claim's
    number from your 3a table, your label, and the line of the trace that shows it (the lookup's number

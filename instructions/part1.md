@@ -161,7 +161,7 @@ articles to check: that is a claim's number of articles. The dataset's label is 
    claims again, into `runs/part1/after`.
 3. Tell Claude what you expect, when it asks.
 4. Read the two tables the run prints at the end. The first shows how many claims matched the dataset's
-   label, by number of articles. The second shows the average lookups, tokens, seconds and cost per
+   label, by number of articles and by the dataset's label. The second shows the average lookups, tokens, seconds and cost per
    claim. Tokens are the unit the API counts text in and charges by, about three quarters of a word.
 5. Open **Results** at the top of the homework page, then open the run `runs/part1/before`.
 6. Choose six claims to read closely: two that need 2 articles, two that need 3, and two that need 4.

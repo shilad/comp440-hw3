@@ -58,6 +58,8 @@ exists.
 - The check says `NOT READY` again after you fixed `.env`: make sure you saved the file, then ask
   Claude to run the check again. If it still fails, post the `NOT READY` line in `#comp440-f26` on
   Slack.
+- The output starts with a line reading "ANTHROPIC_API_KEY is set and takes precedence...": that is a
+  notice from Anthropic's library, which a few laptops print before every run. It is harmless.
 - You can't find the key I sent you: ask me on Slack.
 
 ## 0b. Ask the model with no tools
