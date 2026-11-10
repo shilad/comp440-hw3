@@ -19,7 +19,8 @@ these are the agent's four tools.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 1a.
+1. Start this step's Claude session with the command the homework page shows for 1a, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open `agent.py` in your editor. It is about 210 lines.
 3. Ask Claude to read `agent.py` with you a screenful at a time, from the top.
 4. Ask Claude about any line you don't follow, as often as you like.
@@ -69,7 +70,8 @@ lookups without settling it, stop and answer *doesn't say*, as the agent would h
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 1b.
+1. Start this step's Claude session with the command the homework page shows for 1b, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Tell Claude you are starting on claim 1.
 3. Decide on one lookup: which tool, and what to ask it.
 4. Tell Claude that lookup, and read what comes back.
@@ -130,7 +132,8 @@ agent's lookups for one claim, in order, with what each returned.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 1c.
+1. Start this step's Claude session with the command the homework page shows for 1c, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the agent on the 12 development claims.
 3. Tell Claude what you expect, when it asks.
 4. Read the two tables the run prints at the end.
@@ -180,7 +183,8 @@ with what each returned.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 1d.
+1. Start this step's Claude session with the command the homework page shows for 1d, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Write your own instructions in `instructions.md`, in your editor, covering at least the four points
    below, and save.
 3. Ask Claude to run the agent on the 12 development claims again.
@@ -242,7 +246,8 @@ and *doesn't say* count as *not supported*.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 1e.
+1. Start this step's Claude session with the command the homework page shows for 1e, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open another terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
 3. Start the full run yourself in that tab, with the command under "What you'll see".
 4. Leave that tab open, your laptop awake and `instructions.md` alone until the run ends.

@@ -18,7 +18,8 @@ what you think Wikipedia says.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 3a.
+1. Start this step's Claude session with the command the homework page shows for 3a, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Pick a topic you know well and that Wikipedia covers at least a little.
 3. Type your topic, and why you know it well, under 3a in `WRITEUP.md`.
 4. Write **at least eight** claims about it in the table under 3a, with the mix listed below.
@@ -68,7 +69,8 @@ back, and decides when to answer. *the one-search baseline*: one search, one pag
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 3b.
+1. Start this step's Claude session with the command the homework page shows for 3b, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the one-search baseline and the agent on your claims.
 3. Tell Claude what you expect, when it asks.
 4. Read the two tables the run prints at the end.
@@ -114,7 +116,8 @@ The labels:
 **What to do:** In this order: you label first, and Claude labels without seeing yours, so that neither
 set of labels can steer the other.
 
-1. Start this step's Claude session with the command the homework page shows for 3c.
+1. Start this step's Claude session with the command the homework page shows for 3c, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open **Results** at the top of the homework page, then "runs/part3/before".
 3. Set "Result" in "The agent" box to "does not match your verdict (any reason)".
 4. Click each of those claims and read "The agent's trace", one lookup at a time.
@@ -138,8 +141,9 @@ chat without opening `WRITEUP.md`, so it has not seen yours. It will not say whi
 included, and both answers have text after the `>`.
 
 **If something goes wrong:** If the agent disagreed with you on fewer than three claims, there isn't
-enough to sort. Add harder claims to your 3a table, ask Claude to add them to `data/my-claims.jsonl`
-and to run 3b's command again, then start again from action 2. Add new claims rather than rewording
+enough to sort. Add harder claims to your 3a table. Then go back to 3a's Claude session (the homework page shows the
+command that returns to it) and ask Claude to add them to `data/my-claims.jsonl`, and to 3b's session
+and ask Claude to run 3b's command again. Then start again from action 2. Add new claims rather than rewording
 old ones: a run keeps its saved result for each claim number, so a reworded claim would not be checked
 again. The command checks only the new claims:
 
@@ -157,7 +161,8 @@ run in 1e checked and saved in `runs/part2`.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 3d.
+1. Start this step's Claude session with the command the homework page shows for 3d, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Decide on **one** change aimed at your most common failure from 3c (see the Hint).
 3. Make the change in your editor, or tell Claude exactly what to change.
 4. Ask Claude to run the agent on your claims again, with the change.
@@ -215,7 +220,8 @@ agent reads it again for every claim.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 3e.
+1. Start this step's Claude session with the command the homework page shows for 3e, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Answer the three questions under `### Write-up` in 3e, using your own numbers and examples.
 3. Answer the question under `### How I used AI`.
 4. Ask Claude to show you any of your own numbers or results you want to use.

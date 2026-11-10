@@ -42,7 +42,8 @@ fraction of a cent.
 **What to write:** Only your name, after `Name:` at the top of `WRITEUP.md`.
 
 **You're done when:** The check's last line reads "Everything is ready." and the homework page ticks 0a:
-the saved `WRITEUP.md` has your name after `Name:`, and `.env` exists.
+the saved `WRITEUP.md` has your name after `Name:`, and the check has passed (it then saves
+`runs/part0/setup-check.txt`, which is how the page knows).
 
 **If something goes wrong:**
 
@@ -76,7 +77,8 @@ quarters of a word.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 0b.
+1. Start this step's Claude session with the command the homework page shows for 0b, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the no-tools baseline on the claim.
 3. Tell Claude what verdict you expect, when it asks.
 4. Read the output Claude pastes into the chat.
@@ -117,7 +119,8 @@ alone. *verdict*: *supported*, *refuted* or *doesn't say*.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 0c.
+1. Start this step's Claude session with the command the homework page shows for 0c, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the one-search baseline on the claim.
 3. Tell Claude which Wikipedia page you would want it to read, when it asks.
 4. Read the output Claude pastes into the chat.
@@ -161,12 +164,13 @@ The claim you check in Part 0:
 
 **Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku)
 picks the next lookup, reads what comes back, and decides when to answer. *lookup*: one call to
-`search`, `read` or `wikidata`. *trace*: the agent's lookups for one claim, in order, with what each
+`search`, `read` or `wikidata` (`wikidata` asks Wikidata, Wikipedia's sister site of facts, for one fact). *trace*: the agent's lookups for one claim, in order, with what each
 returned. *evidence*: the sentences quoted from Wikipedia that a verdict rests on.
 
 **What to do:**
 
-1. Start this step's Claude session with the command the homework page shows for 0d.
+1. Start this step's Claude session with the command the homework page shows for 0d, in a terminal tab in the
+   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the agent on the claim.
 3. Tell Claude what you expect the agent to do, when it asks.
 4. Read the trace Claude pastes into the chat, one lookup at a time.
