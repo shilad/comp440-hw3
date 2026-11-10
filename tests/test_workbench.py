@@ -624,7 +624,8 @@ def test_after_the_last_part_extra_credit_and_code_changes_are_saved(tmp_path, m
     assert subjects(h.student) == first and "key" in app.notices
 
 
-COURSE_FILE = STEPS.replace('never_read = [".env"]', 'never_read = [".env", "reference_loop.py", "secret.txt"]')
+COURSE_FILE = STEPS.replace('never_read = [".env"]',
+                            'never_read = [".env", "reference_loop.py", "tests/test_loop_check.py", "secret.txt"]')
 
 
 def test_a_tracked_never_read_file_is_committed_like_any_other(tmp_path):
@@ -687,6 +688,19 @@ def test_the_guard_refuses_a_course_file_by_every_named_route(tmp_path):
                       ("Bash", {"command": "test -f reference_loop.py && echo there"})):
         assert not refused(tool, inp), inp
     assert refused("Read", {"file_path": here + "/.env"}) and refused("Bash", {"command": "cat .env"})
+    # An entry with a folder in it.
+    for path in ("tests/test_loop_check.py", "./tests/test_loop_check.py", here + "/tests/test_loop_check.py"):
+        assert refused("Read", {"file_path": path}), path
+        assert refused("Edit", {"file_path": path, "old_string": "a", "new_string": "b"}), path
+    for cmd in ("cat tests/test_loop_check.py", "head -30 ./tests/test_loop_check.py",
+                "sed -n 1,40p tests/test_loop_check.py", "grep -n def tests/test_loop_check.py",
+                'python3 -c "open(\'tests/test_loop_check.py\').read()"', "cd tests && cat test_loop_check.py",
+                "uv run python -c 'import tests.test_loop_check'",
+                "uv run pytest tests/test_loop_check.py"):        # names the file, so refused too
+        assert refused("Bash", {"command": cmd}), cmd
+    for cmd in ("uv run pytest -q", "uv run pytest tests/test_agent.py -q", "ls tests"):
+        assert not refused("Bash", {"command": cmd}), cmd
+    assert app.file("tests/test_loop_check.py")[1] == 403
 
 
 def test_a_refused_read_of_a_never_read_file_is_never_a_link(tmp_path):

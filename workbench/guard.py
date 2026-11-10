@@ -48,9 +48,16 @@ def touches(secret, inp, tool):
             text = "\n".join(x for x in parts if not WORDS_ONLY.match(x))
     else:
         text = json.dumps(inp)
-    names = [secret] + ([secret[:-3]] if secret.endswith(".py") else [])   # reference_loop too
-    return any(re.search(r"(?<![\w.])" + re.escape(n) + r"(?![\w])", text) for n in names) \
-        if secret.endswith(".py") else re.search(r"(?<![\w.])" + re.escape(secret) + r"(?![\w.])", text) is not None
+    if not secret.endswith(".py"):
+        return re.search(r"(?<![\w.])" + re.escape(secret) + r"(?![\w.])", text) is not None
+    return any(re.search(r"(?<![\w.])" + re.escape(n) + r"(?![\w])", text) for n in names_of(secret))
+
+
+def names_of(secret):
+    """Every name a command can use for a .py file: tests/test_loop_check.py, its file name alone
+    (after cd tests), and its module names (tests.test_loop_check, test_loop_check)."""
+    stem, base = secret[:-3], secret.rsplit("/", 1)[-1]
+    return {secret, stem, stem.replace("/", "."), base, base[:-3]}
 
 
 def writeup_text(conf, inp):
