@@ -17,9 +17,7 @@ measure what it adds over simpler methods. You will:
 The agent is given a claim, one sentence that is either true or false, and nothing else. Here is the
 claim you'll check in Part 0:
 
-```
-[[SAMPLE_CLAIM]]
-```
+> [[SAMPLE_CLAIM]]
 
 The agent has to give a *verdict*: *supported*, *refuted* or *doesn't say*. It also has to quote the
 sentences from Wikipedia that its verdict rests on, its *evidence*. No source comes with the claim.
