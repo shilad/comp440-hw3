@@ -56,7 +56,7 @@ EXPECTED = {
     "3b": (3, "3b. Run the agent on your claims", ["runs/part3/before/report.txt"], EVALUATE + CHECK, 12),
     "3c": (3, "3c. Sort the failures", [], EVALUATE, 25),
     "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt"],
-           EVALUATE + CHECK + ["Edit(instructions.md)", "Bash(uv run python check_loop.py)"], 20),
+           EVALUATE + CHECK + ["Edit(instructions.md)"], 20),
     "3e": (3, "3e. Write it up", [], [], 23),
 }
 

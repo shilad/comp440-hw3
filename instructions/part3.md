@@ -197,9 +197,9 @@ answers have text after the `>`.
   to the end of the same command to start the run over with the agent as it is now.
 
 **Hint:** The change can be to `instructions.md`, to a tool (for example, what `search` returns, in
-`wiki.py`), to the limit of 12 lookups (in `agent.py`), or to your loop, in `my_loop.py` (run
-`uv run python check_loop.py` again after changing it). Claude will not propose a change, because
-choosing it is the point of this step. Leave `instructions.md` alone while a run is going, because the
+`wiki.py`), or to the limit of 12 lookups (in `agent.py`). Leave your loop, `my_loop.py`, as it passed
+the check: a loop that breaks one of the six rules is put back on the reference loop the next time the
+check runs. Claude will not propose a change, because choosing it is the point of this step. Leave `instructions.md` alone while a run is going, because the
 agent reads it again for every claim.
 
 ## 3e. Write it up

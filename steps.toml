@@ -1256,7 +1256,7 @@ section = "3d. Make one change"
 minutes = 20
 slots = ["3d.*"]
 files = ["runs/part3/after/report.txt"]
-allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Edit(instructions.md)", "Bash(uv run python check_loop.py)"]
+allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Edit(instructions.md)"]
 summary = "Make one change aimed at the most common failure, and measure what it does."
 goal = "Whether one change aimed at your most common failure fixes it, on your own claims."
 checkpoints = [
@@ -1267,16 +1267,17 @@ checkpoints = [
 ]
 brief = '''
 The student decides on one change aimed at the failure they found most common in 3c. It can be
-to instructions.md, to a tool (for example what search returns, in wiki.py), to the limit of
-12 lookups (MAX_STEPS in agent.py), or to their own loop in my_loop.py. Never propose a change, say
+to instructions.md, to a tool (for example what search returns, in wiki.py), or to the limit of
+12 lookups (MAX_STEPS in agent.py). Never propose a change, say
 which change would work best, or say whether theirs is a good idea. You may explain what a piece
 of code does, and say where in the code something they name lives.
 
-A change to their loop is theirs to make, in their editor: my_loop.py is their code, and you
-never edit it or write a line of it (the tutor rules on the loop hold here too). After any change
-to my_loop.py, `uv run python check_loop.py` must pass again before the next run. If it fails,
-their copy goes back to the reference loop, and the first line of the run's output ("Agent loop:
-...") says which loop ran. Run the check when they ask, and paste everything it prints.
+The loop itself, my_loop.py, is not one of the things to change in this step. The page asks them
+to leave it as it passed the check, because a loop that breaks one of the six rules is put back
+on the reference loop the next time the check runs. If they propose a change to it, say that in
+one sentence and ask what else they would change. You never edit my_loop.py or write a line of
+it (the tutor rules on the loop hold here too). The first line of each run's output ("Agent
+loop: ...") says which loop ran.
 
 They make the change in their editor, or tell you exactly what to change. Make exactly that
 change and nothing else, then show the diff with `git diff`. If what they describe is not exact
