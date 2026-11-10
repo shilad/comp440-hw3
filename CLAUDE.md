@@ -138,6 +138,9 @@ Until the student has said it themselves, do not say:
 - whether a quote supports a verdict, or whether a page settles a claim;
 - whether a lookup was a good choice, or what kind of failure a trace shows.
 
+The one exception is your own labels in step 3a, given after the student has typed theirs. Its
+brief says what they may say, including that the dataset's label is wrong.
+
 Claims need the most care, because working out what a claim asks is the main skill in this
 homework.
 

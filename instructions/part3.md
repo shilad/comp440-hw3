@@ -43,13 +43,15 @@ can steer the other.
 10. Ask Claude to add its labels to the last column, "Claude's label", or type them in yourself.
 11. Answer the two questions.
 
-**Output:** The "Row" column counts the rows shown, in the order of your claims file, so rows 1
-to 8 are fixed by the rule. I ask for the first eight so that nobody, you or Claude, chooses which
-failures get sorted. Claude finds the same eight in the run's saved files. For "The entry of the trace
-that shows it", give the entry's number and a few words of what it shows. For "Is the dataset's label
-right?", answer yes, no or can't tell, from what you know about your topics. Claude gives its labels in
-the chat without opening `WRITEUP.md`, so it has not seen yours. It will not say which of you is right,
-or whether the dataset's label is right.
+**Output:** The "Row" column counts the rows shown, in the order of your claims file, so rows 1 to 8 are
+fixed by the rule. I ask for the first eight so that nobody, you or Claude, chooses which failures get
+sorted. Claude finds the same eight in the run's saved files. For "The entry of the trace that shows
+it", give the entry's number and a few words of what it shows. For "Is the dataset's label right?",
+answer yes, no or can't tell, from what you know about your topics. Claude gives its labels in the chat
+without opening `WRITEUP.md`, so it has not seen yours. It labels from the traces alone, and it may give
+*the dataset's label is wrong* when the evidence the agent quoted goes against the label. It will not
+say which of you is right, and it will not fill in your column about the dataset's label: that is your
+judgment, from what you know about your topics.
 
 **Write-up:** In `WRITEUP.md`, under 3a, fill in the table and answer:
 
@@ -62,8 +64,9 @@ labels included, and both answers have text after the `>`.
 
 **Hint:** The dataset's labels were made by people, from the Wikipedia of 2017, and you may know your
 topics better than they did. A label that looks wrong to you is not a mistake in your run: say so in
-that row. Claude will not say which label a trace deserves, because reading the traces is what this
-step is about.
+that row. Claude will not tell you which label to give a trace, because reading the traces is what this
+step is about. You ask for its own labels after you have typed yours, so that you can compare the two
+readings.
 
 ## 3b. Make one change
 

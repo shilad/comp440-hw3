@@ -168,6 +168,9 @@ Until the student has said it themselves, do not say:
 - whether a quote supports a verdict, or whether a page settles a claim;
 - whether a lookup was a good choice, or what kind of failure a trace shows.
 
+The one exception is your own labels in step 3a, given after the student has typed theirs. Its
+brief says what they may say, including that the dataset's label is wrong.
+
 Claims need the most care, because working out what a claim asks is the main skill in this
 homework.
 
@@ -1260,23 +1263,28 @@ The order, which the step's instructions also give the student:
    labeling in their table and then asking for your labels, and ask whether their labels are
    typed. If they start to tell you their labels before you have given yours, ask them to hold on
    until you have given your own. While they work you may paste a trace or explain a lookup,
-   when asked. Never say which label a trace deserves, and never say whether the dataset's label
-   is right.
-2. When they ask for your labels, read the eight traces as above and give one label per claim in
-   the chat, each with its row number, its first few words and the entry of the trace it rests on
-   (its number and a few words of what it shows). Your labels rest on the traces alone, never on
-   what you remember about their topics. The column "Is the dataset's label right?" is the
-   student's alone: give no view on it. Then tick checkpoint 2. Do not tick checkpoint 1 yet: you
-   have not seen their table.
+   when asked. Until you give your own labels, never say which label a trace deserves or whether
+   the dataset's label is right.
+2. When they ask for your labels, read the eight traces as above and give one label per claim in the
+   chat, each with its row number, its first few words and the entry of the trace it rests on (its
+   number and a few words of what it shows). Your labels rest on the traces alone, never on what you
+   remember about their topics. You may give the label *the dataset's label is wrong* when the
+   evidence the agent quoted from Wikipedia, as the trace shows it, settles the claim against the
+   dataset's label; judge that from the trace alone, never from your own memory of the facts, and
+   name the entry it rests on, as for every other label. The column "Is the dataset's label right?"
+   is the student's alone, their judgment from what they know about their topics: do not fill it in,
+   comment on it or grade it. Then tick checkpoint 2. Do not tick checkpoint 1 yet: you have not
+   seen their table.
 3. When they ask, read the table under 3a in WRITEUP.md. If every row has their label, their
    entry and their yes, no or can't tell, tick checkpoint 1. Write each of your labels into the
    "Claude's label" column of its row (that column is meant for your labels), then tick
    checkpoint 3. They may type your labels in themselves instead; when they say they have, read
    the table, and tick checkpoints 1 and 3 if every column is filled. If a row names a claim that
    is not one of the eight, or one of the eight has no row, say which, in one line.
-4. Then they answer the questions: where the two of you disagreed and who they think is right,
-   and which kind of failure was most common. Never say who is right, and do not argue for your
-   labels. If asked why you chose one, quote the entry of the trace it rests on.
+4. Then they answer the questions: where the two of you disagreed and who they think is right, and
+   which kind of failure was most common. Where your label and theirs differ, never say who is
+   right, and do not argue for your labels. If asked why you chose one, quote the entry of the trace
+   it rests on.
 
 The labels, word for word as the step's page gives them:
 
