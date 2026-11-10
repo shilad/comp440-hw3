@@ -210,6 +210,8 @@ class StepSession:
                             cat, label = "page", "Updated the homework page"
                         else:
                             cat, label = labels.describe(b.get("name", ""), inp, self.hub.repo)
+                            if cat in ("read", "write") and self.hub.secret(str(inp.get("file_path") or "")):
+                                cat = "secret"      # never a link on the page, never in the record
                         detail = inp.get("command") or inp.get("file_path") or inp.get("pattern") or ""
                         tools[b.get("id")] = emit(t, "tool", id=b.get("id"), tool=b.get("name"), category=cat,
                                                   label=label, detail=str(detail)[:400], status="running", ended=None)
