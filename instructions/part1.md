@@ -274,7 +274,8 @@ keeps every claim it already finished.
 the agent got both right, or both wrong, for a number of articles, use both. In "Claims", set "The number of articles" to "2" (then "3", then "4"), and set "Result" in
 "The agent" box to "matches the dataset's label" or "does not match the dataset's label (any reason)".
 "Next →" goes to the next claim in the filtered list. To find claim 2 from 1b, type a few of its words
-in "Claim contains" and press Enter.
+in "Claim contains" and press Enter. The dataset's labels were made by people, from the Wikipedia of
+2017, so one may look wrong to you. If it does, say so in that row: it is not a mistake in your run.
 
 ## 1d. Write the agent's instructions
 

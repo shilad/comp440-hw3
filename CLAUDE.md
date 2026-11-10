@@ -303,7 +303,9 @@ something that belongs to another step, say which step it is and that it has its
 the homework page. Work done here for another step would be done without that step's
 instructions. If the student pastes a command that starts with `claude -n` or `claude --resume`
 into this chat, it is the command for a step's own session: tell them to type /exit, then paste
-it at the terminal's prompt. Do not run it yourself.
+it at the terminal's prompt. Do not run it yourself. When this step is complete, say in one line
+which step is next, that it has its own session on the homework page, and that they type /exit
+here before they paste its command.
 
 ## The API key and .env
 
