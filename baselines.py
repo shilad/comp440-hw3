@@ -23,19 +23,43 @@ ASK = (
 )
 
 
+def _parse(text):
+    """The verdict and the explanation in the model's reply.
+
+    The reply should be a JSON object. Sometimes the model puts quote marks
+    inside the explanation without escaping them, around a title for example,
+    and that is not valid JSON. Then the two fields are read straight from the
+    text, so a clear verdict is not lost."""
+    match = re.search(r"\{.*\}", text, re.S)
+    reply = match.group(0) if match else text
+    try:
+        parsed = json.loads(reply) if match else {}
+    except json.JSONDecodeError:
+        parsed = {}
+    if not isinstance(parsed, dict):
+        parsed = {}
+    if parsed.get("verdict") not in VERDICTS:
+        options = "|".join(re.escape(v) for v in VERDICTS)
+        verdict = re.search(r'"verdict"\s*:\s*"(' + options + r')"', reply)
+        if verdict:
+            if reply.find('"explanation"') < verdict.start():  # the explanation comes first
+                explanation = re.search(r'"explanation"\s*:\s*"(.*)"\s*,\s*"verdict"\s*:', reply, re.S)
+            else:
+                explanation = re.search(r'"explanation"\s*:\s*"(.*)"\s*\}\s*$', reply, re.S)
+            parsed = {"verdict": verdict.group(1),
+                      "explanation": explanation.group(1) if explanation else text.strip()}
+    verdict = parsed.get("verdict") if parsed.get("verdict") in VERDICTS else None
+    return verdict, parsed.get("explanation", text.strip())
+
+
 def _ask(client, prompt):
     response = client.messages.create(
         model=MODEL, max_tokens=4000, messages=[{"role": "user", "content": prompt}],
     )
     text = "".join(b.text for b in response.content if b.type == "text")
     tokens = {"input": response.usage.input_tokens, "output": response.usage.output_tokens}
-    match = re.search(r"\{.*\}", text, re.S)
-    try:
-        parsed = json.loads(match.group(0)) if match else {}
-    except json.JSONDecodeError:
-        parsed = {}
-    verdict = parsed.get("verdict") if parsed.get("verdict") in VERDICTS else None
-    return verdict, parsed.get("explanation", text.strip()), tokens
+    verdict, explanation = _parse(text)
+    return verdict, explanation, tokens
 
 
 def _result(claim, verdict, explanation, trace, tokens):

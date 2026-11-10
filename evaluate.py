@@ -158,6 +158,15 @@ def report(items, results_by_method, out_dir=None):
                     if group == "All" or group_of(item) == group]
             row += f"{sum(r['correct'] for r in rows):>6}/{len(rows):<5}"
         say(row)
+    if any(item["source"] == "hover" for item in items):
+        say("")  # the same count, split by the dataset's label
+        for label, name in (("SUPPORTED", "HoVer, supported"), ("NOT_SUPPORTED", "HoVer, not supported")):
+            row = f"{name:22}"
+            for method in methods:
+                rows = [r for item, r in zip(items, results_by_method[method])
+                        if item["source"] == "hover" and item["label"] == label]
+                row += f"{sum(r['correct'] for r in rows):>6}/{len(rows):<5}"
+            say(row)
 
     say("\nAverage per claim:\n")
     say(f"{'':22}{'lookups':>10}{'tokens':>10}{'seconds':>10}{'cost':>10}")

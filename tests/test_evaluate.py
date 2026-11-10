@@ -47,6 +47,8 @@ def test_a_finished_run_saves_its_report(monkeypatch, tmp_path, capsys):
     report = (out_dir / "report.txt").read_text()
     assert "Share of claims where the verdict matched the label" in report
     assert "12/12" in report
+    assert "HoVer, supported          12/12" in report   # the count split by the dataset's label
+    assert "HoVer, not supported       0/0" in report
     assert "Average per claim" in report
     assert report.strip() in printed
     assert json.loads((out_dir / "run.json").read_text()) == {"claims": str(claims)}
@@ -133,3 +135,29 @@ def test_lookup_with_no_log_prints_but_does_not_add_to_the_record(monkeypatch, t
     assert "Page: Saint Paul, Minnesota" in printed
     assert "lookups.jsonl" not in printed
     assert not (tmp_path / "lookups.jsonl").exists()
+
+
+def test_a_reply_with_unescaped_quote_marks_keeps_its_verdict():
+    import baselines
+    reply = ('{"verdict": "doesn\'t say", "explanation": "The text names the composer of '
+             '"Persian Surgery Dervishes" but does not give his birthday."}')
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(reply)  # this is the kind of reply that used to lose its verdict
+    verdict, explanation = baselines._parse(reply)
+    assert verdict == "doesn't say"
+    assert explanation == ('The text names the composer of "Persian Surgery Dervishes" '
+                           "but does not give his birthday.")
+
+
+def test_a_reply_that_is_valid_json_is_read_as_before():
+    import baselines
+    fenced = '```json\n{"verdict": "refuted", "explanation": "The page says 1940."}\n```'
+    assert baselines._parse(fenced) == ("refuted", "The page says 1940.")
+    other_order = '{"explanation": "The page says "1935".", "verdict": "supported"}'
+    assert baselines._parse(other_order) == ("supported", 'The page says "1935".')
+
+
+def test_a_reply_with_no_verdict_still_gives_none():
+    import baselines
+    assert baselines._parse("I can't help with that.") == (None, "I can't help with that.")
+    assert baselines._parse('{"verdict": "maybe", "explanation": "x"}') == (None, "x")
