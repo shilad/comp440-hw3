@@ -54,8 +54,8 @@ def key_problem():
 def main():
     SAVED.unlink(missing_ok=True)  # an earlier "ready" no longer counts until this check passes
     if not ENV.exists():
-        print("NOT READY  There is no .env file. In your editor, copy .env.example to .env "
-              "and fill in both lines.")
+        print("NOT READY  There is no .env file. In a terminal in this folder, run "
+              "cp .env.example .env and then fill in both lines of .env in your editor.")
         return 1
     printed = []
 
