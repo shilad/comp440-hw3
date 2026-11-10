@@ -1,5 +1,7 @@
-"""Offline tests for what evaluate.py prints and saves around a run: its progress
-lines, report.txt (which marks a finished run) and run.json."""
+"""Offline tests for what the programs print and save around a run: evaluate.py's
+progress lines, report.txt (which marks a finished run), run.json and --fresh;
+lookup.py's --no-log; the notice when Wikipedia asks the program to wait; and
+reading a verdict from a reply that is not valid JSON."""
 
 import json
 import sys
@@ -135,6 +137,60 @@ def test_lookup_with_no_log_prints_but_does_not_add_to_the_record(monkeypatch, t
     assert "Page: Saint Paul, Minnesota" in printed
     assert "lookups.jsonl" not in printed
     assert not (tmp_path / "lookups.jsonl").exists()
+
+
+class Reply:
+    """What requests.get() returns, for a scripted Wikipedia."""
+
+    def __init__(self, status, data=None, retry_after=None):
+        self.status_code = status
+        self.headers = {"Retry-After": retry_after} if retry_after else {}
+        self.data = data
+
+    def json(self):
+        return self.data
+
+    def raise_for_status(self):
+        pass
+
+
+STEAKHOUSE = {"query": {"search": [{
+    "title": "Vic & Anthony's Steakhouse",
+    "snippet": 'Vic &amp; Anthony&#039;s is a <span class="searchmatch">steakhouse</span>'}]}}
+
+
+def scripted_wikipedia(monkeypatch, tmp_path, replies):
+    replies = list(replies)
+    monkeypatch.setattr(wiki, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(wiki.requests, "get", lambda url, **kwargs: replies.pop(0))
+    monkeypatch.setattr(wiki.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(wiki, "_warned", True)       # the warning about the contact is tested elsewhere
+    monkeypatch.setattr(wiki, "_said_waiting", 0.0)  # as at the start of a run
+
+
+def test_a_wait_for_wikipedia_is_announced_once(monkeypatch, tmp_path, capsys):
+    monkeypatch.delenv("WIKIPEDIA_CONTACT", raising=False)
+    scripted_wikipedia(monkeypatch, tmp_path, [
+        Reply(429, retry_after="7"), Reply(429, retry_after="7"), Reply(200, STEAKHOUSE)])
+    wiki.search("steakhouse")
+    said = capsys.readouterr().err
+    assert said.count("Wikipedia asked this program to slow down") == 1
+    assert "waiting 7 seconds" in said
+    assert "WIKIPEDIA_CONTACT" in said  # not set, so it says how to get your own allowance
+
+
+def test_the_wait_notice_leaves_out_the_contact_when_it_is_set(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("WIKIPEDIA_CONTACT", "student@macalester.edu")
+    scripted_wikipedia(monkeypatch, tmp_path, [Reply(429, retry_after="3"), Reply(200, STEAKHOUSE)])
+    wiki.search("steakhouse")
+    said = capsys.readouterr().err
+    assert "Wikipedia asked this program to slow down" in said
+    assert "WIKIPEDIA_CONTACT" not in said
+
+
+def test_search_results_show_plain_characters(monkeypatch, tmp_path):
+    scripted_wikipedia(monkeypatch, tmp_path, [Reply(200, STEAKHOUSE)])
+    assert "1. Vic & Anthony's Steakhouse: Vic & Anthony's is a steakhouse" in wiki.search("steakhouse")
 
 
 def test_a_reply_with_unescaped_quote_marks_keeps_its_verdict():

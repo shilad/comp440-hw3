@@ -7,6 +7,7 @@ the agent reads.
 """
 
 import hashlib
+import html
 import json
 import os
 import re
@@ -68,6 +69,24 @@ def _pause(response, tries):
     return min(max(seconds, 1), MAX_PAUSE)
 
 
+_said_waiting = 0.0  # when the notice below was last printed
+
+
+def _say_waiting(seconds):
+    """Say that the program is waiting because Wikipedia asked it to, at most
+    once a minute, so that a run that has slowed down does not look stuck."""
+    global _said_waiting
+    if time.time() - _said_waiting < 60:
+        return
+    _said_waiting = time.time()
+    notice = (f"Wikipedia asked this program to slow down, so it is waiting {seconds:.0f} seconds "
+              "before it tries again. It does this by itself; you don't need to do anything.")
+    if not os.environ.get("WIKIPEDIA_CONTACT", "").strip():
+        notice += (" It happens much less once WIKIPEDIA_CONTACT is set in .env, because your "
+                   "requests then get an allowance of their own.")
+    print(notice, file=sys.stderr, flush=True)
+
+
 def _get(url, params):
     """GET a JSON API with a disk cache."""
     params = {**params, "format": "json", "formatversion": "2"}
@@ -87,6 +106,7 @@ def _get(url, params):
             # to the agent like a page that doesn't exist.
             raise RateLimited(f"Wikipedia still says \"too many requests\" after {waited:.0f} "
                               "seconds of waiting. Wait a few minutes, then run again.")
+        _say_waiting(pause)
         time.sleep(pause)
         waited += pause
     response.raise_for_status()
@@ -97,7 +117,9 @@ def _get(url, params):
 
 
 def _strip_html(text):
-    return re.sub(r"<[^>]+>", "", text).replace("&quot;", '"').replace("&amp;", "&")
+    """A search snippet as plain text: tags removed, and codes such as &amp; and
+    &#039; turned back into the characters they stand for."""
+    return html.unescape(re.sub(r"<[^>]+>", "", text))
 
 
 # ---------- search ----------
