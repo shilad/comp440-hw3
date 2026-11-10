@@ -1189,7 +1189,7 @@ part = 3
 title = "Write it up"
 page = "instructions/part3.md"
 section = "3e. Write it up"
-minutes = 30
+minutes = 23
 slots = ["3e.*"]
 summary = "Say what the agent's loop adds, what it costs, and what your topic showed you about Wikipedia."
 goal = "Saying what you learned, in your own words."
@@ -1198,8 +1198,8 @@ checkpoints = [
 ]
 brief = '''
 Nothing runs in this step. The write-up is the student's. Its questions ask what the agent's loop
-adds over one search, using their numbers from Part 2 and their claims from Part 3; what the
-agent costs, and when they would not use an agent for a job like this; what their topic showed
+adds over one search, what it costs, and when they would not use an agent for a job like this,
+using their numbers from Part 2 and their claims from Part 3; what their topic showed
 them about Wikipedia as a source, and why it was thin or wrong where it was; and how they used AI
 in this homework, what they checked themselves, and one decision they made on their own.
 

@@ -245,11 +245,7 @@ Did it fix the failure you aimed at? Give how many of your claims the agent matc
 
 ### Write-up
 
-What does the agent's loop add over one search? Use your numbers from Part 2 and your claims from Part 3.
-
->
-
-What does the agent cost, and when would you not use an agent for a job like this?
+What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and your claims from Part 3.
 
 >
 

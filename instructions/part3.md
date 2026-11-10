@@ -211,21 +211,20 @@ agent reads it again for every claim.
 
 1. Start this step's Claude session with the command the homework page shows for 3e, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Answer the three questions under `### Write-up` in 3e, using your own numbers and examples.
+2. Answer the two questions under `### Write-up` in 3e, using your own numbers and examples.
 3. Answer the question under `### How I used AI`.
 4. Ask Claude to show you any of your own numbers or results you want to use.
 
 **What to write:** In `WRITEUP.md`, under 3e, answer under `### Write-up`:
 
-- What does the agent's loop add over one search? Use your numbers from Part 2 and your claims from Part 3.
-- What does the agent cost, and when would you not use an agent for a job like this?
+- What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and your claims from Part 3.
 - What did your topic show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
 
 and under `### How I used AI`:
 
 - How did you use AI in this homework, what did you check yourself, and what is one decision you made on your own?
 
-**You're done when:** The homework page ticks 3e: all four answers have text after the `>`. That
+**You're done when:** The homework page ticks 3e: all three answers have text after the `>`. That
 finishes Part 3, so the page commits your work as `Part 3 done` and pushes it to your fork. Then submit,
 as the Submitting section of the README says.
 

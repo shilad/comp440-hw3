@@ -55,7 +55,7 @@ EXPECTED = {
     "3c": (3, "3c. Sort the failures", [], EVALUATE, 25),
     "3d": (3, "3d. Make one change", ["runs/part3/after/report.txt"],
            EVALUATE + CHECK + ["Edit(instructions.md)"], 20),
-    "3e": (3, "3e. Write it up", [], [], 30),
+    "3e": (3, "3e. Write it up", [], [], 23),
 }
 
 SAMPLE_CLAIM = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
