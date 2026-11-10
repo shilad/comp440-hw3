@@ -167,11 +167,13 @@ The claim you check in Part 0:
 > The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
 
 **Words in this step:** *the agent*: the program in `agent.py`, a loop in which the model (Claude Haiku)
-picks the next lookup, reads what comes back, and decides when to answer. *lookup*: one call to
+picks the next lookup, reads what comes back, and decides when to answer. The model is a small Claude
+model that the program calls with your key; it is not the Claude you are typing to. *lookup*: one call to
 `search`, `read` or `wikidata`. `wikidata` asks Wikidata for one fact; Wikidata (wikidata.org) is a
 separate site from Wikipedia that stores single facts, such as a person's date of birth. *trace*: the
-agent's lookups for one claim, in order, with what each returned. *entry*: one numbered line of a
-trace, a lookup or an answer. *evidence*: the sentences quoted from Wikipedia that a verdict rests on.
+record of the agent's lookups for one claim, in order, with what each returned; it is not an error
+report. *entry*: one numbered line of a trace, a lookup or an answer. *evidence*: the sentences quoted
+from Wikipedia that a verdict rests on.
 
 **What to do:**
 
