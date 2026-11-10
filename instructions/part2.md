@@ -112,8 +112,8 @@ verdict of *refuted* or *doesn't say* counts as *not supported*.
 10. Answer the two questions.
 
 **What you'll see:** The table keeps the order of the claims file, and its "Row" column counts the rows
-shown, so rows 1 to 10 are fixed by the rule, not chosen. I ask for the first ten so that nobody, you or Claude, chooses which claims get
-checked. If you want to read more of a page as the agent read it, ask Claude to run one of these. The
+shown, so rows 1 to 10 are fixed by the rule, not chosen. I ask for the first ten so that nobody, you
+or Claude, chooses which claims get checked. If you want to read more of a page as the agent read it, ask Claude to run one of these. The
 `--no-log` keeps them out of your record from 1b:
 
 ```
