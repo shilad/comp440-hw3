@@ -342,6 +342,44 @@ def test_each_tick_sits_at_the_moment_it_was_reached(tmp_path):
     assert marked == {None: ["You read the output with Claude"], "Run it.": ["You asked it to run"]}
 
 
+def test_the_guard_lets_a_search_through_only_when_it_names_its_files(tmp_path):
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    (h.student / "runs/part2").mkdir(parents=True)
+    (h.student / "runs/part2/agent.jsonl").write_text("{}\n")
+    (h.student / "data").mkdir()
+    (h.student / "data/eval.jsonl").write_text("{}\n")
+    guard = app.hub.dir / "guard.py"
+
+    def reason(command):
+        event = {"tool_name": "Bash", "tool_input": {"command": command}, "session_id": "s"}
+        out = subprocess.run([sys.executable, str(guard), "pre"], input=json.dumps(event),
+                             capture_output=True, text=True).stdout
+        return json.loads(out)["hookSpecificOutput"]["permissionDecisionReason"] if out.strip() else None
+
+    for ok in ('grep -n -o "Mike Smith was born" runs/part2/agent.jsonl',      # the briefs' three commands
+               """grep -n -o '"correct": false' runs/part2/agent.jsonl""",
+               'grep -n "hover-1234" data/eval.jsonl',
+               'grep -n -e "x" -e "y" data/eval.jsonl runs/part2/agent.jsonl',
+               'grep -n -A2 "x" data/eval.jsonl 2>/dev/null',
+               'echo "use grep -r x . to search everything"',                    # the word in quotes
+               'echo grep is a tool',
+               'python3 .workbench/page.py 0b status "Searching with grep -rn"',
+               "uv run pytest -q"):
+        assert reason(ok) is None, ok
+    for bad in ('grep -n -r "x" .', 'grep -rn "x" .', 'grep -nr "x" .', 'grep -R "x" runs',
+                'grep --recursive -n "x" runs', 'grep -d recurse -n "x" runs', 'grep --directories=recurse x runs',
+                'grep -n "x" *.py', 'grep -n "x" tests/*', 'grep -n "x" .', 'grep -n "x" runs/part2',
+                'grep -n "x"', 'cat data/eval.jsonl | grep -n "x"', 'grep -n "x" < data/eval.jsonl',
+                'rg "x"', 'rg -n "x" .', 'egrep -r "x" runs', 'fgrep -n "x" *',
+                'find . -type f -exec grep -n KEY {} \\;', 'ls | xargs grep -n KEY',
+                'cd runs && grep -rn x .', 'timeout 5 grep -rn x runs'):
+        assert "Search one named file at a time" in (reason(bad) or ""), bad
+    assert reason('grep -n "KEY" .env').startswith("Never read, print or edit .env")   # as before
+    (h.student / "keyfile").symlink_to(h.student / ".env")
+    assert "Search one named file" in reason('grep -n "KEY" keyfile')                 # a link to it
+
+
 def test_the_guard_lets_a_status_line_mention_the_key_file(tmp_path):
     h = homework(tmp_path)
     app = server.App(h.student)
