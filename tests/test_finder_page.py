@@ -272,7 +272,7 @@ const any = new Proxy(function () {}, {
   apply: () => any,
   construct: () => any,
 });
-const elements = {}, storage = {}, sent = [];
+const elements = {}, storage = JSON.parse(process.argv[4]), sent = [];   // storage: what the browser kept
 const element = () => new Proxy({ textContent: "", hidden: false, disabled: false },
                                  { get: (t, p) => (p in t ? t[p] : any) });
 const context = vm.createContext({
@@ -301,14 +301,15 @@ var screen = () => ({ label: byId("all").textContent, disabled: byId("all").disa
 """
 
 
-def run_screen(tmp_path, lines):
-    """What finder.js shows after `lines` run, in Node."""
+def run_screen(tmp_path, lines, storage=None):
+    """What finder.js shows after `lines` run, in Node, starting from what the browser kept in
+    `storage` (its localStorage), as a reload would."""
     node = shutil.which("node")
     if not node:
         pytest.skip("Node is not installed, so the screen's script cannot run outside a browser")
     (tmp_path / "browser.js").write_text(BROWSER)
-    r = subprocess.run([node, str(tmp_path / "browser.js"), str(STATIC / "finder.js"), SHOWN + lines],
-                       capture_output=True, text=True, timeout=30)
+    r = subprocess.run([node, str(tmp_path / "browser.js"), str(STATIC / "finder.js"), SHOWN + lines,
+                        json.dumps(storage or {})], capture_output=True, text=True, timeout=30)
     assert r.returncode == 0, r.stderr
     return json.loads(r.stdout)
 
@@ -394,6 +395,58 @@ def test_a_selection_made_with_select_all_saves_like_any_other(stand_in, tmp_pat
     assert body == {"selected": [{"id": c["id"], "query": "jazz"} for c in eight]}
     assert post("/save", tmp_path, body)[1]["ok"] is True
     assert len((tmp_path / "data/eval.jsonl").read_text().splitlines()) == 4
+
+
+# Step 0b's way of working: Select all shown, Remove two claims that are off the topic, Show 50 more,
+# Select all shown again.
+REMOVE_TWO = """
+  selectAll(); toggle("c3"); toggle("c8");
+  for (let i = 51; i <= 100; i++) shown.set("c" + i, { id: "c" + i, label: "SUPPORTED" });   // Show 50 more
+  allButton();
+"""
+
+
+def test_select_all_leaves_out_the_claims_the_student_removed(tmp_path):
+    s = run_screen(tmp_path, REMOVE_TWO + "screen()")
+    assert (s["label"], s["disabled"]) == ("Select all 50 shown", False)    # c51 to c100, not c3 or c8
+    s = run_screen(tmp_path, REMOVE_TWO + "selectAll(); screen()")
+    assert "c3" not in s["selected"] and "c8" not in s["selected"] and len(s["selected"]) == 98
+    assert s["said"] == ("You selected 50 more claims. You have now selected 98 of 112. "
+                         "The 2 claims you removed earlier stay removed.")
+    assert (s["label"], s["disabled"]) == ("Select all shown", True)       # only removed claims are left
+    # Fifty shown, all selected, then one removed: the button has nothing to select.
+    s = run_screen(tmp_path, "selectAll(); toggle('c3'); screen()")
+    assert (s["label"], s["disabled"]) == ("Select all shown", True) and "c3" not in s["selected"]
+
+
+def test_a_removed_claims_own_select_brings_it_back(tmp_path):
+    s = run_screen(tmp_path, REMOVE_TWO + "toggle('c3'); ({ ...screen(), removed: [...removed] })")
+    assert "c3" in s["selected"] and s["removed"] == ["c8"]
+    assert s["label"] == "Select all 50 shown"                               # c3 is selected, c8 still left out
+    s = run_screen(tmp_path, REMOVE_TWO + "toggle('c3'); selectAll(); screen()")
+    assert "c8" not in s["selected"] and len(s["selected"]) == 99
+    assert s["said"].endswith(" The claim you removed earlier stays removed.")
+
+
+def test_the_removed_claims_are_kept_across_a_reload(tmp_path):
+    kept = run_screen(tmp_path, REMOVE_TWO + "storage")
+    assert json.loads(kept["comp440-hw3-claim-finder-removed"]) == ["c3", "c8"]
+    # A reload: the script starts again from what the browser kept, and a new search shows c1 to c50.
+    s = run_screen(tmp_path, "({ ...screen(), removed: [...removed] })", storage=kept)
+    assert s["removed"] == ["c3", "c8"] and len(s["selected"]) == 48
+    assert (s["label"], s["disabled"]) == ("Select all shown", True)        # c3 and c8 are the only ones left
+
+
+def test_the_cap_at_112_holds_with_removed_claims(tmp_path):
+    s = run_screen(tmp_path, """
+      for (let i = 1; i <= 100; i++) selection.set("old" + i, { id: "old" + i, label: "SUPPORTED", query: "film" });
+      removed.add("c1"); removed.add("c2"); allButton();
+      const label = byId("all").textContent;
+      selectAll(); ({ ...screen(), label })""")
+    assert s["label"] == "Select the first 12 shown"
+    assert s["selected"][100:] == [f"c{i}" for i in range(3, 15)]           # from the top, without c1 and c2
+    assert s["said"] == ("You selected 12 more claims, the first 12 in the list. You have 112, which is all you "
+                         "need. The 2 claims you removed earlier stay removed.")
 
 
 def test_the_homework_page_links_to_the_screen():
