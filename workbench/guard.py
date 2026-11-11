@@ -17,7 +17,9 @@ the page reads. The settings sit beside this file, in guard.json.
 """
 
 import json
+import os
 import re
+import shlex
 import sys
 import time
 from pathlib import Path
@@ -58,6 +60,113 @@ def names_of(secret):
     (after cd tests), and its module names (tests.test_loop_check, test_loop_check)."""
     stem, base = secret[:-3], secret.rsplit("/", 1)[-1]
     return {secret, stem, stem.replace("/", "."), base, base[:-3]}
+
+
+# A search must name the files it reads. A search of a folder, a wildcard or a recursive search
+# could print the key in .env into the conversation, which is saved in TRANSCRIPT.md.
+SEARCHES = {"grep", "egrep", "fgrep", "rg"}
+AFTER = {"xargs", "-exec", "-execdir", "env", "command", "builtin", "nice", "nohup", "time", "sudo"}
+TAKES_VALUE = {"grep": set("efmABCdD"), "rg": set("efgtTmABCMjEr")}   # short options with a value
+LONG_VALUE = {"--regexp", "--file", "--max-count", "--after-context", "--before-context", "--context",
+              "--directories", "--devices", "--label", "--include", "--exclude", "--exclude-dir",
+              "--exclude-from", "--binary-files", "--glob", "--iglob", "--type", "--type-not",
+              "--max-depth", "--replace", "--encoding", "--max-filesize", "--threads", "--sort",
+              "--sortr", "--pre", "--pre-glob", "--max-columns", "--type-add", "--ignore-file"}
+SEARCH_REASON = ('Search one named file at a time, for example: grep -n -o "a few words" '
+                 "runs/part2/agent.jsonl. A search with no file, of a folder, with a wildcard or "
+                 "with -r is refused, because it could print the key in .env into this "
+                 "conversation, which is saved.")
+
+
+def loose_search(cmd, conf):
+    """Why a grep, egrep, fgrep or rg in this shell command could read more than the plain files
+    it names; None if it names plain files only, or runs no search. The word in quotes or after
+    echo is only a word."""
+    if not re.search(r"\b[ef]?grep\b|\brg\b", cmd):
+        return None
+    try:
+        lex = shlex.shlex(cmd, posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        words = list(lex)
+    except ValueError:
+        return "the command could not be read"
+    commands, current = [], []
+    for w in words:
+        if w and set(w) <= set(";|&()"):     # a separator: the next simple command starts
+            commands.append(current)
+            current = []
+        else:
+            current.append(w)
+    commands.append(current)
+    for ws in commands:
+        first = next((j for j, x in enumerate(ws) if not re.match(r"^\w+=", x)), 0)
+        for i, w in enumerate(ws):
+            name = os.path.basename(w)
+            if name not in SEARCHES:
+                continue
+            run = (i == first or (i and ws[i - 1] in AFTER) or (i >= 2 and ws[i - 2] == "timeout")
+                   or (i >= 2 and ws[i - 2:i] == ["uv", "run"]))
+            if run:
+                why = search_args("rg" if name == "rg" else "grep", ws[i + 1:], conf)
+                if why:
+                    return why
+    return None
+
+
+def search_args(kind, args, conf):
+    takes, given, positional, i = TAKES_VALUE[kind], False, [], 0
+    while i < len(args):
+        a = args[i]
+        nxt = args[i + 1] if i + 1 < len(args) else ""
+        if a in ("<", "<<", "<<<"):
+            return "it reads its input, not a named file"
+        if re.fullmatch(r"\d*(>>?|>&|&>)\d*", a):     # an output redirect and its target
+            i += 1 if a.endswith(tuple("0123456789")) and "&" in a else 2
+            continue
+        if a == "--":
+            positional += args[i + 1:]
+            break
+        if a.startswith("--"):
+            opt, eq, val = a.partition("=")
+            if opt in ("--recursive", "--dereference-recursive"):
+                return "it searches folders"
+            if opt == "--directories" and (val if eq else nxt) == "recurse":
+                return "it searches folders"
+            given = given or opt in ("--regexp", "--file")
+            i += 2 if (not eq and opt in LONG_VALUE) else 1
+            continue
+        if a.startswith("-") and len(a) > 1:
+            for j, c in enumerate(a[1:], 1):
+                if kind == "grep" and c in "rR":
+                    return "it searches folders"
+                if c in takes:
+                    val = a[j + 1:] or nxt
+                    if not a[j + 1:]:
+                        i += 1
+                    given = given or c in "ef"
+                    if kind == "grep" and c == "d" and val == "recurse":
+                        return "it searches folders"
+                    break
+            i += 1
+            continue
+        positional.append(a)
+        i += 1
+    targets = positional if given else positional[1:]
+    if not targets:
+        return "it names no file"
+    secrets = {Path(x).name for x in conf.get("never_read", [])}
+    for t in targets:
+        if t == "-" or any(ch in t for ch in "*?[]{}$`~"):
+            return "it names files with a wildcard"
+        p = Path(t) if Path(t).is_absolute() else Path(conf["repo"]) / t
+        if p.is_dir():
+            return "it names a folder"
+        try:
+            if p.resolve().name in secrets:
+                return "it reads a file this session must not open"
+        except OSError:
+            pass
+    return None
 
 
 def writeup_text(conf, inp):
@@ -101,6 +210,9 @@ def main():
                          (f"Never open {secret}: it holds a finished version of what the student writes "
                           "themselves in this homework. Do not look for its contents anywhere else either.")
                 records.append({**base, "kind": "refused", "text": f"Refused a call that touched {secret}."})
+        if reason is None and tool == "Bash" and loose_search(inp.get("command", ""), conf):
+            reason = SEARCH_REASON
+            records.append({**base, "kind": "refused", "text": "Refused a search that did not name its files."})
         if reason is None and tool in EDITS:
             text = writeup_text(conf, inp)
             if text is not None:
