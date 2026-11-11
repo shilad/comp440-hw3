@@ -824,6 +824,23 @@ def test_a_refused_read_of_a_never_read_file_is_never_a_link(tmp_path):
     assert app.file("reference_loop.py")[1] == 403
 
 
+def test_extra_credit_text_is_saved_once_the_required_parts_are_committed(tmp_path, monkeypatch):
+    """Part 1 here is extra credit and not done; text added at the end of WRITEUP.md (under Part
+    1's heading) is still committed, once Part 0, the only required part, is committed."""
+    monkeypatch.setattr(server, "SETTLE", 0)
+    extra = STEPS.replace('number = 1\ntitle = "The loop"', 'number = 1\ntitle = "The loop"\nextra_credit = true')
+    h = homework(tmp_path, {"steps.toml": extra})
+    app = server.App(h.student)
+    finish_part0(h.student)
+    app.commit_finished_parts()
+    assert subjects(h.student)[0] == "Part 0 done"
+    (h.student / "WRITEUP.md").write_text(FILLED + "\n## Extra credit\n\nI found a page that changed since the dataset.\n")
+    app.commit_changes()
+    assert subjects(h.student)[0] == "Part 0 updated"
+    assert "I found a page that changed" in git(h.student, "show", "HEAD:WRITEUP.md")
+    assert "Part 1 done" not in subjects(h.student)
+
+
 def test_a_file_holding_a_key_is_never_committed(tmp_path):
     h = homework(tmp_path, {"notes.txt": "nothing yet\n"})
     app = server.App(h.student)

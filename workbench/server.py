@@ -359,11 +359,13 @@ class App:
             if grown or any(old.get(k) != new.get(k) for k in keys) or (patterns and self.git(
                     "status", "--porcelain", "--untracked-files=all", "--", *patterns).stdout.strip()):
                 out.append(n)
-        last = max(self.a.parts, default=None)
-        if last in done and last not in out:
+        # Once every required part is committed, any other change (extra-credit text at the end of
+        # WRITEUP.md, a change to the code) is committed too, under the latest committed part.
+        required = [n for n, p in self.a.parts.items() if not p.get("extra_credit")] or list(self.a.parts)
+        if required and all(n in done for n in required) and max(done) not in out:
             loose = self.loose()
             if loose and loose != self.idle:
-                out.append(last)
+                out.append(max(done))
         return out
 
     def commit_changes(self) -> None:
