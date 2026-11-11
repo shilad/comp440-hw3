@@ -41,7 +41,7 @@ line says what to fix. The check never prints your key or email, and costs a sma
 **Troubleshooting:**
 
 - Claude says the model in the command is not available. Delete `--model claude-opus-5-5 --effort medium`
-  from the command, and run the rest of it.
+  from the command, and run the rest of it. Do the same with the command of every later step.
 - The check still says `NOT READY` after you fixed `.env`. Check that you saved the file; if so, post the
   `NOT READY` line in `#comp440-f26` on Slack.
 - The output starts with "ANTHROPIC_API_KEY is set and takes precedence...". That is a harmless notice

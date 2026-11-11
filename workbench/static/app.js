@@ -369,11 +369,10 @@ function resultsLink(ss) {
   return `<a href="/results/open?path=${encodeURIComponent(ss.results)}" target="_blank" rel="noopener">Open these results</a>`;
 }
 
-function command(label, cmd, flags) {
+function command(label, cmd) {
   return `<div class="cmd"><span class="label">${label}</span>
     <div class="cmd-row"><code title="${esc(cmd)}">${esc(cmd)}</code><button class="copy" data-copy="${esc(cmd)}" type="button">Copy</button></div>
-    <span class="small">Paste this into a terminal in your homework folder, not into a Claude chat. If the last step's Claude is still open in that terminal, type /exit first.</span>
-    ${flags ? `<span class="small">If Claude says the model is not available, delete <code>${esc(flags)}</code> from the command and run it again.</span>` : ""}</div>`;
+    <span class="small">Paste this into a terminal in your homework folder, not into a Claude chat. If the last step's Claude is still open in that terminal, type /exit first.</span></div>`;
 }
 
 // A command the student runs in a terminal tab of their own (a long run), under the Claude command.
@@ -387,7 +386,7 @@ function yourself(s) {
 
 function recordCol(s, st, ss) {
   const when = st.waiting_on.map(labelOf).join(", ");
-  const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command, ss.model_flags)
+  const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command)
     + yourself(s) : "";
   if (!ss.started) {
     const state = st.locked ? `This record is empty. This step's Claude opens when you finish ${when}.`

@@ -145,8 +145,9 @@ claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus
 - `--plugin-dir` loads the `page` skill: Claude posts a status line, the student's prediction,
   and the checkpoints it ticks, by running `.workbench/page.py`, which finds the server's port in
   `.workbench/server.json`.
-- Under the command the page says: if Claude says the model is not available, delete
-  `--model claude-opus-5-5 --effort medium` and run it again.
+- The page says nothing under the command about a model that is not available. Step 0a's
+  Troubleshooting and the README's "If something goes wrong" do: delete
+  `--model claude-opus-5-5 --effort medium` from the command and run the rest of it.
 
 ## The steps file
 

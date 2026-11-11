@@ -300,13 +300,20 @@ def test_the_command_splitter_respects_quotes():
     assert labels.without_page_calls("uv run python check.py x | tail -3") == "uv run python check.py x | tail -3"
 
 
-def test_each_command_carries_the_model_and_the_line_about_it(tmp_path):
+def test_each_command_carries_the_model_and_troubleshooting_says_what_to_do_without_it(tmp_path):
     h = homework(tmp_path)
     snap = server.App(h.student).hub.sessions["0a"].snapshot()
-    assert snap["model_flags"] == "--model claude-opus-5-5 --effort medium"
-    assert "--model claude-opus-5-5 --effort medium" in snap["command"]
+    flags = "--model claude-opus-5-5 --effort medium"
+    assert snap["model_flags"] == flags
+    assert flags in snap["command"]
+    # The page says nothing about it under the command (the instructor, Nov 11). Step 0a's
+    # Troubleshooting and the README say what to do, with the same flags the command carries.
     js = (ROOT / "workbench/static/app.js").read_text()
-    assert "If Claude says the model is not available, delete" in js
+    assert "model is not available" not in js
+    first_step = (ROOT / "instructions/part0.md").read_text().split("\n## ")[1]
+    trouble = " ".join(first_step.split("**Troubleshooting:**")[1].split())
+    assert f"is not available. Delete `{flags}` from the command" in trouble
+    assert f"is not available.** Delete `{flags}` from the command" in " ".join((ROOT / "README.md").read_text().split())
 
 
 def test_a_chained_call_is_labelled_by_what_is_left(tmp_path):
