@@ -52,7 +52,7 @@ pre code { background: none; padding: 0; }
 /* Header */
 .top .wrap { padding-block: 30px 18px; display: grid; gap: 8px; }
 .top h1 { font: 500 clamp(24px, 4.1vw, 33px)/1.15 var(--display); margin: 0; text-wrap: balance; color: var(--ink); }
-.top .lede { margin: 0; max-width: 64ch; }
+.top .lede { margin: 0; }   /* the opening sentence and the goals use the page's full width */
 .where { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 10px; font-size: 13.5px; }
 .meter { display: flex; align-items: center; gap: 10px; }
 .meter .bar { width: 150px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
