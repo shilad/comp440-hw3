@@ -106,18 +106,18 @@ def handle(method: str, path: str, query: dict, repo, _raise: bool = False) -> t
         return 200, HTML, redirect(r.to).encode()
     except Problem as p:
         return p.status, HTML, shell(p.title, f"<h1>{e(p.title)}</h1><p>{p.text}</p>"
-                                     f"<p>{a(link('/'), 'See every run you have')}</p>").encode()
+                                     f"<p>{a(link('/'), 'See all your runs')}</p>").encode()
     except R.BadPath:
         return 400, HTML, shell("Not inside runs/", "<h1>Not inside runs/</h1><p>The results "
                                 "viewer only opens files and folders inside <code>runs/</code>.</p>"
-                                f"<p>{a(link('/'), 'See every run you have')}</p>").encode()
+                                f"<p>{a(link('/'), 'See all your runs')}</p>").encode()
     except Exception as error:  # noqa: BLE001  show something readable, and log the rest
         traceback.print_exc(file=sys.stderr)
         return 500, HTML, shell("Something went wrong", "<h1>Something went wrong</h1>"
                                 "<p>The results viewer could not show this page: "
                                 f"<code>{e(type(error).__name__)}: {e(error)}</code>. "
                                 "The terminal that runs it has the details.</p>"
-                                f"<p>{a(link('/'), 'See every run you have')}</p>").encode()
+                                f"<p>{a(link('/'), 'See all your runs')}</p>").encode()
 
 
 def static(name: str):
@@ -148,8 +148,7 @@ def shell(title: str, body: str, crumbs: list | None = None) -> str:
 <main id="main" class="wrap">
 {body}
 </main>
-<footer class="foot"><div class="wrap">The results viewer reads what is saved in <code>runs/</code>
-and never changes it. Reload the page to see new results.</div></footer>
+<footer class="foot"><div class="wrap">Reload the page to see new results.</div></footer>
 </body>
 </html>
 """
@@ -228,22 +227,25 @@ def noun(items) -> str:
     return "the dataset's label"
 
 
-def matched_means(items, lead: str = "A ✓ means") -> str:
-    """Said once on a page, where a ✓ (or the word "Matched") first appears."""
+def matched_means(items) -> str:
+    """How a verdict is matched with the label: behind a click, once on a page."""
     sources = sources_of(items)
     if sources and sources <= {"mine"}:
-        return f"{lead} the verdict matched your verdict, the one in your claims file."
-    text = f"{lead} the verdict matched the dataset's label"
-    text += (", or, for your own claims, your verdict. " if "mine" in sources else ". ")
+        return "A verdict matches your verdict, the one in your claims file, when the two are the same."
+    text = "A verdict matches the dataset's label when the two agree"
+    text += (", or, for your own claims, when it is your verdict. " if "mine" in sources else ". ")
     return text + ("HoVer labels each claim only <em>supported</em> or <em>not supported</em>, so "
                    "<em>refuted</em> and <em>doesn't say</em> both count as <em>not supported</em>.")
 
 
+def more(summary: str, body: str) -> str:
+    """An explanation the student does not need in order to read the page, behind a click."""
+    return f'<details class="more"><summary>{summary}</summary><p class="small">{body}</p></details>'
+
+
 def legend(items) -> str:
     nn = noun(items)
-    return (f'<p class="legend small">In each version\'s column, a ✓ means the verdict matches {nn} and a ✗ '
-            'means it does not. A missing verdict, or a claim that stopped with an error, does not match, as in '
-            'evaluate.py.</p>')
+    return f'<p class="legend small">A ✓ means the verdict matches {nn}, and a ✗ means it does not.</p>'
 
 
 def wiki_url(title: str, section: str | None = None) -> str:
@@ -301,8 +303,7 @@ PART_TITLES = {0: "Part 0: Set up and find your claims", 1: "Part 1: How the age
 
 def home(repo: Path, q: dict) -> str:
     evals, checks, lookups = R.walk_runs(repo)
-    out = ['<h1>Your runs</h1><p class="lede">Everything saved in <code>runs/</code>, part by part, in '
-           'the order the homework makes it. Open a run or a check to read it.</p>']
+    out = ['<h1>Your runs</h1><p class="lede">Everything saved in <code>runs/</code>, part by part.</p>']
     if not evals and not checks and not lookups:
         out.append('<p class="empty">No runs yet. Your first one appears here after step 0c.</p>')
         return shell("Your runs", "".join(out))
@@ -313,7 +314,8 @@ def home(repo: Path, q: dict) -> str:
         if run is not None:
             runs[rel] = run
     if runs:
-        out.append(f'<p class="small">{matched_means([it for r in runs.values() for it in r.items.values()] or [{}], "<em>Matched</em> means")}</p>')
+        out.append(more("What “Matched” means", matched_means(
+            [it for r in runs.values() for it in r.items.values()] or [{}])))
     if len(runs) > 1:
         out.append(f'<p>{a(link("/compare"), "Compare two runs")}</p>')
     for part in (0, 1, 2, 3, None):
@@ -395,8 +397,7 @@ def lookups_html(repo: Path, lookups: list) -> str:
     for rel in lookups:
         path, rel = R.safe_path(repo, rel)
         rows, bad = R.CACHE.get(path, R.load_lookups) or ([], 0)
-        out.append(f'<h3 id="{e(anchor(rel))}">Your lookups by hand, in <code>{e(rel)}</code>, '
-                   f'{plural(len(rows), "lookup")}</h3>')
+        out.append(f'<h3 id="{e(anchor(rel))}">Your lookups by hand, in <code>{e(rel)}</code></h3>')
         if rows:
             out.append('<ol class="lookups">')
             for row in rows:
@@ -539,12 +540,12 @@ def run_page(repo: Path, q: dict) -> str:
 def run_facts(run: R.Run) -> str:
     out = ['<div class="facts">']
     total = run.total()
-    made = f"The run was made on {when(run.started)} and last saved on {when(run.mtime)}."
+    saved = f"It was last saved on {when(run.mtime)}."
     if run.file:
-        out.append(f'<p>The claims come from <code>{e(run.file[0])}</code>, which holds '
-                   f'{plural(run.file[1], "claim")}. {made}</p>')
+        out.append(f'<p>This run uses the {plural(run.file[1], "claim")} in <code>{e(run.file[0])}</code>. '
+                   f'{saved}</p>')
     else:
-        out.append(f'<p>{plural(len(run.ids), "claim")}. {made}</p>')
+        out.append(f'<p>This run has results for {plural(len(run.ids), "claim")}. {saved}</p>')
     missing = sum(1 for i in run.ids if "source" not in run.items[i])
     if missing:
         out.append(f'<p class="note">{plural(missing, "claim")} {"is" if missing == 1 else "are"} in no '
@@ -552,31 +553,32 @@ def run_facts(run: R.Run) -> str:
     if run.methods:
         parts = [f"the {e(R.method_name(m))} has {len(run.rows[m]):,}" + (f" of {total:,}" if total else "")
                  + " results" for m in run.methods]
-        out.append(f'<p>So far {and_list(parts)}.</p>')
+        said = and_list(parts)
+        out.append(f'<p>So far {said}.</p>' if not run.finished() else f'<p>{said[0].upper() + said[1:]}.</p>')
     if not run.finished():
-        line = ("<strong>This run has not finished.</strong> Its folder has no <code>report.txt</code> yet, "
-                "and evaluate.py saves that only when every claim has a result. ")
+        line = "<strong>This run has not finished.</strong> "
         if run.recently_changed():
-            line += "Its files changed in the last two minutes, so it is probably still going: reload to see more."
+            line += "Its files changed in the last two minutes, so it is probably still going. Reload to see more."
         else:
             line += ("It may still be going, or it may have stopped early. To finish it, run the same command "
-                     "again: it picks up where it stopped and runs only the claims that have no result.")
-        out.append(f'<p class="note">{line}</p>')
+                     "again. It runs only the claims that have no result.")
+        out.append(f'<div class="note"><p>{line}</p>'
+                   + more("How the viewer knows", "Its folder has no <code>report.txt</code> yet. evaluate.py "
+                          "saves <code>report.txt</code> only when every claim has a result.") + '</div>')
     for m in run.methods:
         if run.bad.get(m):
             out.append(f'<p class="note">{plural(run.bad[m], "line")} in <code>{e(m)}.jsonl</code> could '
                        'not be read. If the run is still going, it may be writing that line now.</p>')
     if len(run.limits) > 1:
-        out.append('<p class="note">The agent\'s results here were made under different limits of lookups per '
-                   'claim: ' + " and ".join(str(n) for n in run.limits) + '.</p>')
+        out.append('<p class="note">The agent\'s results here were made with different limits of lookups per '
+                   'claim, ' + " and ".join(str(n) for n in run.limits) + '.</p>')
     if len(run.versions) > 1:
-        out.append(f'<p class="note">The agent\'s results here were made by {len(run.versions)} different versions '
-                   f'of the agent: different {AGENT_FILES}.</p>')
+        out.append(f'<p class="note">The agent\'s results here were made with {len(run.versions)} different '
+                   f'versions of {AGENT_FILES}.</p>')
     relabelled = len(run.relabelled)
     if relabelled:
-        out.append(f'<p class="note">For {plural(relabelled, "result")}, the label in the claims file has '
-                   'changed since the run, so today it would count the other way. This page uses what the run '
-                   'saved, as evaluate.py does.</p>')
+        out.append(f'<p class="note">The label of {plural(relabelled, "result")} has changed in the claims file '
+                   'since this run. This page counts them as the run saved them, as evaluate.py does.</p>')
     if R.RULES.problem and R.RULES.module is None:
         out.append(f'<p class="note">evaluate.py could not be loaded (<code>{e(R.RULES.problem)}</code>), '
                    'so this page uses its own copy of evaluate.py\'s rules for grouping claims.</p>')
@@ -589,11 +591,11 @@ def run_facts(run: R.Run) -> str:
 
 def accuracy_section(run: R.Run) -> str:
     items = list(run.items.values())
-    out = ['<section aria-labelledby="h-acc"><h2 id="h-acc">Accuracy</h2>',
-           f'<p class="small">{matched_means(items)}</p>']
+    out = ['<section aria-labelledby="h-acc"><h2 id="h-acc">Accuracy</h2>']
     sts = {m: R.stats(run, m) for m in run.methods}
     out.append(accuracy_table(run.methods, sts, R.group_names(run),
                               f"How many verdicts matched {noun(items)}, by the number of articles a claim needs"))
+    out.append(more("How matches are counted", matched_means(items)))
     if len({sts[m]["n"] for m in run.methods}) > 1:
         out.append('<p class="note">The versions do not all have results for the same claims yet. Each '
                    'column counts only the claims that version has finished.</p>')
@@ -615,12 +617,13 @@ def accuracy_section(run: R.Run) -> str:
             bad.append(f'<li>The {e(R.method_name(m))} has {" and ".join(bits)}.</li>')
     out.append('<h3>Claims with no verdict, or that stopped with an error</h3>')
     if bad:
-        out.append('<p class="small">They count as not matching above. A verdict is missing when the program '
-                   'could not get one from the model: for example the model declined, the agent used all its '
-                   'lookups, or its answer was sent back three times. Each claim\'s page shows the text that '
-                   'was saved with it.</p><ul>' + "".join(bad) + '</ul>')
+        out.append('<ul>' + "".join(bad) + '</ul>')
+        out.append(more("Why a verdict can be missing", "These claims count as not matching above. A verdict is "
+                        "missing when the program could not get one from the model: for example, the model "
+                        "declined, the agent used all its lookups, or its answer was sent back three times. Each "
+                        "claim's page shows the text that was saved with it."))
     else:
-        out.append('<p class="small">None: every saved result has a verdict.</p>')
+        out.append('<p class="small">Every saved result has a verdict.</p>')
     out.append('</section>')
     return "".join(out)
 
@@ -697,11 +700,11 @@ def cost_section(run: R.Run) -> str:
                    f'<td>{sum(s["total_seconds"] for s in sts.values()):,.1f}</td>'
                    f'<td>{dollars(sum(s["total_cost"] for s in sts.values()))}</td></tr>')
     out.append('</tbody></table></div>')
-    out.append('<p class="small">A lookup is one call to <code>search</code>, <code>read</code> or '
-               '<code>wikidata</code>; the final answer is not counted. Tokens are input and output '
-               'together. Seconds are each claim\'s own time, added up; claims run a few at a time, so '
-               'the whole run took less time than that. Dollars are worked out from the tokens at the '
-               'prices in <code>agent.py</code>.</p>')
+    out.append(more("How these numbers are counted", 'A lookup is one call to <code>search</code>, '
+                    '<code>read</code> or <code>wikidata</code>. The final answer is not a lookup. Tokens are '
+                    'input and output together. Seconds are each claim\'s own time, added up. Claims run a few '
+                    'at a time, so the whole run took less time than that. Dollars come from the tokens, at the '
+                    'prices in <code>agent.py</code>.'))
     if "agent" in sts:
         n = sts["agent"]["all_steps"]
         out.append(f'<p class="small">The agent used all {run.limit} lookups on '
@@ -803,7 +806,7 @@ def claim_page(repo: Path, q: dict) -> str:
     full = q.get("full") == "1"
     out = [nav, claim_head(item, run.items[i].get("source") is not None,
                            [("", run.rows["agent"].get(i))] if "agent" in run.rows else [])]
-    out.append(f'<p class="small">{matched_means([item])}</p>')
+    out.append(more("How matches are counted", matched_means([item])))
     cols = []
     for m in run.methods:
         row = run.rows[m].get(i)
@@ -828,9 +831,8 @@ def pager(prev, nxt, where, back) -> str:
     n = a(nxt, "Next →", "pg") if nxt else '<span class="pg off">Next →</span>'
     p = p.replace("<a ", '<a rel="prev" ', 1) if prev else p
     n = n.replace("<a ", '<a rel="next" ', 1) if nxt else n
-    keys = '<br><span class="hint">The left and right arrow keys move too.</span>' if (prev or nxt) else ""
     return (f'<nav class="pager" aria-label="Claims">{p}<span class="where">{e(where)} · '
-            f'{a(back, "back to the table")}{keys}</span>{n}</nav>')
+            f'{a(back, "back to the table")}</span>{n}</nav>')
 
 
 def claim_head(item: dict, known: bool, reads: list | None = None) -> str:
@@ -848,7 +850,7 @@ def claim_head(item: dict, known: bool, reads: list | None = None) -> str:
             out.append(articles_html(item, reads or []))
     else:
         out.append('<p class="note">This claim is in no claims file, so its label is not known.</p>')
-    out.append(f'<p class="small">Id: <code>{e(item.get("id", ""))}</code></p></div>')
+    out.append(f'<p class="small">The claim\'s id is <code>{e(item.get("id", ""))}</code>.</p></div>')
     return "".join(out)
 
 
@@ -888,9 +890,6 @@ def result_card(method: str, row: dict | None, note: str = "", anchor_for: str =
     if not places:
         out.append('<p class="small">None.</p>')
     else:
-        if any(h for place in places for h in place["hits"]):
-            out.append('<p class="small hint">An <em>open the live page</em> link opens today\'s Wikipedia '
-                       'page in a new tab. Your browser jumps to the quote if the page still has it.</p>')
         out.append('<ol class="quotes">')
         for n, place in enumerate(places, 1):
             out.append(f'<li><blockquote id="q-{e(anchor_for)}-{n}">{e(place["quote"])}</blockquote>'
@@ -911,7 +910,7 @@ def quote_where(row: dict, place: dict, n: int, who: str) -> str:
         if place["across"]:
             return ("This quote is not in any one text the agent read: it runs from the end of one "
                     "result into the start of the next.")
-        return "This quote appears in nothing the agent read in this check."
+        return "This quote is not in anything the agent read."
     bits = []
     for hit in place["hits"]:
         call = row["trace"][hit["call"]]
@@ -997,7 +996,7 @@ def call_html(call: dict, n: int, who: str, marks: list, full: bool) -> str:
                         + "".join(f"<li>{e(x)}</li>" for x in ev) + '</ol>')
         if inp.get("explanation"):
             body.append(f'<p class="small">Explanation: {e(inp["explanation"])}</p>')
-        body.append(f'<p class="came">Came back: <span class="result-inline">{e(call["result"])}</span></p>')
+        body.append(f'<p class="came">Result: <span class="result-inline">{e(call["result"])}</span></p>')
     else:
         head += f' <span class="args">{args_text(call["input"])}</span>'
         page = R.page_of(call)
@@ -1059,8 +1058,8 @@ def check_page(repo: Path, q: dict) -> str:
         item = dict(item)
         row["correct"] = R.RULES.is_correct(item, row["verdict"]) if not row["failed"] else False
         out.append(claim_head(item, True, [("", row)] if method == "agent" else []))
-        out.append(f'<p class="small">This claim is in <code>{e(name)}</code>, which gives the label above. '
-                   f'{matched_means([item])}</p>')
+        out.append(f'<p class="small">The label comes from <code>{e(name)}</code>.</p>')
+        out.append(more("How matches are counted", matched_means([item])))
         card = result_card(method, row, anchor_for=method, nn=noun([item]))
     else:
         out.append(f'<h1 class="claim">{e(row.get("claim", ""))}</h1>')
@@ -1119,38 +1118,39 @@ def compare_page(repo: Path, q: dict) -> str:
         out.append('<p class="note">A and B are the same run.</p>')
     for run in (A, B):
         if not run.finished():
-            out.append(f'<p class="note"><code>{e(run.rel)}</code> has not finished: its folder has no '
-                       '<code>report.txt</code> yet.</p>')
+            out.append(f'<p class="note"><code>{e(run.rel)}</code> has not finished.</p>')
     if "agent" in shared and A.versions_complete and B.versions_complete and \
             len(set(A.versions) | set(B.versions)) == 1:
-        out.append(f'<p class="note">A and B used the same version of the agent: the same {AGENT_FILES}.</p>')
+        out.append(f'<p class="note">A and B were made with the same {AGENT_FILES}.</p>')
     if "agent" in shared and A.limit != B.limit:
         out.append(f'<p class="note">A was made with a limit of {A.limit} lookups per claim, and B with a limit '
                    f'of {B.limit}.</p>')
     for side, ms in (("A", only_a), ("B", only_b)):
         if ms:
-            out.append(f'<p class="small">Only run {side} has these versions, so this page does not compare them: '
-                       + ", ".join(f"the {e(R.method_name(m))}" for m in ms) + '.</p>')
+            names = [f"the {e(R.method_name(m))}" for m in ms]
+            names[0] = names[0][0].upper() + names[0][1:]
+            out.append(f'<p class="small">{and_list(names)} {"is" if len(ms) == 1 else "are"} only in run {side}, '
+                       'so this page does not compare them.</p>')
     if not shared:
         out.append('<p class="empty">These two runs have no version in common, so there is nothing to compare.</p>')
         return shell("Compare two runs", "".join(out), ["Compare two runs"])
     common = {m: [i for i in A.ids if i in A.rows[m] and i in B.rows[m]] for m in shared}
     items = [A.items[i] for m in shared for i in common[m]]
-    out.append(f'<p class="small">{matched_means(items)}</p>')
+    out.append(more("How matches are counted", matched_means(items)))
     for m in shared:
         na, nb, nc = len(A.rows[m]), len(B.rows[m]), len(common[m])
         if not (na == nb == nc):
             out.append(f'<p class="note">For the {e(R.method_name(m))}, A has {plural(na, "claim")} and B has '
                        f'{plural(nb, "claim")}. This page compares the {plural(nc, "claim")} both have.</p>')
         else:
-            out.append(f'<p class="small">The {e(R.method_name(m))}: both runs have the same '
+            out.append(f'<p class="small">Both runs have results from the {e(R.method_name(m))} for the same '
                        f'{plural(nc, "claim")}.</p>')
     # accuracy
     out.append('<section aria-labelledby="h-cacc"><h2 id="h-cacc">Accuracy</h2>')
     for m in shared:
         sa, sb = R.stats(A, m, common[m]), R.stats(B, m, common[m])
         out.append(accuracy_table([m], {m: sa}, R.group_names(A, common[m]),
-                                  f"The {e(R.method_name(m))}: how many verdicts matched {noun(items)}, "
+                                  f"How many of the {e(R.method_name(m))}'s verdicts matched {noun(items)}, "
                                   "by the number of articles a claim needs", {m: sb}))
     out.append('</section>')
     # cost
@@ -1192,7 +1192,7 @@ def compare_page(repo: Path, q: dict) -> str:
                f'{plural(len(changes), "change")}.</p>')
     if not shown:
         out.append('<p class="empty">No claims changed in this way.</p>' if changes else
-                   '<p class="empty">No claim changed: every shared claim has the same verdict in A and B.</p>')
+                   '<p class="empty">No claim changed. Every claim in both runs has the same verdict in A and B.</p>')
     else:
         out.append(legend(items))
         out.append('<div class="scroll"><table class="grid claims"><thead><tr><th scope="col" class="num">Row</th>'
@@ -1216,15 +1216,16 @@ def compare_page(repo: Path, q: dict) -> str:
 def suggested(evals: list, repo: Path) -> str:
     """The comparisons the homework asks for, as links when both runs exist."""
     have = set(evals)
-    out = ['<p>Pick two runs above. Run A is the one you count from. The homework asks for these '
-           'comparisons:</p><ul class="kinds">']
+    out = ['<p>Pick two runs above, or one of the comparisons the homework asks for:</p><ul class="kinds">']
     for ra, rb, step in R.comparisons(repo):
         text = f"Step {step}: <code>{e(ra)}</code> with <code>{e(rb)}</code>"
         if ra in have and rb in have:
             out.append(f'<li>{a(link("/compare", a=ra, b=rb), text)}</li>')
         else:
-            missing = " and ".join(f"<code>{e(r)}</code>" for r in (ra, rb) if r not in have)
-            out.append(f'<li>{text} <span class="small">({missing} not made yet)</span></li>')
+            gone = [r for r in (ra, rb) if r not in have]
+            missing = " and ".join(f"<code>{e(r)}</code>" for r in gone)
+            out.append(f'<li>{text} <span class="small">({missing} {"is" if len(gone) == 1 else "are"} not made '
+                       'yet)</span></li>')
     out.append('</ul>')
     return "".join(out)
 
@@ -1291,8 +1292,7 @@ def compare_claim(A: R.Run, B: R.Run, q: dict) -> str:
     item = A.items[i]
     full = q.get("full") == "1"
     reads = [(side, run.rows["agent"].get(i)) for side, run in (("A", A), ("B", B))] if m == "agent" else []
-    out = [nav, claim_head(item, "source" in item, reads), f'<p class="small">{matched_means([item])}</p>']
-    out.append(f'<p>The {e(R.method_name(m))} in A (<code>{e(A.rel)}</code>) and in B (<code>{e(B.rel)}</code>).</p>')
+    out = [nav, claim_head(item, "source" in item, reads), more("How matches are counted", matched_means([item]))]
     cols = []
     for side, run in (("A", A), ("B", B)):
         row = run.rows[m].get(i)

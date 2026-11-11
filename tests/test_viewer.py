@@ -183,8 +183,9 @@ def test_numbers_equal_evaluate_report(repo):
         st = R.stats(run, m)
         assert f"{st['correct']} of {st['n']}" in words
         assert f"${st['cost']:.4f}" in words
-    assert "A ✓ means the verdict matched the dataset's label." in words
-    assert words.count("A ✓ means") == 1
+    assert "A ✓ means the verdict matches the dataset's label, and a ✗ means it does not." in words
+    assert words.count("A verdict matches the dataset's label when the two agree.") == 1  # behind a click
+    assert re.search(r'<details class="more"><summary>How matches are counted</summary>', page)
     assert html.escape(printed.strip("\n"), quote=True) in page
 
 
@@ -302,7 +303,7 @@ def test_quote_found_and_not_found(repo):
     assert re.search(r'<mark data-q="1"[^>]*>She was born in Paris and\s+lives in \u201cLyon\u201d today\.</mark>', page)
     assert "Found in entry 2 of the trace (read), highlighted below" in words
     assert "Its trace, one entry at a time" in words
-    assert "This quote appears in nothing the agent read in this check." in words
+    assert "This quote is not in anything the agent read." in words
     assert 'href="https://en.wikipedia.org/wiki/Alpha_Person"' in page
     assert 'target="_blank"' in page and 'rel="noopener noreferrer"' in page
     assert "#:~:text=" in page
@@ -341,7 +342,7 @@ def test_single_check_and_lookups(repo):
                  {"tool": "read", "input": {"title": "Forrest Gump", "section": None}}])
     home = text_of(get(repo, "/results/")[2])
     assert "Alpha Person was born in Paris." in home
-    assert "1994 Best Picture" in home and "2 lookups" in home
+    assert "1994 Best Picture" in home and "Your lookups by hand, in runs/part1/lookups.jsonl" in home
     page = get(repo, "/results/check?file=runs/part0/agent-1794290701.json")[2]
     words = text_of(page)
     assert "The dataset's label is supported" in words and "data/claims.jsonl" in words
@@ -374,8 +375,8 @@ def test_compare_two_runs(repo):
     status, _, page = get(repo, "/results/compare?a=runs/part2&b=runs/part3/after-eval")
     words = text_of(page)
     assert status == 200
-    assert ("Only run A has these versions, so this page does not compare them: the no-tools baseline, "
-            "the one-search baseline.") in words
+    assert ("The no-tools baseline and the one-search baseline are only in run A, so this page does not "
+            "compare them.") in words
     assert "A has 5 claims and B has 4 claims. This page compares the 4 claims both have." in words
     # A on the shared 4: h1, h2, h3 correct, h4 wrong -> 3 of 4. B: h1, h2, h4 correct -> 3 of 4.
     assert "3 of 4 (75.0%) 3 of 4 (75.0%) no change" in words
@@ -397,7 +398,7 @@ def test_compare_two_runs(repo):
 def test_compare_picker(repo):
     words = text_of(get(repo, "/results/compare?a=runs/part2")[2])
     assert "Pick two runs above" in words
-    assert "Step 3b: runs/part2 with runs/part3/after" in words and "runs/part3/after not made yet" in words
+    assert "Step 3b: runs/part2 with runs/part3/after" in words and "runs/part3/after is not made yet" in words
     assert "Step 3d" not in words and "runs/part3/before" not in words
     assert get(repo, "/results/compare?a=runs/nothing&b=runs/part2")[0] == 404
 
@@ -860,11 +861,11 @@ def test_a_version_of_the_agent_includes_its_loop(repo):
     def said(url):  # text_of puts a space inside "(<code>my_loop.py</code>": take it out
         return text_of(get(repo, url)[2]).replace("( ", "(").replace(" )", ")")
     words = said("/results/compare?a=runs/part2&b=runs/b")
-    assert f"A and B used the same version of the agent: the same {files}." in words
+    assert f"A and B were made with the same {files}." in words
     rows[0]["agent_version"] = "bbb"  # one result made with another loop
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", rows)
     words = said("/results/run?dir=runs/b")
-    assert f"made by 2 different versions of the agent: different {files}." in words
+    assert f"made with 2 different versions of {files}." in words
 
 
 def test_the_loop_check_file_is_not_a_run(repo):
@@ -880,7 +881,7 @@ def test_the_loop_check_file_is_not_a_run(repo):
     assert status == 200 and 'url=/results/#part-1"' in page
     write_jsonl(repo / "runs" / "part1" / "lookups.jsonl", [{"tool": "search", "input": {"query": "q"}}])
     words = text_of(get(repo, "/results/")[2])
-    assert "1 lookup" in words and "loop-check" not in words
+    assert "Your lookups by hand" in words and "loop-check" not in words
 
 
 def test_report_txt_and_run_json_open_their_run(repo):
@@ -897,13 +898,13 @@ def test_compare_says_whether_the_agent_changed(repo):
     write_jsonl(repo / "runs" / "part2" / "agent.jsonl", with_version(full_rows()["agent"], "aaa"))
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", with_version(full_rows()["agent"], "aaa"))
     words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
-    assert "A and B used the same version of the agent" in words
+    assert "A and B were made with the same" in words
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", with_version(full_rows()["agent"], "bbb"))
     words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
-    assert "same version" not in words and "version of the agent" not in words  # different: say nothing
+    assert "made with the same" not in words  # different: say nothing
     assert "No claim changed" in words
     # One result without a version: nothing is said either.
     rows = with_version(full_rows()["agent"], "aaa")
     rows[0].pop("agent_version")
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", rows)
-    assert "same version" not in text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
+    assert "made with the same" not in text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])

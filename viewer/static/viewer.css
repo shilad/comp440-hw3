@@ -186,6 +186,10 @@ details.result > summary .more::before { content: "+ "; }
 details.result > summary .less::before { content: "− "; }
 details.result:not([open]) > summary .less { display: none; }
 details.result[open] > summary .more, details.result[open] > summary .peek { display: none; }
+details.more { margin: 4px 0 8px; }
+details.more > summary { cursor: pointer; color: var(--link); font-size: 14px; }
+details.more > p { margin: 4px 0 0; }
+.note details.more { margin-bottom: 0; }
 details.report summary { cursor: pointer; color: var(--link); font-size: 14px; margin: 4px 0; }
 mark { background: var(--mark); color: var(--mark-ink); border-bottom: 2px solid var(--mark-line); padding: 0 1px; border-radius: 2px; }
 mark::before { content: attr(data-q); font-family: var(--body); font-size: 10px; font-weight: 700; vertical-align: super; margin-right: 2px; color: var(--mark-ink); }
