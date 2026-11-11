@@ -16,8 +16,12 @@ const NEEDED = 112;     // the claims a student saves: 12 development claims and
 // measuring 19 topics: below about 200 such claims, the end of the list was mostly off the topic.
 const FEW_CLAIMS = 200;
 const KEY = "comp440-hw3-claim-finder-selection";   // where the browser keeps the selection
+const REMOVED_KEY = "comp440-hw3-claim-finder-removed";   // and the ids of the claims the student removed
 
-const selection = new Map(stored());   // id -> claim, with "query": the search that found it
+const selection = new Map(stored(KEY).map((c) => [c.id, c]));   // id -> claim, with "query": the search that found it
+// The claims the student took out of the selection with Remove. "Select all shown" leaves them out;
+// only a claim's own Select brings it back.
+const removed = new Set(stored(REMOVED_KEY));
 const shown = new Map();               // id -> claim, for the search results on the screen
 let current = null;                    // the last search: its query, way of searching and total
 let asked = 0;                         // counts searches, so an answer that arrives late is ignored
@@ -25,9 +29,9 @@ let asked = 0;                         // counts searches, so an answer that arr
 const claims = (n) => `${n} ${n === 1 ? "claim" : "claims"}`;
 const contain = (n) => `${claims(n)} ${n === 1 ? "contains" : "contain"}`;
 
-function stored() {
+function stored(key) {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]").map((c) => [c.id, c]);
+    return JSON.parse(localStorage.getItem(key) || "[]");
   } catch (err) {
     return [];
   }
@@ -36,6 +40,7 @@ function stored() {
 function keep() {
   try {
     localStorage.setItem(KEY, JSON.stringify([...selection.values()]));
+    localStorage.setItem(REMOVED_KEY, JSON.stringify([...removed]));
   } catch (err) {
     say("This browser does not let the page store your selection, so do not reload the page before you save.", true);
   }
@@ -148,8 +153,13 @@ function rankText(c) {
 // ---- the selection -------------------------------------------------------------------------------
 
 function toggle(id) {
-  if (selection.has(id)) selection.delete(id);
-  else selection.set(id, { ...shown.get(id), query: current.query });
+  if (selection.has(id)) {
+    selection.delete(id);
+    removed.add(id);
+  } else {
+    selection.set(id, { ...shown.get(id), query: current.query });
+    removed.delete(id);
+  }
   keep();
   paint(id);
   tally();
@@ -168,11 +178,14 @@ function paint(id) {
 
 // ---- selecting every claim shown -------------------------------------------------------------------
 
-// What "Select all shown" would select now: the claims shown and not selected yet, from the top of
-// the list, as many as there is room for under 112.
+// What "Select all shown" would select now: the claims shown that are neither selected nor removed
+// by the student, from the top of the list, as many as there is room for under 112. `skipped` counts
+// the claims shown that it leaves out because the student removed them.
 function selectable() {
-  const left = [...shown.values()].filter((c) => !selection.has(c.id));
-  return { left: left, take: left.slice(0, Math.max(0, NEEDED - selection.size)) };
+  const unselected = [...shown.values()].filter((c) => !selection.has(c.id));
+  const left = unselected.filter((c) => !removed.has(c.id));
+  return { left: left, take: left.slice(0, Math.max(0, NEEDED - selection.size)),
+           skipped: unselected.length - left.length };
 }
 
 // The button's label says how many claims it would select. With none to select, it is disabled.
@@ -188,23 +201,28 @@ function allLabel(left, take) {
   return left === 1 ? "Select the 1 shown" : `Select all ${left} shown`;
 }
 
-// Select every claim shown, each as if its own Select had been pressed, but never more than 112.
+// Select every claim shown that the student has not removed, each as if its own Select had been
+// pressed, but never more than 112.
 function selectAll() {
-  const { left, take } = selectable();
+  const { left, take, skipped } = selectable();
   take.forEach((c) => selection.set(c.id, { ...c, query: current.query }));
   keep();
   take.forEach((c) => paint(c.id));
   tally();
   allButton();
-  byId("all-said").textContent = allSentence(take.length, left.length);
+  byId("all-said").textContent = allSentence(take.length, left.length, skipped);
 }
 
-// What the button did, in a sentence.
-function allSentence(took, left) {
+// What the button did, in a sentence, and a second one when it left out claims the student removed.
+function allSentence(took, left, skipped) {
   const more = `You selected ${took} more ${took === 1 ? "claim" : "claims"}`;
   const first = took === 1 ? "the first one" : `the first ${took}`;
-  if (took < left) return `${more}, ${first} in the list. You have ${selection.size}, which is all you need.`;
-  return `${more}. You have now selected ${selection.size} of ${NEEDED}.`;
+  const text = took < left
+    ? `${more}, ${first} in the list. You have ${selection.size}, which is all you need.`
+    : `${more}. You have now selected ${selection.size} of ${NEEDED}.`;
+  if (!skipped) return text;
+  return text + (skipped === 1 ? " The claim you removed earlier stays removed."
+                               : ` The ${skipped} claims you removed earlier stay removed.`);
 }
 
 // The line at the top: how many are selected, and of which label.
