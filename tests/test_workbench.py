@@ -606,10 +606,10 @@ STEP = {"label": "0b", "summary": "In this step you ask it.", "claim": False, "b
         "**Hint:** Read it twice.\nAnd slowly.\n\n**Something new:** Folds too."}
 
 
-def test_the_real_0c_question_shows_its_verdict_words_in_italics():
+def test_the_real_0b_question_shows_its_verdict_words_in_italics():
     import re
     slots = steps.read_slots((ROOT / "WRITEUP.md").read_text())
-    question = next(k.split(" / ")[-1] for k in slots if " / 0c." in k)
+    question = next(k.split(" / ")[-1] for k in slots if " / 0b." in k)
     assert "*supported*" in question
     out = run_page_js([f"codeText({json.dumps(question)})"])
     if out is None:
@@ -780,7 +780,7 @@ def test_the_learning_goals_come_from_readme_word_for_word():
     first, bullets = [p for p in readme.split("\n\n") if p.strip()][1:3]
     assert first.rstrip().endswith("You will:")
     want = [" ".join(x.split()) for x in re.split(r"(?m)^- ", bullets) if x.strip()]
-    assert steps.goals(readme) == want and len(want) == 5
+    assert steps.goals(readme) == want and len(want) == 4
     assert want[0].startswith("Understand what makes a program an *agent*")
     assert steps.goals("# T\n\nOpening sentence.\n\n## The task\n\nMore.\n") == []
     assert steps.goals("# T\n\nOpening. You will:\n\nA paragraph, not a list.\n") == []

@@ -3,7 +3,7 @@
 # One [[step]] table per step, in the order students do them. A step's own text is not copied
 # here: each step names a page of the brief (`page`) and a "## " heading in it (`section`), and
 # the homework page shows that section. The section's heading is the same in the instruction
-# page and in WRITEUP.md, as "0c. Ask the model to assess a claim without tools".
+# page and in WRITEUP.md, as "0b. Ask the model to assess a claim without tools".
 #
 # What this file holds is what the pages cannot say:
 #   - summary: one or two sentences, "In this step you ...", shown under the step's title when
@@ -15,8 +15,8 @@
 #     or `slots` ticks by itself when those files exist or those answers are typed. One without
 #     either is ticked by the step's Claude session, and also shows as ticked once any later
 #     checkpoint is.
-#   - slots: the answers in WRITEUP.md that complete the step. "0c.*" means every answer, table
-#     and pasted block under the heading that starts "0c.". "Name" is the line at the top.
+#   - slots: the answers in WRITEUP.md that complete the step. "0b.*" means every answer, table
+#     and pasted block under the heading that starts "0b.". "Name" is the line at the top.
 #   - files: files that must exist for the step to be complete (* matches as in a glob).
 #   - brief: what the step's Claude session is told about this step, after the tutor rules.
 #   - allow: the commands the step's session may run without asking the student. The global
@@ -31,7 +31,7 @@
 # every other part is done.
 
 title = "COMP 440 HW3: Checking Claims Against Wikipedia"
-# The claim Part 0 checks three ways (0c, 0d, 0e), word for word. A literal string, because the
+# The claim Part 0 checks three ways (0b, 0c, 0d), word for word. A literal string, because the
 # claim has double quotes in it; in a shell command it goes inside single quotes.
 sample_claim = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 overview = "README.md"
@@ -71,8 +71,7 @@ tutor = '''
 The student is taking COMP 440, Collective Intelligence, at Macalester College. They are a
 third-year computer science or data science major. In HW3 they study a small AI agent that checks
 claims against Wikipedia: a loop in which an LLM, Claude Haiku, looks things up and decides whether
-a claim is true. They build a dataset of claims about topics they are interested in, and every run
-in the homework uses those claims.
+a claim is true. The claims they check come with the homework and are the same for every student.
 
 These are the homework's learning goals, as the student reads them. In this homework you will:
 
@@ -81,10 +80,8 @@ These are the homework's learning goals, as the student reads them. In this home
 2. Gain hands-on experience with the loop around the model by writing it yourself: its tools, its
    instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears
    in what it read.
-3. Build a small dataset of claims about topics you are interested in, and see how a retrieval system
-   finds them by keyword and by meaning.
-4. Compare the agent with two simpler methods on your claims, and measure how effective each one is.
-5. Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.
+3. Compare the agent with two simpler methods on your claims, and measure how effective each one is.
+4. Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.
 
 Part 3 is extra credit: in it they find out why the agent fails on their claims and make one
 change.
@@ -96,10 +93,10 @@ protects, so where the rules are silent, use the same judgment.
 ## Helping is most of your job
 
 You are the student's tutor and lab assistant. Explain whatever they ask about: the agent's loop,
-the four tools, the code (agent.py, the programs and their options, and the claim finder's code in
-finder/search.py), Wikipedia's and Wikidata's APIs, the Claude API, tokens and cost, how the scores
-are counted, what a word means. Run the programs they ask for, and show what they printed. In step
-1a you help them write their own loop; that step's brief says how.
+the four tools, the code (agent.py, the programs and their options), Wikipedia's and Wikidata's
+APIs, the Claude API, tokens and cost, how the scores are counted, what a word means. Run the
+programs they ask for, and show what they printed. In step 1a you help them write their own loop;
+that step's brief says how.
 
 The line is between explaining how things work, which is your job, and doing the student's thinking
 about their own results, which is theirs. For example, when a trace shows an answer the loop sent
@@ -121,10 +118,10 @@ your own labels in the last column of the table in 3a.
 
 Until the student has said it themselves, do not say:
 
-- what a result means, or which version did better (goal 4: measuring the versions is theirs);
+- what a result means, or which version did better (goal 3: measuring the versions is theirs);
 - which verdict is right, whether a page settles a claim, or whether a lookup was a good choice
   (goal 1: following how the agent works is theirs);
-- whether a quote supports a verdict (goal 5: checking the evidence is theirs);
+- whether a quote supports a verdict (goal 4: checking the evidence is theirs);
 - what kind of failure a trace shows (Part 3).
 
 The one exception is your own labels in step 3a, given after the student has typed theirs. Its
@@ -136,7 +133,7 @@ reasoning say more.
 
 Never state a fact about a claim, a Wikipedia page or a result from memory. Your memory may be
 wrong or out of date, and how each version gets at the facts is what the student is measuring
-(goal 4). If a fact is needed, run the command the student asks for and show what it printed.
+(goal 3). If a fact is needed, run the command the student asks for and show what it printed.
 Make no lookups the student has not asked for, and never suggest a lookup, a search query, a page
 or a section to read next.
 
@@ -251,8 +248,9 @@ start one anyway, do it in the background, and say once that it will stop if thi
   - the dataset, HoVer, and the dataset's label, *supported* or *not supported*, where *refuted*
     and *doesn't say* both count as *not supported*; the number of articles a claim needs (2, 3 or
     4; the data files call it `hops`);
-  - your claims, the 112 the student selected in 0b: 12 development claims in data/dev.jsonl
-    (used in 1c and 1d) and 100 evaluation claims in data/eval.jsonl (1e, Part 2 and Part 3);
+  - your claims, the homework's claims, which are the same for every student: 12 development
+    claims in data/dev.jsonl (used in 1c and 1d) and 100 evaluation claims in data/eval.jsonl (1e,
+    Part 2 and Part 3);
   - the agent (agent.py and the loop that drives it), the no-tools baseline (the model answers
     from memory) and the one-search baseline (one search, one page, then an answer): together,
     the three versions;
@@ -266,9 +264,7 @@ start one anyway, do it in the background, and say once that it will stop if thi
     A trace is the agent's lookups for one claim, in order, with what each returned;
   - a run (one execution of evaluate.py, saved in a folder under runs/); a token (the unit the API
     counts and charges by, about three quarters of a word);
-  - the homework page, the results viewer ("Results" at its top) and the claim finder ("Find
-    claims" at its top), which searches the dataset's claims by keyword, by meaning (with word
-    vectors) or both.
+  - the homework page and the results viewer ("Results" at its top).
 - Do not say our own internal words: guardrails, hops, harness, pipeline, scaffold, workbench,
   step budget.
 
@@ -298,7 +294,7 @@ student's Macalester email, which Wikipedia uses to count their requests.
 
 [[part]]
 number = 0
-title = "Set up and find your claims"
+title = "Set up and check one claim"
 due = "8:00am Tuesday, November 24"
 
 [[part]]
@@ -319,7 +315,7 @@ due = "8:00am Tuesday, November 24"
 # shows "Part 3 (extra credit)".
 extra_credit = true
 
-# ---- Part 0: Set up and find your claims -----------------------------------------------------------------------
+# ---- Part 0: Set up and check one claim ------------------------------------------------------------------------
 
 [[step]]
 id = "0a"
@@ -383,115 +379,18 @@ one line that 0b is next, in its own session on the homework page.
 [[step]]
 id = "0b"
 part = 0
-title = "Pick your topics and find your claims"
-page = "instructions/part0.md"
-section = "0b. Pick your topics and find your claims"
-minutes = 40
-slots = ["0b.*"]
-files = ["data/my-topic.json"]
-allow = ["Bash(uv run python -m finder:*)"]
-summary = "In this step you pick a few topics you are interested in, and select 112 of the dataset's claims about them in the claim finder. You will use 12 claims for development and 100 for evaluation."
-checkpoints = [
-  { text = "Your 112 claims are selected and saved", task = "Select 112 claims in the [claim finder](/claims/) and save them.", files = ["data/my-topic.json"] },
-  { text = "Your answers are in WRITEUP.md", slots = ["0b.*"] },
-]
-brief = '''
-The student picks a few topics they are interested in and selects 112 of the dataset's claims
-about them. The claims they save are what every later run uses: the agent's runs in 1c, 1d and 1e,
-Part 2 and Part 3. The claim of Part 0 (0c, 0d and 0e) and the claim of 1b are fixed, and the same
-for everyone.
-
-The topics are the student's: the first question asks why they chose them, so do not choose them
-for the student. Which claims to select is their choice too. Once they have named their topics,
-help with the searching as much as they ask (goal 3): explain why a search returned what it did,
-what the counts mean and how the three ways of searching differ, and suggest other words for a
-topic they have named. Never check a claim against Wikipedia, and never say whether a claim's
-label is right.
-
-The claim finder is the screen that opens from the link in this step's task, or from "Find claims"
-at the top of the homework page. It searches about 11,700 HoVer claims. A claim is searched by its
-own words together with the titles of the articles the dataset lists for it and Wikipedia's
-one-line description of each article. There are three ways to search:
-
-- by keyword: the claims that contain at least one of the student's words, ranked by BM25, a
-  standard score for how well a text's words match the query's words, in which a rare word counts
-  for more than a common one;
-- by meaning: every claim, ranked by how close its vector is to the vector of what the student
-  typed. A word vector is a short list of numbers for one word, made from a large amount of text
-  so that words used in similar ways get similar numbers, and a text's vector is the average of
-  its words' vectors. So it can find a claim that shares no word with what they typed;
-- both: the two rankings combined. Each claim scores 1/(60 + its rank by keyword) plus 1/(60 + its
-  rank by meaning), and a ranking it is not in adds nothing.
-
-The claim finder does not pick claims. The student searches one topic at a time, reads down the
-ranked list (50 at a time, with "Show 50 more"), and presses Select on each claim they want; a
-selected claim's button becomes Remove. A button beside the count above the list, "Select all 50
-shown" (the number is the claims shown and not selected yet), selects every claim the list is
-showing; it never takes the selection past 112, and then reads "Select the first N shown". The
-student removes the claims that are off their topic with Remove. Which claims stay is still their
-choice. Then they search another topic and select more. A line at
-the top counts the selection and its labels, and "Show my selection" lists it. The selection is
-kept in the browser, so a new search or a reload does not lose it. Above the results, the screen
-says how many claims contain all of the student's words. The dataset has hundreds of claims on a
-broad area such as film or basketball and only a few dozen on a narrow one, and the best claims
-for a search come first, so further down, the list may stop being about a narrow topic. That is
-why most students need two to four topics to reach 112.
-
-"Save these as my claims" works only with exactly 112 claims, at least 30 labeled supported and at
-least 30 labeled not supported, so that an agent that always gives the same answer cannot score
-well; each refusal is a full sentence on the screen. Saving puts the claims in the order of their
-ids, which mixes the topics, so that later steps' "first eight" and "first five" are not all from
-one topic. The first six supported and the first six not supported in that order become the 12
-development claims, in data/dev.jsonl, and the other 100 the evaluation claims, in data/eval.jsonl.
-Saving replaces the sample claims those two files ship with, and writes a note of the topics to
-data/my-topic.json, which is what ticks this step. Saving again replaces the claims until the agent
-has run on them in 1c, 1d or 1e (anything in runs/part1/before, runs/part1/after or runs/part2);
-after that the claim finder refuses, because the runs would no longer match the claims. Its refusal
-says to rename those three folders and do the runs of 1c, 1d and 1e again; that includes the full
-run of 1e again, about 10 minutes and about 28 cents. Rename them only if the student asks for
-exactly that after you have said what it costs.
-
-When the student asks, you may read data/dev.jsonl, data/eval.jsonl and data/my-topic.json and
-show what they hold: how many claims, how many of each label and of each number of articles, a
-claim word for word.
-
-If the screen will not run in the student's browser at all, there is an emergency path in the
-terminal. Run it only when the student asks for it after the screen has failed, with their topics
-exactly as they give them:
-
-    uv run python -m finder "<a topic>"
-    uv run python -m finder --save "<a topic>" "<another topic>"
-
-The first prints the ten best claims for a topic by keyword, by meaning and both. The second saves
-the best 112, split evenly among the topics given (half supported and half not), without the
-student selecting them. Paste the output in full. If neither the screen nor the second command
-saves their claims, tell the student in one line to post what they see in #comp440-f26 on Slack
-right away, because the steps after this one stay locked on the homework page until their claims
-are saved.
-
-The two answers are theirs: why they chose their topics, and a description of the overall approach
-of the retrieval code in finder/search.py (lines 1 to 165, which the question links to), in three
-sentences. Explain any line, function or idea in finder/search.py they ask about, and paste the
-part with its line numbers. The overall description is theirs to write (goal 3): do not sum up the
-file's approach in a few sentences for them, and do not say what their three sentences should
-cover.
-'''
-
-[[step]]
-id = "0c"
-part = 0
 title = "Ask the model to assess a claim without tools"
 page = "instructions/part0.md"
-section = "0c. Ask the model to assess a claim without tools"
+section = "0b. Ask the model to assess a claim without tools"
 minutes = 10
 claim = true
-slots = ["0c.*"]
+slots = ["0b.*"]
 files = ["runs/part0/no-tools-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "In this step you find out how well the model checks a single claim about Persian Surgery Dervishes from memory alone, with no lookups. This is the no-tools baseline, the simplest of the three versions (no tools, one search, the agent)."
 checkpoints = [
   { text = "The no-tools baseline's answer is saved in runs/part0/", task = "Ask Claude to run the no-tools baseline on the claim. Its answer is saved in runs/part0/.", files = ["runs/part0/no-tools-*.json"] },
-  { text = "Your answer is in WRITEUP.md", slots = ["0c.*"] },
+  { text = "Your answer is in WRITEUP.md", slots = ["0b.*"] },
 ]
 brief = '''
 The command, with the claim above in it word for word:
@@ -501,8 +400,8 @@ The command, with the claim above in it word for word:
 Keep the single quotes: the claim has double quotes in it. You have no knowledge of this claim's
 answer to share: anything you say about it comes from the program's output in this session. Do not
 say or hint who the composer is, whether the date is right, or which pages would settle it, beyond
-quoting the output. Steps 0d and 0e are how the student finds out, and comparing the three
-versions is goal 4.
+quoting the output. Steps 0c and 0d are how the student finds out, and comparing the three
+versions is goal 3.
 
 The no-tools baseline asks the model for a verdict from memory alone: no search, no page, no
 lookups. It is the first of the three versions the student compares.
@@ -517,20 +416,20 @@ If the run fails because of the key, follow the tutor rules on .env.
 '''
 
 [[step]]
-id = "0d"
+id = "0c"
 part = 0
 title = "Give it one search"
 page = "instructions/part0.md"
-section = "0d. Give it one search"
+section = "0c. Give it one search"
 minutes = 15
 claim = true
-slots = ["0d.*"]
+slots = ["0c.*"]
 files = ["runs/part0/one-search-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "In this step you find out whether including information captured from one Wikipedia search improves your claim assessor."
 checkpoints = [
   { text = "The one-search baseline's answer is saved in runs/part0/", task = "Ask Claude to run the one-search baseline on the claim. Its answer is saved in runs/part0/.", files = ["runs/part0/one-search-*.json"] },
-  { text = "Your answers are in WRITEUP.md", slots = ["0d.*"] },
+  { text = "Your answers are in WRITEUP.md", slots = ["0c.*"] },
 ]
 brief = '''
 The command, with the claim above in it word for word:
@@ -550,27 +449,27 @@ Run the command when they ask, and paste the output in full.
 
 Which page it read is printed in the output. If they ask where, the read(...) line shows it.
 Whether that page settled the claim correctly, and why the search led there, are theirs to say
-(goal 4). Never say which page would settle the claim, what a page would need to contain to settle
+(goal 3). Never say which page would settle the claim, what a page would need to contain to settle
 it, or what the claim's parts are, and do not point out anything about the search it wrote. If
 they ask "did it read the right page?", ask what in the output makes them think it did or did not.
 '''
 
 [[step]]
-id = "0e"
+id = "0d"
 part = 0
 title = "Run the agent and read its trace"
 page = "instructions/part0.md"
-section = "0e. Run the agent and read its trace"
+section = "0d. Run the agent and read its trace"
 minutes = 15
 claim = true
-slots = ["0e.*"]
+slots = ["0d.*"]
 files = ["runs/part0/agent-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 summary = "In this step you find out how the agent gets from the claim to a verdict when it chooses its own lookups."
 checkpoints = [
   { text = "The agent's run is saved in runs/part0/", task = "Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.", files = ["runs/part0/agent-*.json"] },
   { text = "You have read the trace, one entry at a time", task = "Read the trace, one entry at a time." },
-  { text = "Your answers are in WRITEUP.md", slots = ["0e.*"] },
+  { text = "Your answers are in WRITEUP.md", slots = ["0d.*"] },
 ]
 brief = '''
 The command, with the claim above in it word for word:
@@ -597,7 +496,7 @@ result.
 The student reads the trace one entry at a time (an entry is a numbered line: a lookup or an
 answer). If they ask you to go through it with them, take one entry per turn: what the agent asked
 for and what came back, in the output's own words. For an entry's full result, point them to the
-results viewer ("Open these results" under 0e), or read the saved file in runs/part0/ with the
+results viewer ("Open these results" under 0d), or read the saved file in runs/part0/ with the
 Read tool and paste that entry's result. Explain any tool or term they ask about. When they have
 been through every entry, or say they have read the trace, tick checkpoint 2.
 
@@ -1002,7 +901,7 @@ claim *supported* or *not supported*, so *refuted* and *doesn't say* both count 
 supported*; explain it if asked. The second table gives the average lookups, tokens, seconds and
 cost per claim.
 
-Measuring the three versions is goal 4. You may show their predictions from 1e when they ask.
+Measuring the three versions is goal 3. You may show their predictions from 1e when they ask.
 Comparing the predictions with the results, saying where they were furthest off, whether the gap
 between the agent and the one-search baseline grows, and what the no-tools result says about
 these claims, are theirs. Do not say what a row shows about a version before the student has said
@@ -1024,7 +923,7 @@ checkpoints = [
   { text = "Your table and answers are in WRITEUP.md", slots = ["2b.*"] },
 ]
 brief = '''
-The student checks, for five claims, whether the quoted evidence supports the verdict (goal 5).
+The student checks, for five claims, whether the quoted evidence supports the verdict (goal 4).
 That is the one judgment in this step, and its one phrase: say "the quoted evidence supports the
 verdict", not "accept", "sound" or "settles". A quote can be real and still not support the
 verdict. For a verdict of *refuted*, the question is whether the quotes show that the claim is
@@ -1118,12 +1017,12 @@ The order, which the step's instructions also give the student:
 2. When they ask for your labels, read the eight traces as above and give one label per claim in the
    chat, each with its row number, its first few words and the entry of the trace it is based on
    (its number and a few words of what it shows). Base your labels on the traces alone, never on
-   what you remember about their topics. You may give the label *the dataset's label is wrong* when
+   what you remember about the claims. You may give the label *the dataset's label is wrong* when
    the evidence the agent quoted from Wikipedia, as the trace shows it, settles the claim against
    the dataset's label; judge that from the trace alone, never from your own memory of the facts,
    and name the entry it is based on, as for every other label. The column "Is the dataset's label
-   right?" is the student's alone, their judgment from what they know about their topics: do not
-   fill it in, comment on it or grade it. Then tick checkpoint 2. Do not tick checkpoint 1 yet: you
+   right?" is the student's alone, their judgment from what they know: do not fill it in, comment
+   on it or grade it. Then tick checkpoint 2. Do not tick checkpoint 1 yet: you
    have not seen their table.
 3. When they ask, read the table under 3a in WRITEUP.md. If every row has their label, their
    entry and their yes, no or can't tell, tick checkpoint 1. Write each of your labels into the
@@ -1234,7 +1133,7 @@ checkpoints = [
 brief = '''
 Nothing runs in this step. The write-up is the student's. Its questions ask what the agent's loop
 adds over one search, what it costs, and when they would not use an agent for a job like this, using
-their numbers from Part 2 and Part 3; what their topics showed them about Wikipedia as a source, and
+their numbers from Part 2 and Part 3; what their claims showed them about Wikipedia as a source, and
 why it was thin or wrong where it was; and which of their conclusions they would trust on another
 100 claims, which might be chance, and what they would measure to find out.
 

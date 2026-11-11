@@ -8,8 +8,6 @@ measure the effectiveness of different methods. You will:
 - Gain hands-on experience with the loop around the model by writing it yourself: its tools, its
   instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in
   what it read.
-- Build a small dataset of claims about topics you are interested in, and see how a retrieval system
-  finds them by keyword and by meaning.
 - Compare the agent with two simpler methods on your claims, and measure how effective each one is.
 - Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.
 
@@ -35,8 +33,7 @@ and reads Wikipedia as it is today.
 The claims come from HoVer, a public dataset of claims that each need two, three or four Wikipedia
 articles to check. Many do not name the page that holds the answer, so one fact has to be found before
 you know which page to read next. You measure whether one search is enough, and you study how the agent
-breaks a claim into pieces, looks up each one and puts them together. In step 0b you pick a few topics
-you are interested in and select 112 claims about them; every run after that uses them.
+breaks a claim into pieces, looks up each one and puts them together.
 
 ## What you need before you start
 
@@ -114,13 +111,13 @@ You used all of these in earlier homeworks:
 
 | Part | What you do | Weight |
 |---|---|---|
-| [Part 0: Set up and find your claims](instructions/part0.md) | Get your copy running, create a dataset of claims about a few topics you are interested in, then check one claim three ways: with an LLM alone, with one Wikipedia search, and with the agent | 15% |
+| [Part 0: Set up and check one claim](instructions/part0.md) | Get your copy running, then check one claim three ways: with an LLM alone, with one Wikipedia search, and with the agent | 15% |
 | [Part 1: How the agent works](instructions/part1.md) | Write the agent's loop, check one claim yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 35% |
 | [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy by how many articles a claim needs, and check the agent's evidence yourself | 50% |
 | [Part 3 (extra credit): Why the agent fails, and one change](instructions/part3.md) | Sort the agent's failures on your claims, make one change, and write up what you found | Extra credit |
 
-I expect this homework to take about 5 hours and 45 minutes in all, in three sittings: about 1 hour and
-40 minutes for Part 0, about 3 hours for Part 1, and about an hour for Part 2. On top of that, the full run in
+I expect this homework to take about 5 hours in all, in three sittings: about an hour for Part 0, about
+3 hours for Part 1, and about an hour for Part 2. On top of that, the full run in
 Part 1 takes about 10 minutes while you do other things. Part 3, which is extra credit, takes a little
 over an hour more, and its run about 6 minutes.
 
@@ -144,9 +141,9 @@ over an hour more, and its run about 6 minutes.
 - **HoVer** is the public dataset the claims come from. **The dataset's label** is HoVer's *supported* or
   *not supported*; a verdict of *refuted* or *doesn't say* counts as *not supported*. **The number of
   articles** is how many Wikipedia articles a claim needs (2, 3 or 4).
-- **The claim finder**, **Find claims** at the top of the homework page, is where you select **your
-  claims**, 112 in all, in step 0b: 12 **development claims** in `data/dev.jsonl` for trying things out in
-  Part 1, and 100 **evaluation claims** in `data/eval.jsonl` for the full run and Parts 2 and 3.
+- **Your claims** are the homework's claims, the same for every student: 12 **development claims** in
+  `data/dev.jsonl` for trying things out in Part 1, and 100 **evaluation claims** in `data/eval.jsonl` for
+  the full run and Parts 2 and 3.
 - A **run** is one use of `evaluate.py`, saved in a folder under `runs/`.
 - A **token** is the unit the Claude API counts text in and charges by, about three quarters of a word.
 
@@ -162,7 +159,7 @@ In your repository I look for:
 - `WRITEUP.md`, with every answer of Parts 0 to 2 filled in, and of Part 3 if you did the extra credit;
 - your `instructions.md`;
 - your loop, `my_loop.py`;
-- your claims, `data/dev.jsonl`, `data/eval.jsonl` and `data/my-topic.json`;
+- your claims, `data/dev.jsonl` and `data/eval.jsonl`;
 - your runs, in `runs/`;
 - `TRANSCRIPT.md`, your conversations with Claude.
 

@@ -230,12 +230,10 @@ evidence" says "Found in entry N of the trace (read), highlighted below": click 
 **Troubleshooting:** If the run stops partway, ask Claude to run the same command again. It keeps every
 claim it already finished.
 
-**Hint:** Your claims were picked for your topics, not by number of articles, so your 12 may lack one of
-the numbers; then choose another claim. In "Claims", set "The number of articles" to "2" (then "3", then
-"4"), and set "Result" in "The agent" box to "matches the dataset's label" or "does not match the
-dataset's label (any reason)". "Next →" goes to the next claim in the filtered list. The dataset's
-labels were made by people from the Wikipedia of 2017, so one may look wrong to you; if so, say so in
-that row.
+**Hint:** In "Claims", set "The number of articles" to "2" (then "3", then "4"), and set "Result" in
+"The agent" box to "matches the dataset's label" or "does not match the dataset's label (any reason)".
+"Next →" goes to the next claim in the filtered list. The dataset's labels were made by people from the
+Wikipedia of 2017, so one may look wrong to you; if so, say so in that row.
 
 ## 1d. Write the agent's instructions
 

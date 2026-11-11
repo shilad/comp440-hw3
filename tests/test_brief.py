@@ -16,12 +16,11 @@ WRITEUP = ROOT / "WRITEUP.md"
 
 # The parts and steps, in order: the "## " headings of each page and of WRITEUP.md.
 PARTS = {
-    0: ("Set up and find your claims", "instructions/part0.md", [
+    0: ("Set up and check one claim", "instructions/part0.md", [
         "0a. Get your copy running",
-        "0b. Pick your topics and find your claims",
-        "0c. Ask the model to assess a claim without tools",
-        "0d. Give it one search",
-        "0e. Run the agent and read its trace",
+        "0b. Ask the model to assess a claim without tools",
+        "0c. Give it one search",
+        "0d. Run the agent and read its trace",
     ]),
     1: ("How the agent works", "instructions/part1.md", [
         "1a. Write the loop",
@@ -64,7 +63,7 @@ OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**"
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
-SLOTS = 34
+SLOTS = 32
 
 # Part 3 is extra credit: its headings say so after the part's number.
 EXTRA_CREDIT = {3}
@@ -260,8 +259,6 @@ LEARNING_GOALS = [
     "Gain hands-on experience with the loop around the model by writing it yourself: its tools, its "
     "instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in "
     "what it read.",
-    "Build a small dataset of claims about topics you are interested in, and see how a retrieval system "
-    "finds them by keyword and by meaning.",
     "Compare the agent with two simpler methods on your claims, and measure how effective each one is.",
     "Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.",
 ]
@@ -293,7 +290,7 @@ def bullets_after(text, lead):
     return [one_line(item) for item in items], one_line(" ".join(after))
 
 
-def test_readme_and_writeup_give_the_same_five_learning_goals():
+def test_readme_and_writeup_give_the_same_four_learning_goals():
     readme, readme_after = bullets_after((ROOT / "README.md").read_text(encoding="utf-8"), "You will:")
     writeup, writeup_after = bullets_after(WRITEUP.read_text(encoding="utf-8"), "In this homework you will:")
     assert readme == LEARNING_GOALS
@@ -329,13 +326,20 @@ def test_nothing_removed_comes_back(name):
     assert not left, f"{name} still has {left}"
 
 
-def test_0b_links_the_retrieval_code_and_the_lines_hold_the_search():
-    link = "https://github.com/shilad/comp440-hw3/blob/main/finder/search.py#L1-L165"
-    assert f"[retrieval code]({link})" in WRITEUP.read_text(encoding="utf-8")
-    code = (ROOT / "finder/search.py").read_text(encoding="utf-8").splitlines()
-    start = {name: next(i + 1 for i, line in enumerate(code) if line.startswith(f"def {name}("))
-             for name in ("search", "pick")}
-    assert start["search"] <= 165 < start["pick"], start
+@pytest.mark.parametrize("name", OWNED)
+def test_nothing_students_read_sends_them_to_the_claim_finder(name):
+    """Step 0b is gone (the instructor, Nov 11: "drop 0b"), and with it the claim finder, the
+    student's topics and the 112 claims they selected; the later steps of Part 0 are 0b to 0d.
+    README's Resources section keeps the licence notices for the claim finder's data, which stays in
+    the repository."""
+    text = (ROOT / name).read_text(encoding="utf-8")
+    if name == "README.md":
+        text = re.sub(r"(?s)\n## Resources\n.*?(?=\n## )", "\n", text)
+    text = one_line(text)
+    for gone in ("claim finder", "**Find claims**", "my-topic", "finder/search.py", "topics", "112",
+                 "dataset of claims about", "retrieval"):
+        assert gone not in text, f"{name} still has {gone!r}"
+    assert not re.search(r"\b0e\b", text), f"{name} still names step 0e"
 
 
 # ---- what each part holds -----------------------------------------------------------------------
@@ -406,8 +410,7 @@ def test_every_label_is_one_the_page_knows(step):
 # (the page reads README's first paragraph and the bullets after it, so it cannot come before them).
 DUE = "Everything is due 8:00am Tuesday, November 24."
 PART_OPENINGS = {
-    0: "In this part you get your copy of the homework running, and create a dataset of claims about a few "
-       "topics you are interested in.",
+    0: "In this part you get your copy of the homework running. Then you check one claim",
     1: "In this part you build and study the agent.",
     2: "In this part you read the full run you started in 1e:",
     3: "In this part you sort out why the agent fails on your evaluation claims,",

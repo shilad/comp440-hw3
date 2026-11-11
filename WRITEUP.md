@@ -13,35 +13,24 @@ In this homework you will:
 
 - Understand what makes a program an *agent*: a language model that picks the next thing to look up, reads what comes back, and decides when to stop.
 - Gain hands-on experience with the loop around the model by writing it yourself: its tools, its instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in what it read.
-- Build a small dataset of claims about topics you are interested in, and see how a retrieval system finds them by keyword and by meaning.
 - Compare the agent with two simpler methods on your claims, and measure how effective each one is.
 - Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.
 
 For extra credit, in Part 3, you find out why the agent fails on your claims, make one change, and see where Wikipedia, which is written by its volunteer editors, is thin, out of date or wrong.
 
-# Part 0: Set up and find your claims
+# Part 0: Set up and check one claim
 
 ## 0a. Get your copy running
 
 There is nothing to write for this step except your name, after `Name:` at the top of this file.
 
-## 0b. Pick your topics and find your claims
-
-Why did you choose the topics you did?
-
->
-
-Read through the [retrieval code](https://github.com/shilad/comp440-hw3/blob/main/finder/search.py#L1-L165) in `finder/search.py`. Describe its overall approach in three sentences.
-
->
-
-## 0c. Ask the model to assess a claim without tools
+## 0b. Ask the model to assess a claim without tools
 
 What verdict did the model give (*supported*, *refuted* or *doesn't say*), and what reason did it give? Quote the lines of the output that show them.
 
 >
 
-## 0d. Give it one search
+## 0c. Give it one search
 
 Which Wikipedia page did it read? Quote the line of the output that shows it.
 
@@ -51,7 +40,7 @@ Did that page settle the claim correctly? If not, why do you think the search le
 
 >
 
-## 0e. Run the agent and read its trace
+## 0d. Run the agent and read its trace
 
 In one or two sentences, how did the agent get from the claim to its verdict? Point to the trace entries by their numbers.
 
@@ -211,10 +200,10 @@ What does the agent's loop add over one search, what does it cost, and when woul
 
 >
 
-What did your topics show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
+What did your claims show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
 
 >
 
-Your numbers rest on 100 claims about the topics you chose. Which of your conclusions would you trust on another 100 claims, which might be chance, and what would you measure to find out?
+Your numbers rest on 100 claims. Which of your conclusions would you trust on another 100 claims, which might be chance, and what would you measure to find out?
 
 >

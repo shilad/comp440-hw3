@@ -353,7 +353,7 @@ def test_single_check_and_lookups(repo):
 
 def test_empty_states(tmp_path):
     words = text_of(get(tmp_path, "/results/")[2])
-    assert "No runs yet. Your first one appears here after step 0c." in words
+    assert "No runs yet. Your first one appears here after step 0b." in words
     (tmp_path / "runs" / "part0").mkdir(parents=True)
     (tmp_path / "runs" / "part0" / "agent-1.json").write_text(json.dumps(
         {"claim": "x", "verdict": "supported", "trace": [], "evidence": []}))
@@ -718,8 +718,8 @@ def test_home_lists_runs_in_the_homework_order(repo):
                                       "Part 3: Why the agent fails, and one change",
                                       "Other runs")]
     assert order == sorted(order)
-    assert "Steps 0c, 0d and 0e each save a check" in words  # Part 0 is empty
-    assert "Part 0: Set up and find your claims" in words
+    assert "Steps 0b, 0c and 0d each save a check" in words  # Part 0 is empty
+    assert "Part 0: Set up and check one claim" in words
     picker = get(repo, "/results/compare")[2]
     assert picker.index(">runs/part1/before<") < picker.index(">runs/part2<") < picker.index(">runs/zzz<")
 

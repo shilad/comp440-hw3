@@ -47,7 +47,7 @@ give a trace, or say which of you is right.
 
 **Hint:** For "The entry of the trace that shows it", give the entry's number and a few words of what it
 shows. For "Is the dataset's label right?", go by what you know: people made the dataset's labels from
-the Wikipedia of 2017, and you may know your topics better than they did.
+the Wikipedia of 2017, and you may know a claim's subject better than they did.
 
 ## 3b. Make one change
 
@@ -104,8 +104,8 @@ In this step you say what you learned, in your own words.
 **Write-up:** Answer these questions in `WRITEUP.md`, under 3c:
 
 - What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and Part 3.
-- What did your topics show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
-- Your numbers rest on 100 claims about the topics you chose. Which of your conclusions would you trust on another 100 claims, which might be chance, and what would you measure to find out?
+- What did your claims show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
+- Your numbers rest on 100 claims. Which of your conclusions would you trust on another 100 claims, which might be chance, and what would you measure to find out?
 
 **Hint:** Keep each answer free of blank lines, since a blank line ends it. To start a new paragraph,
 put a line with just `>` between the two. Claude will not write or suggest a sentence, because the

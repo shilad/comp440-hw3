@@ -2,7 +2,7 @@
 
 Offline: no network, no key. Run with `uv run pytest -q`.
 
-The step list is fixed: the fifteen steps from 0a to 3c, each with the sections, answers, files and
+The step list is fixed: the fourteen steps from 0a to 3c, each with the sections, answers, files and
 commands below, and Part 3 extra credit. These tests catch a step that drifts from that list, a
 heading that the pages or WRITEUP.md do not have, a command a step's Claude session is told to run
 but may not run without asking, a word students should not see, a rule that asks for a prediction,
@@ -24,7 +24,7 @@ from workbench import steps as stepmod  # noqa: E402
 STEPS = REPO / "steps.toml"
 
 PARTS = {
-    0: "Set up and find your claims",
+    0: "Set up and check one claim",
     1: "How the agent works",
     2: "The agent against the baselines",
     3: "Why the agent fails, and one change",
@@ -34,7 +34,6 @@ DUE = "8:00am Tuesday, November 24"
 CHECK = ["Bash(uv run python check.py:*)"]
 EVALUATE = ["Bash(uv run python evaluate.py:*)"]
 LOOKUP = ["Bash(uv run python lookup.py:*)"]
-FINDER = ["Bash(uv run python -m finder:*)"]
 LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loop.py --use-reference)",
               "Bash(uv run pytest:*)"]
 
@@ -42,10 +41,9 @@ LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loo
 EXPECTED = {
     "0a": (0, "0a. Get your copy running", [".env", "runs/part0/setup-check.txt"],
            ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"], 20),
-    "0b": (0, "0b. Pick your topics and find your claims", ["data/my-topic.json"], FINDER, 40),
-    "0c": (0, "0c. Ask the model to assess a claim without tools", ["runs/part0/no-tools-*.json"], CHECK, 10),
-    "0d": (0, "0d. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 15),
-    "0e": (0, "0e. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 15),
+    "0b": (0, "0b. Ask the model to assess a claim without tools", ["runs/part0/no-tools-*.json"], CHECK, 10),
+    "0c": (0, "0c. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 15),
+    "0d": (0, "0d. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 15),
     "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 70),
     "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 25),
     "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 25),
@@ -59,23 +57,21 @@ EXPECTED = {
     "3c": (3, "3c. Write it up", [], [], 20),
 }
 # Minutes per part (the instructor's "split the difference", morning of Nov 11). Parts 0 to 2,
-# the required work, make about 5 hours and 45 minutes. 0b is 40: halfway between his 25 and the
-# 40 to 75 that a simulated student needed with the Select all shown button.
-PART_MINUTES = {0: 100, 1: 185, 2: 60, 3: 70}
+# the required work, made about 5 hours and 45 minutes; the old step 0b, picking topics and
+# claims, took 40 of them. Without it (the instructor, afternoon of Nov 11: "drop 0b") they make
+# 305 minutes, about 5 hours.
+PART_MINUTES = {0: 60, 1: 185, 2: 60, 3: 70}
 
 # Each step's summary, word for word from the instructor's outline (Nov 11).
 SUMMARIES = {
     "0a": "In this step you get the homework running on your laptop, so the later steps can reach "
           "Wikipedia and the Claude API.",
-    "0b": "In this step you pick a few topics you are interested in, and select 112 of the dataset's "
-          "claims about them in the claim finder. You will use 12 claims for development and 100 for "
-          "evaluation.",
-    "0c": "In this step you find out how well the model checks a single claim about Persian Surgery "
+    "0b": "In this step you find out how well the model checks a single claim about Persian Surgery "
           "Dervishes from memory alone, with no lookups. This is the no-tools baseline, the simplest of "
           "the three versions (no tools, one search, the agent).",
-    "0d": "In this step you find out whether including information captured from one Wikipedia search "
+    "0c": "In this step you find out whether including information captured from one Wikipedia search "
           "improves your claim assessor.",
-    "0e": "In this step you find out how the agent gets from the claim to a verdict when it chooses its "
+    "0d": "In this step you find out how the agent gets from the claim to a verdict when it chooses its "
           "own lookups.",
     "1a": "In this step you write the agent loop yourself. The loop asks the model for lookups, runs the "
           "lookups it chooses, sends back what they return, and stops.",
@@ -101,10 +97,9 @@ TASKS = {
            "Type your name after Name: at the top of WRITEUP.md, and save the file.",
            "Start this step's Claude session with the command on this page.",
            "Ask Claude to run the set-up check, until it says everything is ready."],
-    "0b": ["Select 112 claims in the [claim finder](/claims/) and save them."],
-    "0c": ["Ask Claude to run the no-tools baseline on the claim. Its answer is saved in runs/part0/."],
-    "0d": ["Ask Claude to run the one-search baseline on the claim. Its answer is saved in runs/part0/."],
-    "0e": ["Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.",
+    "0b": ["Ask Claude to run the no-tools baseline on the claim. Its answer is saved in runs/part0/."],
+    "0c": ["Ask Claude to run the one-search baseline on the claim. Its answer is saved in runs/part0/."],
+    "0d": ["Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.",
            "Read the trace, one entry at a time."],
     "1a": ["Read agent.py: the four tools, the evidence check and finish().",
            "Write your loop in my_loop.py until it passes every rule of the check, or choose to keep the "
@@ -143,16 +138,14 @@ RUN_NOTES = {
           "tables.",
 }
 
-# The homework's learning goals (contract, Nov 11): the same five, word for word, in README.md,
-# WRITEUP.md and the tutor text.
+# The homework's learning goals (contract, Nov 11): the same four, word for word, in README.md,
+# WRITEUP.md and the tutor text. The goal about building a dataset of claims went with step 0b.
 GOALS = [
     "Understand what makes a program an *agent*: a language model that picks the next thing to look "
     "up, reads what comes back, and decides when to stop.",
     "Gain hands-on experience with the loop around the model by writing it yourself: its tools, its "
     "instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears "
     "in what it read.",
-    "Build a small dataset of claims about topics you are interested in, and see how a retrieval system "
-    "finds them by keyword and by meaning.",
     "Compare the agent with two simpler methods on your claims, and measure how effective each one is.",
     "Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.",
 ]
@@ -254,7 +247,7 @@ def test_only_part_3_is_extra_credit(a):
     assert {n: p.get("extra_credit", False) for n, p in a.parts.items()} == {0: False, 1: False, 2: False, 3: True}
 
 
-def test_fifteen_steps_in_order(a):
+def test_fourteen_steps_in_order(a):
     assert [s.id for s in a.steps] == list(EXPECTED)
     # The page names a step by its part and its letter in the part; that must be its id.
     assert [a.label(s) for s in a.steps] == [s.id for s in a.steps]
@@ -263,13 +256,36 @@ def test_fifteen_steps_in_order(a):
 def test_minutes_per_part(a):
     per = {n: sum(s.minutes for s in a.steps if s.part == n) for n in PARTS}
     assert per == PART_MINUTES
-    assert sum(per[n] for n in (0, 1, 2)) == 345, "the required work is about 5 hours and 45 minutes"
+    assert sum(per[n] for n in (0, 1, 2)) == 305, "the required work is about 5 hours"
 
 
 def test_the_old_cost_step_and_the_id_2c_are_gone():
     text = STEPS.read_text(encoding="utf-8")
     assert "Compare cost" not in text
     assert not re.search(r"\b2c\b", text), "the old 2c is now 2b"
+
+
+def test_every_student_uses_the_shipped_claims():
+    """The instructor, Nov 11: "drop 0b". No step picks topics or selects claims in the claim finder;
+    every student runs on the claims the repository ships: 12 development claims, 2 for each number
+    of articles and label, and 100 evaluation claims, 34, 33 and 33 by number of articles and 50 of
+    each label, which the homework's times and costs assume."""
+    import collections
+    import json
+    text = STEPS.read_text(encoding="utf-8")
+    for gone in ("claim finder", "Find claims", "/claims", "my-topic", "finder", "topic", "112", "goal 5"):
+        assert gone not in text, gone
+    rows = {name: [json.loads(line) for line in (REPO / "data" / f"{name}.jsonl").read_text().splitlines()]
+            for name in ("dev", "eval")}
+
+    def count(name, key):
+        return dict(collections.Counter(key(r) for r in rows[name]))
+
+    assert count("dev", lambda r: (r["hops"], r["label"])) == {
+        (n, label): 2 for n in (2, 3, 4) for label in ("SUPPORTED", "NOT_SUPPORTED")}
+    assert count("eval", lambda r: r["hops"]) == {2: 34, 3: 33, 4: 33}
+    assert count("eval", lambda r: r["label"]) == {"SUPPORTED": 50, "NOT_SUPPORTED": 50}
+    assert not {r["id"] for r in rows["dev"]} & {r["id"] for r in rows["eval"]}
 
 
 @pytest.mark.parametrize("step_id", list(EXPECTED))
@@ -285,7 +301,7 @@ def test_step_mechanics(a, step_id):
     assert s.minutes == minutes
     assert s.slots == (["Name"] if step_id == "0a" else [f"{step_id}.*"])
     assert s.setup == (step_id == "0a")
-    assert s.claim == (step_id in ("0c", "0d", "0e"))
+    assert s.claim == (step_id in ("0b", "0c", "0d"))
     assert s.summary and s.brief.strip() and s.checkpoints
 
 
@@ -365,7 +381,7 @@ def test_claim_steps_give_the_claim_word_for_word(a):
 
 def test_part0_briefs_give_the_commands_whole():
     a = stepmod.load(STEPS)
-    for step_id, method in (("0c", "no-tools"), ("0d", "one-search"), ("0e", "agent")):
+    for step_id, method in (("0b", "no-tools"), ("0c", "one-search"), ("0d", "agent")):
         brief = a.step(step_id).brief
         assert PART0_COMMANDS[method] in brief, f"{step_id}: the brief lacks {PART0_COMMANDS[method]}"
         assert "single quotes" in brief, f"{step_id}: the brief doesn't say to keep the single quotes"
@@ -510,7 +526,7 @@ def test_the_learning_goals_are_the_same_in_readme_writeup_and_tutor(a):
     for name in ("README.md", "WRITEUP.md"):
         path = REPO / name
         assert path.is_file(), name
-        assert GOALS in goal_lists(path.read_text(encoding="utf-8")), f"{name} lacks the five learning goals word for word"
+        assert GOALS in goal_lists(path.read_text(encoding="utf-8")), f"{name} lacks the four learning goals word for word"
 
 
 def test_the_tutor_text_is_shorter_than_before(a):
@@ -602,11 +618,11 @@ def test_1a_helps_with_the_loop_but_never_writes_it(a):
 
 
 def test_the_strict_rules_about_claims_live_where_the_student_does_the_agents_job(a):
-    """Goal 1: in 1b the student is the agent, and in 0e, 1c, 2b and 3a they judge its reasoning.
+    """Goal 1: in 1b the student is the agent, and in 0d, 1c, 2b and 3a they judge its reasoning.
     The tutor text says the short form once; those briefs say the strict form."""
-    for step_id in ("1b", "0e", "1c", "2b", "3a"):
+    for step_id in ("1b", "0d", "1c", "2b", "3a"):
         assert "word for word" in flat(a.step(step_id).brief), step_id
-    for step_id in ("1b", "0e", "1c", "2b"):
+    for step_id in ("1b", "0d", "1c", "2b"):
         assert "does the same work" in flat(a.step(step_id).brief), step_id
     assert "Never break a claim into parts" not in flat(a.tutor)
     assert "Do not do the student's reading of a claim for them" in flat(a.tutor)

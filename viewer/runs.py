@@ -833,7 +833,7 @@ ORDER = ["runs/part0", "runs/part1/lookups.jsonl", "runs/part1", "runs/part1/bef
 # The comparisons the homework asks for: (run A, run B, the step that makes run B).
 COMPARISONS = [("runs/part1/before", "runs/part1/after", "1d"),
                ("runs/part2", "runs/part3/after", "3b")]
-WHERE_FROM = {"runs/part0": "Steps 0c, 0d and 0e each save a check in runs/part0/.",
+WHERE_FROM = {"runs/part0": "Steps 0b, 0c and 0d each save a check in runs/part0/.",
               "runs/part1/lookups.jsonl": "Step 1b saves the lookups you make by hand in runs/part1/lookups.jsonl.",
               "runs/part1/before": "Step 1c saves the run in runs/part1/before/.",
               "runs/part1/after": "Step 1d saves the run in runs/part1/after/.",

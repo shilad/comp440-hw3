@@ -291,13 +291,13 @@ def json_str(v) -> str:
 # ------------------------------------------------------------------ home
 
 EMPTY_PART = {
-    0: "Nothing yet. Steps 0c, 0d and 0e each save a check in <code>runs/part0/</code>.",
+    0: "Nothing yet. Steps 0b, 0c and 0d each save a check in <code>runs/part0/</code>.",
     1: ("Nothing yet. Step 1b saves your lookups in <code>runs/part1/lookups.jsonl</code>, and steps 1c "
         "and 1d save runs in <code>runs/part1/before/</code> and <code>runs/part1/after/</code>."),
     2: "Nothing yet. Step 1e starts the run that fills <code>runs/part2/</code>.",
     3: "Nothing yet. Step 3b saves a run in <code>runs/part3/after/</code>.",
 }
-PART_TITLES = {0: "Part 0: Set up and find your claims", 1: "Part 1: How the agent works",
+PART_TITLES = {0: "Part 0: Set up and check one claim", 1: "Part 1: How the agent works",
                2: "Part 2: The agent against the baselines", 3: "Part 3: Why the agent fails, and one change"}
 
 
@@ -305,7 +305,7 @@ def home(repo: Path, q: dict) -> str:
     evals, checks, lookups = R.walk_runs(repo)
     out = ['<h1>Your runs</h1><p class="lede">Everything saved in <code>runs/</code>, part by part.</p>']
     if not evals and not checks and not lookups:
-        out.append('<p class="empty">No runs yet. Your first one appears here after step 0c.</p>')
+        out.append('<p class="empty">No runs yet. Your first one appears here after step 0b.</p>')
         return shell("Your runs", "".join(out))
     runs = {}
     for rel in evals:
