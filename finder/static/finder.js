@@ -62,12 +62,12 @@ async function search(more = false) {
   const query = more ? current.query : byId("q").value.trim();
   const way = more ? current.how : how();
   if (!query) {
-    byId("status").textContent = "Type a few words about your topic first.";
+    byId("status").textContent = "Type a topic first.";
     return;
   }
   const mine = ++asked;
   byId("status").textContent = mine === 1
-    ? "Searching. The first search takes a few seconds, because the claims are loaded then."
+    ? "Searching. The first search takes a few seconds while the claims load."
     : "Searching.";
   byId("all-said").textContent = "";
   const start = more ? shown.size : 0;
@@ -106,8 +106,8 @@ function matchesText(answer) {
   const all = answer.matches.all;
   const severalWords = answer.query.trim().split(/\s+/).length > 1;
   if (all === 0 && severalWords) {
-    return "No claim contains all of your words, which is usual for a description of several words. " +
-      "Read down the list, and select the claims that are on your topic.";
+    return "No claim contains all of your words, which is usual when you type several words. " +
+      "Select the claims on your topic.";
   }
   if (all === 0) {
     return "No claim contains your word, so the claims below were found by meaning alone and may be off your topic.";

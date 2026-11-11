@@ -16,15 +16,9 @@
     <div class="bar"><span class="label">COMP 440 HW3 · The claim finder</span><a href="/">Back to the homework page</a></div>
     <h1>Find claims</h1>
     <div class="notice" id="saved" hidden></div>
-    <p class="lede">Here you search for topics you are interested in, read the claims from HoVer that match each one,
-      and select 112 of them as your claims for the whole homework. You need exactly 112, with at least 30
-      supported and 30 not supported, so that an agent that always gives the same answer cannot score well.</p>
-    <p class="lede">A search by keyword finds the claims that contain your words, and a search by meaning finds the
-      claims whose words are close in meaning to yours, even when they share none of them. Both combines the two
-      rankings.</p>
-    <p class="lede small">The search by meaning uses word vectors, lists of numbers that are close together for
-      words used in similar ways; this is what an embedding search is. Each claim is searched by its own text, the
-      titles of the Wikipedia articles it needs, and those articles' one-line descriptions.</p>
+    <p class="lede">Search for topics you are interested in, and select the HoVer claims about them. You need exactly
+      112 claims, with at least 30 supported and 30 not supported, so that an agent that always gives the same
+      answer cannot score well.</p>
   </div>
 </header>
 
@@ -42,7 +36,7 @@
 <main class="wrap">
   <section id="searching">
     <form class="search" id="search">
-      <label for="q" class="ink">Describe one topic in a few words or a sentence.</label>
+      <label for="q" class="ink">Describe one topic in a few words.</label>
       <div class="row">
         <input id="q" type="text" autocomplete="off" spellcheck="true">
         <button class="go" type="submit">Search</button>
@@ -54,8 +48,20 @@
         <label><input type="radio" name="how" value="both" checked> both</label>
       </fieldset>
     </form>
-    <p class="status" id="status">Search a topic you are interested in. Its claims will appear here, best first, and
-      you select the ones that are on your topic.</p>
+    <details class="fold how">
+      <summary>How the search works</summary>
+      <p>The claim finder is a small retrieval system. Its code is in <code>finder/search.py</code>, and step 0b
+        asks you to read it.</p>
+      <ul>
+        <li>A search by keyword finds the claims that contain your words.</li>
+        <li>A search by meaning is an embedding search. It finds the claims whose words are close in meaning to
+          yours, so a claim can match without sharing a word with your search.</li>
+        <li>Both combines the two rankings into one.</li>
+        <li>Each claim is searched by its text, the titles of the Wikipedia articles it needs, and those articles'
+          one-line descriptions.</li>
+      </ul>
+    </details>
+    <p class="status" id="status">The claims that match your search appear here, best first.</p>
     <div class="above" id="above" hidden>
       <p class="matches" id="matches"></p>
       <button class="pick" id="all" type="button">Select all shown</button>
@@ -74,9 +80,7 @@
   </section>
 </main>
 
-<footer class="foot"><div class="wrap">Your selection stays in this browser until you save it. Your saved claims
-  are in <code>data/dev.jsonl</code> and <code>data/eval.jsonl</code>. Saving again replaces them, until the agent
-  has run on them in step 1c.</div></footer>
+<footer class="foot"><div class="wrap">This browser keeps your selection until you save it.</div></footer>
 <script src="/claims/static/finder.js"></script>
 </body>
 </html>

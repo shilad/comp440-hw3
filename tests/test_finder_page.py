@@ -98,8 +98,8 @@ def test_refusals_come_back_as_their_sentences(stand_in, tmp_path):
         "ok": False, "why": "You have selected 5 claims, and you need exactly 8."}
     unknown = EIGHT[:7] + [{"id": "hover-gone", "query": "jazz"}]
     assert post("/save", tmp_path, {"selected": unknown})[1] == {
-        "ok": False, "why": "The claim hover-gone is not in the dataset any more. Remove it from your selection, "
-                            "select another claim, and save again."}
+        "ok": False, "why": "The claim hover-gone is no longer in the dataset. Remove it, select another claim, "
+                            "and save again."}
     for body in ({}, {"selected": "hover-01"}, {"selected": [{"query": "jazz"}]}):
         a = post("/save", tmp_path, body)[1]
         assert a["ok"] is False and a["why"].endswith("."), body
@@ -148,12 +148,26 @@ def test_the_screen_uses_the_names_the_student_sees():
     page = (STATIC / "index.html").read_text()
     js = (STATIC / "finder.js").read_text()
     for name in ("Find claims", ">Search<", "by keyword", "by meaning", "> both<", "Save these as my claims",
-                 "Show my selection", "Show 50 more", 'value="both" checked', "select 112 of them",
-                 "with at least 30\n      supported and 30 not supported, so that an agent that always gives the same",
-                 "data/dev.jsonl", "data/eval.jsonl"):
+                 "Show my selection", "Show 50 more", 'value="both" checked'):
         assert name in page, name
-    for name in ('"Remove" : "Select"', "Back to the search results", "localStorage"):
+    for name in ('"Remove" : "Select"', "Back to the search results", "localStorage", "data/dev.jsonl",
+                 "data/eval.jsonl"):
         assert name in js, name
+    # In view: what to do and the saving rule. Behind one click, closed: how the search works.
+    lede = " ".join(re.search(r'<p class="lede">(.*?)</p>', page, re.S).group(1).split())
+    assert lede == ("Search for topics you are interested in, and select the HoVer claims about them. You need "
+                    "exactly 112 claims, with at least 30 supported and 30 not supported, so that an agent that "
+                    "always gives the same answer cannot score well.")
+    assert page.count('class="lede"') == 1
+    how = re.search(r'<details class="fold how">\s*<summary>How the search works</summary>(.*?)</details>', page, re.S)
+    assert how and "<details class=\"fold how\" open" not in page
+    for words in ("retrieval", "finder/search.py", "step 0b\n        asks you to read it", "embedding search",
+                  "one-line descriptions"):
+        assert words in how.group(1), words
+    # How the code ranks is what step 0b asks the student to find by reading finder/search.py, so the
+    # screen does not say it.
+    for words in ("BM25", "reciprocal rank fusion", "fusion", "averag", "cosine"):
+        assert words not in page + js, words
     # The button that selects every claim shown sits beside the count of claims with all the words.
     assert re.search(r'<p class="matches" id="matches"></p>\s*<button class="pick" id="all" type="button">'
                      r"Select all shown</button>", page)
@@ -169,8 +183,8 @@ def test_the_screen_uses_the_names_the_student_sees():
             "return `${contain(all)} all of your words.`;",
             "return `Only ${contain(all)} all of your words, so further down, the list may stop being about your topic. ` +\n"
             "      \"Select the ones that are on your topic, and search another topic for the rest.\";",
-            "\"No claim contains all of your words, which is usual for a description of several words. \" +\n"
-            "      \"Read down the list, and select the claims that are on your topic.\";",
+            "\"No claim contains all of your words, which is usual when you type several words. \" +\n"
+            "      \"Select the claims on your topic.\";",
             "\"No claim contains your word, so the claims below were found by meaning alone and may be off your topic.\"",
             # saving
             "evaluation claims in data/eval.jsonl. Every run from step 1c on uses them."):
@@ -185,7 +199,7 @@ def test_the_screen_uses_the_names_the_student_sees():
         assert stale not in page + js, stale
     words = (page + js).lower()
     assert words.count("embedding") == 1      # once, to say what the search by meaning is
-    for word in ("hybrid", "corpus", "pool", "retrieval"):
+    for word in ("hybrid", "corpus", "pool"):
         assert word not in words, word
 
 
@@ -254,7 +268,7 @@ def test_the_intro_states_the_search_packages_numbers():
     from finder import search
     intro = " ".join((STATIC / "index.html").read_text().split())
     least, saved = search.LEAST_PER_LABEL, search.SAVED_CLAIMS
-    assert f"You need exactly {saved}, with at least {least} supported and {least} not supported," in intro
+    assert f"You need exactly {saved} claims, with at least {least} supported and {least} not supported," in intro
     assert len(re.findall(r"^const NEEDED = (\d+);", (STATIC / "finder.js").read_text(), re.M)) == 1
     assert f"const NEEDED = {saved};" in (STATIC / "finder.js").read_text()
 

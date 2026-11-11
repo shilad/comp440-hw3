@@ -74,7 +74,7 @@ def search_page(params: dict) -> tuple[dict, int]:
     except ValueError:
         start = 0
     if not query:
-        return {"error": "Type a few words about your topic first."}, 400
+        return {"error": "Type a topic first."}, 400
     search = engine()
     results = search.search(query, how)
     return {"query": query, "how": how, "matches": search.keyword_counts(query),
@@ -90,8 +90,8 @@ def save_page(asked: dict, repo: Path) -> dict:
     by_id = search.claims_by_id()
     unknown = [s["id"] for s in selected if s["id"] not in by_id]
     if unknown:
-        return {"ok": False, "why": f"The claim {unknown[0]} is not in the dataset any more. Remove it from "
-                                    "your selection, select another claim, and save again."}
+        return {"ok": False, "why": f"The claim {unknown[0]} is no longer in the dataset. Remove it, select "
+                                    "another claim, and save again."}
     try:
         search.save([by_id[s["id"]] for s in selected], [str(s.get("query") or "") for s in selected], folder=repo)
     except ValueError as refusal:
