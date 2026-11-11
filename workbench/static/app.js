@@ -1,10 +1,11 @@
 // The workbench page, for the student. The assignment's parts, each with a sentence or two on what
 // it is for, and under each its steps (0a, 0b, ...), each with its summary under its title,
-// open or closed. A step opens to show its tasks (left: the checkpoints, and the brief's own
-// text folded under "If you're stuck"), and their record of working on it with Claude (right: what they
+// open or closed. A step opens the same way for every step (left: any text before the first label
+// of its instructions, then Tasks, then each labeled part of its instructions folded, to open on
+// a click), and their record of working on it with Claude (right: what they
 // expected, what they asked, what Claude ran and what came back, ending on the open question),
 // with links to what the step produced and the command that opens its Claude Code session.
-// The record shows what happened, never the next move. A setup step shows its steps in full.
+// The record shows what happened, never the next move. A setup step's tasks are numbered.
 // The current step starts open; every other step shows its summary and every other part its
 // description. The page polls the local server; nothing here talks to Claude. At the top, the
 // notices: an update to the homework (with its Update button), a push that didn't go through, a
@@ -88,40 +89,21 @@ function md(text) {
   return out.join("\n");
 }
 
-// A step's instructions: as md(), except that each part with one of the labels in FOLDED is folded
-// away, to open with a click. The student sees without a click only what they need to do the step:
-// its opening paragraph, Actions, Write-up and (in 1a) The six rules; a label not in the list stays
-// open. A part is the paragraph that starts with the label (the
-// rest of its first line included) and everything after it, up to the next paragraph that starts
-// with a bold label, the next heading, or the end of the text. Each fold has a key (the step and
-// its number in the text), so one the student opened stays open if the page rebuilds itself.
-const FOLDED = ["Words in this step", "Interpreting output", "Completion", "Troubleshooting", "Hint"];
-const FOLD = new RegExp(`^\\*\\*(${FOLDED.join("|")}):\\*\\*\\s*(.*)$`);
-const LABELLED = /^\*\*[^*]+:\*\*/;
-function doc(text, key) {
-  const lines = String(text || "").split("\n");
-  const out = [], plain = [];
-  let i = 0, fence = false, n = 0;
-  const flush = () => { if (plain.length) out.push(md(plain.splice(0).join("\n"))); };
-  while (i < lines.length) {
-    const l = lines[i];
+// A step's instructions in order: the open text before the first label, then each labeled part. A
+// labeled part is the paragraph that starts with a bold label ("**Actions:**"), the rest of its first
+// line included, and everything after it up to the next paragraph that starts with a bold label or
+// the end of the text. A label inside a code block is only text.
+const LABEL_LINE = /^\*\*([^*]+):\*\*\s*(.*)$/;
+function sections(text) {
+  const lines = String(text || "").split("\n"), out = [];
+  let cur = { label: null, lines: [] }, fence = false;
+  lines.forEach((l, i) => {
     if (/^\s*```/.test(l)) fence = !fence;
-    const m = !fence && (i === 0 || !lines[i - 1].trim()) ? l.match(FOLD) : null;
-    if (!m) { plain.push(l); i++; continue; }
-    flush();
-    const body = [m[2]];
-    let inner = false;
-    for (i++; i < lines.length; i++) {
-      const x = lines[i];
-      if (/^\s*```/.test(x)) inner = !inner;
-      if (!inner && (/^#{1,6}\s/.test(x) || (LABELLED.test(x) && !lines[i - 1].trim()))) break;
-      body.push(x);
-    }
-    out.push(`<details class="fold" data-key="${esc(key)}:${n++}"><summary>${m[1]}</summary>`
-      + `<div class="fold-body">${md(body.join("\n"))}</div></details>`);
-  }
-  flush();
-  return out.join("\n");
+    const m = !fence && (i === 0 || !lines[i - 1].trim()) ? l.match(LABEL_LINE) : null;
+    if (m) { out.push(cur); cur = { label: m[1], lines: [m[2]] }; } else cur.lines.push(l);
+  });
+  out.push(cur);
+  return out.map((x) => ({ label: x.label, text: x.lines.join("\n").trim() })).filter((x) => x.label || x.text);
 }
 
 // A step's instructions without their first paragraph when it repeats the summary shown under the
@@ -201,13 +183,21 @@ function minutes(s) {
   return m > 0 ? `<span class="mins">about ${m} minute${m === 1 ? "" : "s"}</span>` : "";
 }
 
+// An open step's left column, the same for every step: the text before the first label (the
+// summary already under the title is left out; the claim box only when that text does not quote
+// the claim), then Tasks, then every labeled part of the instructions folded, in their order. Each
+// fold has a key (the step, its place and its label), so one the student opened stays open if the
+// page rebuilds itself.
 function leftCol(s) {
-  const plain = s.setup;   // a setup step: the brief's text in full
-  const text = withoutSummary(s.body, s.summary);   // the summary is already under the step's title
-  return (plain ? `<span class="label">Instructions</span><div class="doc">${doc(text, s.label)}</div>`
-    : `${s.claim && A.sample_claim ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : ""}`)
+  const secs = sections(withoutSummary(s.body, s.summary));
+  const first = secs.length && !secs[0].label ? secs.shift().text : "";
+  const claim = s.claim && A.sample_claim && !flat(first).includes(flat(A.sample_claim))
+    ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : "";
+  return claim + (first ? `<div class="doc opening">${md(first)}</div>` : "")
     + `<div class="counts" id="dw-${s.label}"></div>`
-    + (!plain && text.trim() ? `<details class="stuck" data-key="${esc(s.label)}:stuck"><summary>If you're stuck</summary><div class="stuck-body doc">${doc(text, s.label)}</div></details>` : "");
+    + (secs.length ? `<div class="doc folds">${secs.map((x, n) =>
+        `<details class="fold" data-key="${esc(s.label)}:${n}:${esc(x.label)}"><summary>${esc(x.label)}</summary>`
+        + `<div class="fold-body">${md(x.text)}</div></details>`).join("")}</div>` : "");
 }
 
 // ---- what changes: progress, state, the open steps -------------------------------------------
@@ -264,11 +254,14 @@ function update() {
 }
 
 // Tasks: the step's checkpoints. One that the student's answers complete shows each question
-// and their answer; the rest show their task, a full sentence saying what to do. A setup step lists only those it shows here.
+// and their answer; the rest show their task, a full sentence saying what to do. A setup step
+// shows every task, numbered, each with its tick (and the student's answer under one they answer).
 function counts(s, st, rec) {
   const row = (ok, text, sub, mine) => `<div class="check ${ok ? "ok" : ""}"><span class="tick">${ok ? "✓" : "○"}</span>
       <div><span class="q">${codeText(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
-  const rows = rec.checkpoints.filter((c) => !s.setup || c.auto).flatMap((c) => c.slots.length
+  const rows = s.setup ? rec.checkpoints.filter((c) => c.n).map((c) => row(c.done, `${c.n}. ${c.task || c.text}`,
+      c.slots.length && c.slots.every((x) => x.filled) ? c.slots.map((x) => trim(x.answer, 200)).join(", ") : "", true))
+    : rec.checkpoints.flatMap((c) => c.slots.length
     ? c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),
         x.filled ? trim(x.answer, 400) : (x.todo || `Not written yet. Type it in WRITEUP.md, under ${s.label}.`), x.filled))
     : [row(c.done, c.task || c.text, c.files.join(", "), false)]);
@@ -384,11 +377,6 @@ function recordCol(s, st, ss) {
   const when = st.waiting_on.map(labelOf).join(", ");
   const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command, ss.model_flags)
     + yourself(s) : "";
-  if (s.setup) {
-    const steps = `<ol class="plainsteps">${ss.record.checkpoints.filter((c) => c.n).map((c) => `<li class="${c.done ? "done" : ""}">${codeText(c.task || c.text)}</li>`).join("")}</ol>`;
-    return `<div class="record-head"><span class="label">Setup steps</span><span class="state">${esc(st.complete ? "Done." : ss.started ? stateLine(ss) : st.locked ? `Opens when you finish ${when}.` : "Not started.")}</span></div>
-      ${steps}${ss.started ? links(s, ss) : ""}${cmd}`;
-  }
   if (!ss.started) {
     const state = st.locked ? `Empty. This step's Claude opens when you finish ${when}.` : "Empty. Start this step's Claude in a terminal.";
     return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(state)} What you ask Claude, and what comes back, will be recorded here.</span></div>${ss.results ? `<p class="small">${resultsLink(ss)}</p>` : ""}${cmd}`;

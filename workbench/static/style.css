@@ -100,21 +100,14 @@ pre code { background: none; padding: 0; }
 .check.ok .q { color: var(--muted); }
 .check .ans { font-size: 13.5px; }
 .check .ans.mine { color: var(--ink); }
-details.stuck { border-top: 1px solid var(--line); padding-top: 10px; }
-details.stuck summary { cursor: pointer; font-size: 14px; color: var(--link); list-style: none; }
-details.stuck summary::-webkit-details-marker { display: none; }
-details.stuck summary::before { content: "+ "; }
-details.stuck[open] summary::before { content: "− "; }
-.stuck-body { margin-top: 8px; font-size: 13.5px; max-width: 60ch; }
-.stuck-body p { margin: 0 0 8px; }
-.stuck-body ul { margin: 0 0 8px; padding-left: 20px; }
 /* The learning goals under the opening sentence: the opening's own text style, kept compact. */
 .top .goals:empty { display: none; }
 .top .goals p { margin: 0 0 2px; }
 .top .goals ul { margin: 0; padding-left: 20px; }
 .top .goals li { margin: 1px 0; }
-/* The folded parts of a step's instructions (see FOLDED in app.js), opened with a click, in the plain style
-   of "If you're stuck" (its + and - marker), a little lighter than a heading. */
+/* The labeled parts of a step's instructions, below its Tasks: each folded, opened with a click, in
+   a plain style (a + and - marker, the link colour), a little lighter than a heading. */
+.folds { border-top: 1px solid var(--line); padding-top: 10px; }
 details.fold { margin: 0 0 8px; }
 details.fold > summary { cursor: pointer; color: var(--link); list-style: none; font-weight: 500; }
 details.fold > summary::-webkit-details-marker { display: none; }
@@ -135,9 +128,6 @@ details.fold[open] > summary::before { content: "− "; }
 .cmd-row code { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 7px 9px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; font-size: 12.5px; color: var(--muted); }
 .copy { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; color: var(--muted); }
 .copy:hover { border-color: var(--link); color: var(--link); }
-.plainsteps { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 13.5px; }
-.plainsteps .done { color: var(--muted); }
-.plainsteps .done::marker { color: var(--ok); }
 
 .foot { border-top: 1px solid var(--line); font-size: 13.5px; }
 .foot .wrap { padding-block: 20px 36px; }
@@ -165,7 +155,7 @@ details.fold[open] > summary::before { content: "− "; }
   .step-head .chev { grid-column: 3; grid-row: 1; }
 }
 
-/* The brief's own text, rendered from Markdown, under "Instructions" or "If you're stuck" */
+/* The brief's own text, rendered from Markdown: the open text above Tasks and the folded parts */
 .doc { max-width: 62ch; }
 .doc p { margin: 0 0 8px; }
 .doc h3, .doc h4 { margin: 14px 0 6px; color: var(--ink); font-size: 14px; }
@@ -189,7 +179,7 @@ details.fold[open] > summary::before { content: "− "; }
 .step-body .claimbox { font-family: var(--body); font-size: 14px; background: none; border-left: 3px solid var(--line); border-radius: 0; padding: 2px 0 2px 12px; }
 .step-body .check { font-size: 14px; }
 .step-body .check .ans { font-size: 14px; }
-.step-body .state, .step-body .small, .step-body .linkbtn, .step-body details.stuck summary { font-size: 14px; }
+.step-body .state, .step-body .small, .step-body .linkbtn, .step-body details.fold > summary { font-size: 14px; }
 .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
 .ln { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; align-items: baseline; }
 .ln .mk { text-align: center; color: var(--faint); }
