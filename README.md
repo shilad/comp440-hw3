@@ -85,8 +85,10 @@ You used all of these in earlier homeworks:
 
 - The homework page lists every step, 0a to 3c, and ticks each one when it is done. For each step it
   shows a short summary and its tasks. Part 3 is extra credit. Under "If you're stuck" it shows the
-  step's full instructions, from the pages in `instructions/`. Open it for every step, stuck or not: it has
-  the exact commands and what I am looking for. Step 0a, the set-up step, shows them in full.
+  step's full instructions, from the pages in `instructions/`. Open it for every step, stuck or not: it
+  has the exact commands and what I am looking for. Step 0a, the set-up step, shows them in full. In the
+  instructions, the actions and the write-up are open, and the other parts (Words in this step,
+  Interpreting output, Completion, Troubleshooting and Hint) open with a click.
 - Each step has its own Claude session: a Claude Code session that is your tutor and lab assistant for
   that step. The homework page shows the command that starts it, with a **Copy** button. Open a new
   terminal tab, go into the homework's folder, paste the command and press Enter. When you finish a
@@ -134,8 +136,8 @@ You used all of these in earlier homeworks:
 
 Everything is due 8:00am Tuesday, November 24.
 
-I expect this homework to take about 4 hours in all, in three sittings: a little over an hour for
-Part 0, about 2 hours for Part 1, and about 40 minutes for Part 2. On top of that, the full run in
+I expect this homework to take about 5 and a half hours in all, in three sittings: about an hour and a
+half for Part 0, about 3 hours for Part 1, and about an hour for Part 2. On top of that, the full run in
 Part 1 takes about 10 minutes while you do other things. Part 3, which is extra credit, takes a little
 over an hour more, and its run about 6 minutes.
 

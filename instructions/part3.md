@@ -17,16 +17,6 @@ In this step you find out why the agent fails on your evaluation claims.
 match the dataset's label, in the full run you started in step 1e. A *trace* is the agent's lookups for one claim, in order, with what each returned. An *entry* is
 one numbered line of a trace, a lookup or an answer.
 
-The labels:
-
-- *wrong page*: The agent never found the page that settles the claim.
-- *stopped too early*: The agent answered before checking every piece of the claim.
-- *misread*: The agent read the right page and drew the wrong conclusion.
-- *forced a verdict*: The agent answered *supported* or *refuted* when Wikipedia does not settle the claim.
-- *Wikipedia is missing or wrong*: The agent did what it should, and Wikipedia lacks the fact or has it wrong.
-- *the dataset's label is wrong*: The agent's verdict is right, and the dataset's label is not.
-- If none of these fits, give a label of your own.
-
 **Actions:** You label first, and Claude labels without seeing yours, so that neither set of labels
 can steer the other.
 
@@ -38,14 +28,20 @@ can steer the other.
    "Order of the claims file".
 5. Take rows 1 to 8. If there are fewer than eight rows, take them all.
 6. Click row 1 and read "The agent's trace", one entry at a time.
-7. Give it one label from the list above, without telling Claude, and decide whether the dataset's label
-   is right.
+7. Give it one of these labels, without telling Claude, and decide whether the dataset's label is right:
+   - *wrong page*: The agent never found the page that settles the claim.
+   - *stopped too early*: The agent answered before checking every piece of the claim.
+   - *misread*: The agent read the right page and drew the wrong conclusion.
+   - *forced a verdict*: The agent answered *supported* or *refuted* when Wikipedia does not settle the claim.
+   - *Wikipedia is missing or wrong*: The agent did what it should, and Wikipedia lacks the fact or has it wrong.
+   - *the dataset's label is wrong*: The agent's verdict is right, and the dataset's label is not.
+   - If none of these fits, give a label of your own.
 8. Fill in that claim's row of the table under 3a, then click "Next →" for row 2, and so on to row 8.
 9. Ask Claude to label the same claims.
 10. Ask Claude to add its labels to the last column, "Claude's label", or type them in yourself.
 11. Answer the two questions.
 
-**Output:** The "Row" column counts the rows shown, in the order of your claims file, so rows 1 to 8 are
+**Interpreting output:** The "Row" column counts the rows shown, in the order of your claims file, so rows 1 to 8 are
 fixed by the rule. I ask for the first eight so that nobody, you or Claude, chooses which failures get
 sorted. Claude finds the same eight in the run's saved files. For "The entry of the trace that shows
 it", give the entry's number and a few words of what it shows. For "Is the dataset's label right?",
@@ -81,8 +77,8 @@ failure on your evaluation claims.
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Decide on **one** change aimed at your most common failure from 3a (see the Hint).
 3. Make the change in your editor, or tell Claude exactly what to change.
-4. Start the run yourself in another terminal tab in the homework's folder, with the first command under
-   "Output".
+4. Start the run yourself in another terminal tab in the homework's folder, with this command:
+   `uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after`.
 5. Leave that tab open, your laptop awake and your change alone until the run ends with two tables.
 6. Open **Results** at the top of the homework page, click "Compare two runs", then "Step 3b:
    runs/part2 with runs/part3/after".
@@ -90,7 +86,7 @@ failure on your evaluation claims.
    B", and then to "matches in A, does not match in B".
 8. Answer the three questions.
 
-**Output:** Claude makes exactly the change you describe and shows you what changed. You run
+**Interpreting output:** Claude makes exactly the change you describe and shows you what changed. You run
 the first command below yourself, on your 100 evaluation claims, the same claims as your full run in 1e.
 It takes about 6 minutes and costs about 21 cents on your key. If you adjust your change after seeing
 the results, run the second, whose `--fresh` replaces the folder's saved results, since a run never

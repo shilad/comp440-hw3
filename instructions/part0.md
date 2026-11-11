@@ -4,7 +4,7 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you get your copy of the homework running, and create a dataset of claims about a few
 topics you are interested in. Then you check one claim by feeding it to an LLM, using a Wikipedia search,
-and using the agent. It should take a little over an hour.
+and using the agent. It should take about an hour and a half.
 
 ## 0a. Get your copy running
 
@@ -26,7 +26,7 @@ Getting started section says. Then:
 6. Ask Claude to run the set-up check. Fix each line marked `NOT READY` in your editor, save, and ask
    Claude to run the check again, until its last line reads "Everything is ready."
 
-**Output:** Claude runs this command:
+**Interpreting output:** Claude runs this command:
 
 ```
 uv run python check_setup.py
@@ -93,16 +93,7 @@ out in Part 1, and your 100 *evaluation claims*, for the full run in 1e and ever
 7. When the line at the top says you have selected 112 of 112 claims, press **Save these as my claims**.
 8. Read through the retrieval code, lines 1 to 165 of `finder/search.py`, and answer the two questions.
 
-Topics that work are broad areas that Wikipedia covers well: a sport, film, television, a broad kind of
-music, or a country's geography or history. The dataset's claims were written from Wikipedia's most-read
-articles of 2017, mostly about films, television, music, sports and places. So it has hundreds of claims
-on a broad area such as film or basketball, and only a few dozen on a narrow one such as jazz or
-Minnesota. The best claims for a topic come first, so I expect most of you to need two to four topics to
-reach 112. Film, television, basketball, American football and rock music each give a list that stays
-on the topic for 100 claims or more. The lists for jazz, physics and Formula One start showing claims
-that are not about the topic much sooner.
-
-**Output:** The claim finder shows the claims for your search, best first, 50 at a time, with **Show 50
+**Interpreting output:** The claim finder shows the claims for your search, best first, 50 at a time, with **Show 50
 more** at the end of the list. Above them it says how many claims contain all of your words. As a rule,
 the list for a topic of one or two words stays on the topic when about 200 claims or more contain all
 of its words, and the screen warns you when fewer do. In every case, you judge a list by reading it.
@@ -160,6 +151,15 @@ work. The three-sentence description is yours to write. Some of the dataset's cl
 because people made them by rewriting other claims. Select a claim if it is on your topic, however it is
 worded.
 
+Topics that work are broad areas that Wikipedia covers well: a sport, film, television, a broad kind of
+music, or a country's geography or history. The dataset's claims were written from Wikipedia's most-read
+articles of 2017, mostly about films, television, music, sports and places. So it has hundreds of claims
+on a broad area such as film or basketball, and only a few dozen on a narrow one such as jazz or
+Minnesota. The best claims for a topic come first, so I expect most of you to need two to four topics to
+reach 112. Film, television, basketball, American football and rock music each give a list that stays
+on the topic for 100 claims or more. The lists for jazz, physics and Formula One start showing claims
+that are not about the topic much sooner.
+
 ## 0c. Ask the model to assess a claim without tools
 
 In this step you find out how well the model checks a single claim about Persian Surgery Dervishes from
@@ -184,14 +184,14 @@ quarters of a word.
 3. Read the output Claude pastes into the chat.
 4. Answer the question in `WRITEUP.md`.
 
-**Output:** Claude runs this command:
+**Interpreting output:** Claude runs this command:
 
 ```
 uv run python check.py --method no-tools --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 ```
 
 The output gives the verdict, the model's explanation, and a line with the lookups (none here),
-tokens, cost and time. The result is saved as `runs/part0/no-tools-<number>.json`.
+tokens, cost and time. The explanation is the model's own reason for its verdict, from memory alone. The result is saved as `runs/part0/no-tools-<number>.json`.
 
 **Write-up:** Answer this question in `WRITEUP.md`, under 0c:
 
@@ -226,7 +226,7 @@ program that gives a verdict on a claim; in this step it is the model with one s
 4. Click "Open these results" under 0d on the homework page to read the whole page it read.
 5. Answer the two questions in `WRITEUP.md`.
 
-**Output:** Claude runs this command:
+**Interpreting output:** Claude runs this command:
 
 ```
 uv run python check.py --method one-search --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
@@ -234,7 +234,8 @@ uv run python check.py --method one-search --out runs/part0 'The composer of "Pe
 
 The line numbered 1 is the search and a short version of its results; the line numbered 2 is the page
 it read and a short version of that page. Then come the verdict, the explanation, and a line with the
-lookups, tokens, cost and time. The result is saved as `runs/part0/one-search-<number>.json`. In the
+lookups, tokens, cost and time. The verdict is based only on the page in line 2. The result is saved as
+`runs/part0/one-search-<number>.json`. In the
 results viewer, a long result is folded: click "+ Show the whole result".
 
 **Write-up:** Answer these questions in `WRITEUP.md`, under 0d:
@@ -279,7 +280,7 @@ sentences quoted from Wikipedia that a verdict is based on.
 4. Click "Open these results" under 0e and read "The agent's trace", with each lookup's full result.
 5. Answer the two questions in `WRITEUP.md`.
 
-**Output:** Claude runs this command:
+**Interpreting output:** Claude runs this command:
 
 ```
 uv run python check.py --method agent --out runs/part0 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'

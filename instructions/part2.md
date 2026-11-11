@@ -4,7 +4,7 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you read the full run you started in 1e: how often each version matched the dataset's
 label, and whether the agent's evidence supports its verdicts when you check it yourself. It should take
-about 40 minutes.
+about an hour.
 
 ## 2a. Compare accuracy
 
@@ -23,13 +23,13 @@ that are in `data/eval.jsonl`, the ones the full run in 1e checked.
 
 1. Start this step's Claude session with the command the homework page shows for 2a, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Check that the full run has finished (see "Output").
+2. Check that the full run has finished: it ends with two tables in the tab where you started it.
 3. Open **Results** at the top of the homework page, then "runs/part2", and read "Accuracy".
 4. Ask Claude to paste the report into the empty block under 2a in `WRITEUP.md`.
 5. Compare the report's first table with your predictions under 1e.
 6. Answer the three questions.
 
-**Output:** A finished run ends with two tables in the tab where you started it, and saves them
+**Interpreting output:** A finished run ends with two tables in the tab where you started it, and saves them
 as `runs/part2/report.txt`. If it stopped early, or its tables end with a line saying some runs stopped
 with an error, run the same command again in a terminal tab in the homework's folder; it keeps every
 claim it already finished:
@@ -56,10 +56,6 @@ report, and the three answers have text after the `>`.
 
 In this step you find out whether the agent's quoted evidence really supports its verdicts.
 
-The loop already checks that every quoted sentence appears in something the agent read. A quote can be
-real and still not support the verdict. For a verdict of *refuted*, the question is whether the quotes
-show that the claim is false.
-
 **Words in this step:** A *verdict* is one of *supported*, *refuted* or *doesn't say*. The *evidence* is
 the sentences the agent quoted from Wikipedia. *The dataset's label* is the label that HoVer, the public
 dataset these claims come from, gives each claim, *supported* or *not supported*. An *entry* is one
@@ -79,7 +75,7 @@ numbered line of a trace, a lookup or an answer.
 9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 5.
 10. Answer the two questions.
 
-**Output:** The "Row" column counts the rows shown, in the order of the claims file, so rows 1
+**Interpreting output:** The "Row" column counts the rows shown, in the order of the claims file, so rows 1
 to 5 are fixed by the rule. I ask for the first five so that nobody, you or Claude, chooses which claims
 get checked. A claim's page says, under "The agent", whether its verdict "matches the dataset's label":
 that is the table's fourth column. To read more of a page as the agent read it, ask Claude to run one of these (`--no-log`
@@ -105,6 +101,10 @@ verdict in the chat. Claude will not say whether the quoted evidence supports a 
 judgment is what this step is about. Some of the dataset's claims are worded oddly, because people
 made them by rewriting other claims. Take a claim as it is written, and if you cannot tell what it
 asserts, say so in its row.
+
+The loop already checks that every quoted sentence appears in something the agent read. A quote can be
+real and still not support the verdict. For a verdict of *refuted*, the question is whether the quotes
+show that the claim is false.
 
 ## What I look for
 
@@ -143,7 +143,7 @@ case* is the claim that came nearest, and what kept it from being clear.
 9. In that case, use the closest case you found for each remaining row, and say it is not a clear case.
 10. Type a heading `## Extra credit` at the end of `WRITEUP.md`, and under it the table and question below.
 
-**Output:** A claim's page shows "The dataset's label" at the top. The lists after "The dataset lists
+**Interpreting output:** A claim's page shows "The dataset's label" at the top. The lists after "The dataset lists
 these articles for this claim:" and "It read these pages, and each link opens the page as it is on
 Wikipedia today:" link to today's pages. The results viewer cannot show older versions; Wikipedia's "View history" can. To read today's page as the
 agent reads it, ask Claude to run this, or run it yourself in a terminal in the homework's folder:
