@@ -419,8 +419,8 @@ the top counts the selection and its labels, and "Show my selection" lists it. T
 kept in the browser, so a new search or a reload does not lose it. Above the results, the screen
 says how many claims contain all of the student's words. The dataset has hundreds of claims on a
 broad area such as film or basketball and only a few dozen on a narrow one, and the best claims
-for a search come first, so further down the list stops being about a narrow topic. That is why most
-students need two to four topics to reach 112.
+for a search come first, so further down, the list may stop being about a narrow topic. That is
+why most students need two to four topics to reach 112.
 
 "Save these as my claims" works only with exactly 112 claims, at least 30 labeled supported and at
 least 30 labeled not supported, so that an agent that always gives the same answer cannot score
