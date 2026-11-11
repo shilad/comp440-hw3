@@ -107,7 +107,8 @@ TASKS = {
     "1a": ["In your editor or with Claude, read agent.py: the four tools, the evidence check and finish().",
            "In your editor, write your loop in my_loop.py until it passes every rule of the check, or choose "
            "to keep the reference loop. (Remember, Claude can help you!)"],
-    "1b": ["Ask Claude to make your first lookup, with the tool and the words you choose. It is saved in "
+    "1b": ["By hand, make your first lookup: ask Claude to run it, with the tool and the words you choose. "
+           "It is saved in "
            "runs/part1/lookups.jsonl.",
            "Decide on a verdict on the claim. If you've used all 12 lookups without answering it, your "
            "verdict is *doesn't say*."],

@@ -649,7 +649,7 @@ files = ["runs/part1/lookups.jsonl"]
 allow = ["Bash(uv run python lookup.py:*)"]
 summary = "In this step you check one claim yourself, using only the agent's four tools."
 checkpoints = [
-  { text = "Your first lookup is saved in runs/part1/lookups.jsonl", task = "Ask Claude to make your first lookup, with the tool and the words you choose. It is saved in runs/part1/lookups.jsonl.", files = ["runs/part1/lookups.jsonl"] },
+  { text = "Your first lookup is saved in runs/part1/lookups.jsonl", task = "By hand, make your first lookup: ask Claude to run it, with the tool and the words you choose. It is saved in runs/part1/lookups.jsonl.", files = ["runs/part1/lookups.jsonl"] },
   { text = "You have a verdict on the claim", task = "Decide on a verdict on the claim. If you've used all 12 lookups without answering it, your verdict is *doesn't say*.", tick = false },
   { text = "Your table and answer are in WRITEUP.md", slots = ["1b.*"] },
 ]
