@@ -42,7 +42,7 @@ LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loo
 EXPECTED = {
     "0a": (0, "0a. Get your copy running", [".env", "runs/part0/setup-check.txt"],
            ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"], 20),
-    "0b": (0, "0b. Pick your topics and find your claims", ["data/my-topic.json"], FINDER, 30),
+    "0b": (0, "0b. Pick your topics and find your claims", ["data/my-topic.json"], FINDER, 40),
     "0c": (0, "0c. Ask the model to assess a claim without tools", ["runs/part0/no-tools-*.json"], CHECK, 10),
     "0d": (0, "0d. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 15),
     "0e": (0, "0e. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 15),
@@ -59,8 +59,9 @@ EXPECTED = {
     "3c": (3, "3c. Write it up", [], [], 20),
 }
 # Minutes per part (the instructor's "split the difference", morning of Nov 11). Parts 0 to 2,
-# the required work, make about 5 and a half hours.
-PART_MINUTES = {0: 90, 1: 185, 2: 60, 3: 70}
+# the required work, make about 5 hours and 45 minutes. 0b is 40: halfway between his 25 and the
+# 40 to 75 that a simulated student needed with the Select all shown button.
+PART_MINUTES = {0: 100, 1: 185, 2: 60, 3: 70}
 
 # Each step's summary, word for word from the instructor's outline (Nov 11).
 SUMMARIES = {
@@ -262,7 +263,7 @@ def test_fifteen_steps_in_order(a):
 def test_minutes_per_part(a):
     per = {n: sum(s.minutes for s in a.steps if s.part == n) for n in PARTS}
     assert per == PART_MINUTES
-    assert sum(per[n] for n in (0, 1, 2)) == 335, "the required work is about 5 and a half hours"
+    assert sum(per[n] for n in (0, 1, 2)) == 345, "the required work is about 5 hours and 45 minutes"
 
 
 def test_the_old_cost_step_and_the_id_2c_are_gone():

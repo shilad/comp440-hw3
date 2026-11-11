@@ -136,8 +136,8 @@ You used all of these in earlier homeworks:
 
 Everything is due 8:00am Tuesday, November 24.
 
-I expect this homework to take about 5 and a half hours in all, in three sittings: about an hour and a
-half for Part 0, about 3 hours for Part 1, and about an hour for Part 2. On top of that, the full run in
+I expect this homework to take about 5 hours and 45 minutes in all, in three sittings: about 1 hour and
+40 minutes for Part 0, about 3 hours for Part 1, and about an hour for Part 2. On top of that, the full run in
 Part 1 takes about 10 minutes while you do other things. Part 3, which is extra credit, takes a little
 over an hour more, and its run about 6 minutes.
 
