@@ -193,7 +193,7 @@ the extra credit, since I grade what is on GitHub.
 
 In your repository I look for:
 
-- `WRITEUP.md`, with every answer filled in;
+- `WRITEUP.md`, with every answer of Parts 0 to 2 filled in, and of Part 3 if you did the extra credit;
 - your `instructions.md`;
 - your loop, `my_loop.py`;
 - your claims, `data/dev.jsonl`, `data/eval.jsonl` and `data/my-topic.json`;

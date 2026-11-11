@@ -96,8 +96,8 @@ articles of 2017, mostly about films, television, music, sports and places. So i
 on a broad area such as film or basketball, and only a few dozen on a narrow one such as jazz or
 Minnesota. The best claims for a topic come first, so I expect most of you to need two to four topics to
 reach 112. Film, television, basketball, American football and rock music each give a list that stays
-on the topic for 100 claims or more. The lists for jazz, physics and Formula One drift off their topic
-much sooner.
+on the topic for 100 claims or more. The lists for jazz, physics and Formula One start showing claims
+that are not about the topic much sooner.
 
 **Output:** The claim finder shows the claims for your search, best first, 50 at a time, with **Show 50
 more** at the end of the list. Above them it says how many claims contain all of your words. As a rule,
@@ -210,7 +210,8 @@ The claim you check in Part 0:
 
 **Words in this step:** In *the one-search baseline*, the model (Claude Haiku) writes one Wikipedia
 search, the program reads the opening paragraphs of the top page found, and the model answers from that
-page alone. A *verdict* is one of *supported*, *refuted* or *doesn't say*.
+page alone. A *verdict* is one of *supported*, *refuted* or *doesn't say*. A *claim assessor* is a
+program that gives a verdict on a claim; in this step it is the model with one search to read.
 
 **Actions:**
 

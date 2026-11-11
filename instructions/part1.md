@@ -20,7 +20,7 @@ yours. Four files are part of this step:
   goes.
 - `reference_loop.py` is a loop I wrote. Your copy's agent uses it until your own loop passes the check,
   so nothing else in the homework waits on this step. Don't open it until your loop passes: reading it
-  first gives the exercise away. Claude cannot open it at all.
+  first shows you a finished loop before you have written your own. Claude cannot open it at all.
 - `check_loop.py` checks your loop against the six rules below, with a stand-in for the model and for
   Wikipedia. Run it as often as you like: it needs no key and no network, takes a few seconds, and costs
   nothing.
@@ -147,7 +147,9 @@ text after the `>`.
   `uv run python check_loop.py --use-reference`, or run it yourself. Your copy keeps using the reference
   loop, and the rest of the homework works exactly as before. You lose the points for the loop itself
   (the first line of "What I look for" below), not the rest of the homework. You can come back to your
-  loop at any time: once it passes the check, your copy switches to it.
+  loop at any time: once it passes the check, your copy switches to it. To answer 1a's questions, open
+  `reference_loop.py`. Answer the first two about it, with its line numbers, and for the third, say how
+  far your own loop got and what stopped you.
 - You changed `my_loop.py` after it passed. Run the check again. If it no longer passes, your copy goes
   back to the reference loop until it does.
 
@@ -405,5 +407,6 @@ Part 1 is 35% of the homework. At a minimum I am looking for the following:
   the sentences that are most important.
 - Predictions: 15% - Each prediction in 1e has a reason. They are graded on the reasoning, not on being
   right.
-- Instructions: 35% - Your `instructions.md` covers the four points in 1d, and your 1c table and 1d
-  answer compare the traces before and after with a specific example.
+- Instructions: 35% - Your `instructions.md` covers the four points in 1d, your 1c table says for each
+  trace whether the agent got there for a good reason, and your 1d answer compares the traces before and
+  after with a specific example.
