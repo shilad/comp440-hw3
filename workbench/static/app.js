@@ -135,6 +135,15 @@ const infoOf = (id) => S.steps.find((x) => x.id === id);
 const labelOf = (id) => stepOf(id)?.label || id;
 const due = (p) => String(p?.due || "").replace(/ \[TBD\]/, "");
 const shortDue = (p) => due(p).replace(/^\d{1,2}:\d{2}(am|pm) /, "");
+// The due date. When every part has the same one, it is said once, at the top, and no part repeats
+// it. When the parts differ, each part's header gives its own, and the top line gives the current
+// part's, as before.
+function dueText(parts, part) {
+  const all = parts.map(due);
+  const same = all.length > 0 && !!all[0] && all.every((d) => d === all[0]);
+  return { same, top: same ? `Everything is due ${all[0]}.`
+    : part?.due ? `Part ${part.number}${part.extra_credit ? " (extra credit)" : ""} is due ${due(part)}` : "" };
+}
 const rel = (path) => (path && path.startsWith(A.repo + "/") ? path.slice(A.repo.length + 1) : path);
 const trim = (t, n) => { t = String(t || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
 
@@ -229,15 +238,15 @@ function update() {
   paint(byId("next"), !now ? "Every step is done."
     : part?.extra_credit && n === required.length ? `Every required step is done. The next step, ${jump}, is extra credit.`
     : `Now: ${jump}`);
-  byId("due").textContent = part?.due
-    ? `Part ${part.number}${part.extra_credit ? " (extra credit)" : ""} is due ${due(part)}` : "";
+  const dues = dueText(A.parts, part);
+  byId("due").textContent = dues.top;
 
   for (const p of A.parts) {
     const mine = S.steps.filter((x) => x.part === p.number), done = mine.filter((x) => x.complete).length;
     const saved = S.committed.includes(p.number);
     const pushed = S.push && S.push.on && S.push.ok ? " and pushed to GitHub" : "";
     byId(`meta-${p.number}`).textContent = (saved ? `Committed as “Part ${p.number} done”${pushed}` : done ? `${done} of ${mine.length} done` : `${mine.length} steps`)
-      + (p.due && !saved ? ` · due ${shortDue(p)}` : "");
+      + (p.due && !saved && !dues.same ? ` · due ${shortDue(p)}` : "");
     const open = openParts.has(p.number);
     $(`[data-part="${p.number}"]`).setAttribute("aria-expanded", String(open));
     byId(`steps-${p.number}`).hidden = !open;

@@ -611,6 +611,31 @@ def test_the_real_0c_question_shows_its_verdict_words_in_italics():
     assert not re.search(r"<(?!/?em>)", out[0])               # no other markup
 
 
+def test_one_due_date_is_said_once_at_the_top_and_different_ones_on_each_part():
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert "byId(\"due\").textContent = dues.top;" in js
+    assert "(p.due && !saved && !dues.same ? ` · due ${shortDue(p)}` : \"\")" in js   # headers keep it only then
+    node = node_or_none()
+    if not node:
+        return
+    lines = js.splitlines()
+    helpers = [x for x in lines if x.startswith(("const due =", "const shortDue ="))] + [page_function(js, "dueText")]
+    same = [{"number": n, "due": "8:00am Tuesday, November 24"} for n in range(4)]
+    same[3]["extra_credit"] = True
+    differ = [{"number": 0, "due": "8:00am Thursday, November 12"}, {"number": 1, "due": "8:00am Tuesday, November 24"},
+              {"number": 3, "due": "8:00am Tuesday, November 24", "extra_credit": True}]
+    calls = [f"dueText({json.dumps(same)}, {json.dumps(same[1])})", f"dueText({json.dumps(same)}, null)",
+             f"dueText({json.dumps(differ)}, {json.dumps(differ[0])})", f"dueText({json.dumps(differ)}, {json.dumps(differ[2])})",
+             "dueText([], null)"]
+    run = "\n".join(helpers) + "\n" + "\n".join(f"console.log(JSON.stringify({c}));" for c in calls)
+    out = [json.loads(x) for x in subprocess.run([node, "-e", run], capture_output=True, text=True).stdout.splitlines()]
+    assert out[0] == {"same": True, "top": "Everything is due 8:00am Tuesday, November 24."}
+    assert out[1] == out[0]                                   # said even when every step is done
+    assert out[2] == {"same": False, "top": "Part 0 is due 8:00am Thursday, November 12"}
+    assert out[3] == {"same": False, "top": "Part 3 (extra credit) is due 8:00am Tuesday, November 24"}
+    assert out[4] == {"same": False, "top": ""}
+
+
 def test_every_step_opens_the_same_way_text_then_tasks_then_every_part_folded():
     js = (ROOT / "workbench/static/app.js").read_text()
     css = (ROOT / "workbench/static/style.css").read_text()
