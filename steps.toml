@@ -15,8 +15,8 @@
 #     or `slots` ticks by itself when those files exist or those answers are typed. One without
 #     either is ticked by the step's Claude session, and also shows as ticked once any later
 #     checkpoint is. One with `tick = false` is a task only the student can see done (reading a
-#     trace, comparing two runs in the results viewer): the page lists it with no tick, as it
-#     lists the /exit task, Claude never ticks it, and the step never waits on it.
+#     trace, comparing two runs in the results viewer): the page lists it with no tick, Claude
+#     never ticks it, and the step never waits on it.
 #     A task names where it happens, in the same words each time: "Ask Claude to ...", "In the
 #     results viewer, ...", "In your editor, ...", "In a terminal tab of your own, ...".
 #   - slots: the answers in WRITEUP.md that complete the step. "0b.*" means every answer, table
@@ -24,7 +24,10 @@
 #   - files: files that must exist for the step to be complete (* matches as in a glob).
 #   - brief: what the step's Claude session is told about this step, after the tutor rules.
 #   - allow: the commands the step's session may run without asking the student. The global
-#     `allow` list below applies to every step; reading files never needs asking.
+#     `allow` list below applies to every step; reading files never needs asking. A `Bash(...)`
+#     rule is allowed in every step's session, because a session started for one step can go on
+#     to the next (see below); any other rule, such as `Edit(instructions.md)`, stays with its
+#     own step's new session.
 #   - setup = true: a set-up step, whose text and checkpoints show as plain steps.
 #   - start_task, stop_task: this step's own wording of the first and last task (see below).
 #   - claim = true: the page shows `sample_claim` beside the step's summary.
@@ -40,12 +43,18 @@ title = "COMP 440 HW3: Checking Claims Against Wikipedia"
 sample_claim = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 overview = "README.md"
 writeup = "WRITEUP.md"
-# The first and the last task the page lists in every step: when to start the step's Claude
-# session and when to stop it. A step may give its own `start_task` or `stop_task`, and an empty
-# one is left out (0a's own third task says when to start). The page ticks the first once the
-# session has started. It cannot see /exit, so the last task has no tick.
-start_task = "First, start this step's Claude session: copy the command on this page and paste it into a terminal in your homework folder."
-stop_task = "Last, when every task above is done, type /exit in that terminal to stop this step's Claude session."
+# Every step after the first can be done in a new Claude session, or in the session the student
+# already has open (instructor, Nov 11: "i'd like to rework so that i always have the option of
+# continuing an existing claude session (from a previous step) or starting a new one. Give both in
+# the web ui."). The page shows both: a one-line prompt to paste into the open session ("Start step
+# 0c. Read .workbench/0c.md and follow it ..."), and the terminal command for a new session, under
+# which it says to type /exit first if another session is open in that terminal.
+# The first task the page lists in every step says how to start it with Claude; the page ticks it
+# once Claude has started on the step. A step may give its own `start_task`, and an empty one is
+# left out (0a's own third task says when to start). `stop_task` would be a last task, with no tick;
+# it is empty, since a student who goes on to the next step keeps the same session.
+start_task = "First, start this step with Claude: paste the prompt on this page into the Claude session you have open, or paste the command into a terminal in your homework folder to start a new session."
+stop_task = ""
 # Shown once in a step's Tasks, above its write-up questions, in place of "Type it in WRITEUP.md"
 # under each one (instructor, Nov 11: "Should I be talking with Claude? Should I be typing in the
 # writeup? Clarify."). "Your answers", not "them": in 1b, 2a and 3a a question asks Claude to paste
@@ -169,8 +178,8 @@ each turn so that they know which place comes next.
   to run the agent on the claim." Do not ask what they would like to do first. The first reply
   runs nothing. Posting a status with the page skill, and ticking what the brief says to tick in
   the first reply, are the only exceptions.
-- After you paste output, or finish what they asked, end with one or two sentences on what they
-  do next and where: read something on the homework page or in the results viewer, type answers
+- After you paste output or do what they asked, end with one or two sentences on what they do
+  next and where: read something on the homework page or in the results viewer, type answers
   in WRITEUP.md in their editor, or ask you for the next thing. When this session has nothing
   more to do, say that they need not reply here, but may ask about anything in the output.
 - If they ask what to do next, name the next task on the page that is not done yet, in one
@@ -182,11 +191,12 @@ each turn so that they know which place comes next.
   in `git diff`, a table you have read. Some tasks happen where you cannot see them, such as
   reading a trace in the results viewer: the page shows those with no tick, so never tick them or
   ask whether they are done.
-- This session is for one step, and has only that step's instructions. If the student asks for
-  something from another step, say which step and that it has its own session on the homework
-  page. A command that starts with `claude -n` or `claude --resume`, pasted into this chat, is a
-  step's own session: tell them to type /exit, then paste it at the terminal's prompt; do not run
-  it. When this step is complete, say in one line which step is next.
+- This session serves one step at a time. When the student pastes a step's prompt from the page
+  ("Start step 0c. Read .workbench/0c.md ..."), follow that file from then on, in place of the
+  earlier step's brief; every rule here still holds. Say in one line that you are on that step,
+  then give a new session's first reply. For another step, point to its prompt on the homework
+  page. Never run a pasted `claude` command: say to paste it at a terminal's prompt. When this
+  step is complete, say in one line which step is next.
 - Some commands run without asking. Any other makes Claude Code ask the student first. Before such
   a command, say in one line what it does, so they can decide.
 
@@ -400,7 +410,7 @@ offline tests, `uv run pytest -q`, which need no key and no network; do not brin
 otherwise.
 
 The step is done when the check says "Everything is ready." and their name is typed. Then say in
-one line that 0b is next, in its own session on the homework page.
+one line that 0b is next: its prompt on the homework page, pasted into this chat, starts it here.
 '''
 
 [[step]]

@@ -71,7 +71,9 @@ a word.
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. Ask Claude to run the no-tools baseline on the claim, and read the output it pastes.
 3. Type your answer to the question in `WRITEUP.md`, in your editor, under 0b.
 
@@ -106,7 +108,9 @@ assessor* is a program that gives a verdict on a claim; here, the model with one
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. Ask Claude to run the one-search baseline on the claim, and read the output it pastes.
 3. Click "Open these results" under 0c on the homework page to read the whole page it read.
 4. Type your answers to the two questions in `WRITEUP.md`, in your editor, under 0c.
@@ -150,7 +154,9 @@ from Wikipedia that a verdict is based on.
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. Ask Claude to run the agent on the claim, and read the trace it pastes, one entry at a time.
 3. Click "Open these results" under 0d and read "The agent's trace", with each lookup's full result.
 4. Type your answers to the two questions in `WRITEUP.md`, in your editor, under 0d.

@@ -84,10 +84,10 @@ If you are curious, here are additional details.
   from the pages in `instructions/`, open with a click, part by part: Words in this step, Actions,
   Interpreting output, Write-up, Troubleshooting and Hint (and in 1a, The six rules). Open Actions for
   the exact commands.
-- Each step has its own Claude Code session, your tutor and lab assistant for that step. The homework
-  page shows the command that starts it, with a **Copy** button: paste it into a terminal tab in the
-  homework's folder. Type `/exit` when you finish a step; the same tab works for the next one. When you
-  come back to a step, the page shows the command that returns you to the same conversation.
+- Claude Code is your tutor and lab assistant for each step. For every step after the first, the homework
+  page gives two choices, each with a **Copy** button: a prompt to paste into the Claude session you
+  already have open, or a command to paste into a terminal tab in the homework's folder to start a new
+  session. When you come back to a step, the page shows how to return to the same conversation.
 - Claude does nothing until you ask. Claude Code sometimes asks your permission before it runs a command:
   read the command, and say yes if it is what you asked for.
 - You type your answers yourself, in `WRITEUP.md`, in your editor. Claude will not write them, because

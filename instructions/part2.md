@@ -18,7 +18,9 @@ or 4).
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. Check that the full run has finished: it ends with two tables in the tab where you started it.
 3. Open **Results** at the top of the homework page, then "runs/part2", and read "Accuracy".
 4. Ask Claude to paste the report into the empty block under 2a in `WRITEUP.md`.
@@ -50,7 +52,9 @@ In this step you find out whether the agent's quoted evidence really supports it
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. Open **Results** at the top of the homework page, then "runs/part2".
 3. Click "Clear the filters" under the claims filters.
 4. Set "Verdict" in "The agent" box to "supported or refuted"; leave "Order" at "Order of the claims file".

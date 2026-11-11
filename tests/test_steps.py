@@ -391,6 +391,22 @@ def test_no_rule_asks_an_open_question_or_a_write_up_question_in_the_chat(a):
         assert rule in tutor, rule
 
 
+def test_a_session_serves_one_step_at_a_time_and_can_go_on_to_the_next(a):
+    """The instructor, Nov 11: "i always have the option of continuing an existing claude session
+    (from a previous step) or starting a new one." The tutor follows a pasted step prompt, and still
+    never runs a pasted `claude` command."""
+    tutor = flat(a.tutor)
+    for rule in ("This session serves one step at a time.",
+                 "follow that file from then on, in place of the earlier step's brief; every rule here still holds.",
+                 "Say in one line that you are on that step, then give a new session's first reply.",
+                 "Never run a pasted `claude` command: say to paste it at a terminal's prompt."):
+        assert rule in tutor, rule
+    for gone in ("This session is for one step, and has only that step's instructions",
+                 "tell them to type /exit", "it has its own session on the homework page"):
+        assert gone not in tutor, gone
+    assert "in its own session" not in flat(a.step("0a").brief)
+
+
 def test_run_notes_are_the_outlines():
     steps = {s["id"]: s for s in raw()["step"]}
     assert {i: s["run_yourself"]["note"] for i, s in steps.items() if "run_yourself" in s} == RUN_NOTES
@@ -605,8 +621,9 @@ def test_the_learning_goals_are_the_same_in_readme_writeup_and_tutor(a):
 
 
 def test_the_tutor_text_is_shorter_than_before(a):
-    """It was 3,965 words on Nov 10. The rules now say why they exist, and fewer of them are left."""
-    assert len(a.tutor.split()) < 3000
+    """It was 3,965 words on Nov 10. The rules now say why they exist, and fewer of them are left.
+    The limit was 3,000 until the rule for going on to another step in the same session (Nov 11)."""
+    assert len(a.tutor.split()) < 3050
 
 
 def test_the_api_key_rules_are_kept(a):

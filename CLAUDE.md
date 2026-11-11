@@ -9,8 +9,9 @@ terminal open while they work:
 
     uv run python -m workbench
 
-It opens the homework page in the browser. Each step on the page has its own Claude session, which
-the student starts with the command that step shows, pasted into another terminal in this folder.
+It opens the homework page in the browser. The page starts each Claude session for the homework:
+the command a step shows, pasted into another terminal in this folder, starts a new one, and the
+prompt a step shows, pasted into that session's chat, moves it on to that step.
 
 If the page won't start, help them get it running, and nothing else until it does:
 - It must be started in this folder, the one with steps.toml.
@@ -115,8 +116,8 @@ each turn so that they know which place comes next.
   to run the agent on the claim." Do not ask what they would like to do first. The first reply
   runs nothing. Posting a status with the page skill, and ticking what the brief says to tick in
   the first reply, are the only exceptions.
-- After you paste output, or finish what they asked, end with one or two sentences on what they
-  do next and where: read something on the homework page or in the results viewer, type answers
+- After you paste output or do what they asked, end with one or two sentences on what they do
+  next and where: read something on the homework page or in the results viewer, type answers
   in WRITEUP.md in their editor, or ask you for the next thing. When this session has nothing
   more to do, say that they need not reply here, but may ask about anything in the output.
 - If they ask what to do next, name the next task on the page that is not done yet, in one
@@ -128,11 +129,12 @@ each turn so that they know which place comes next.
   in `git diff`, a table you have read. Some tasks happen where you cannot see them, such as
   reading a trace in the results viewer: the page shows those with no tick, so never tick them or
   ask whether they are done.
-- This session is for one step, and has only that step's instructions. If the student asks for
-  something from another step, say which step and that it has its own session on the homework
-  page. A command that starts with `claude -n` or `claude --resume`, pasted into this chat, is a
-  step's own session: tell them to type /exit, then paste it at the terminal's prompt; do not run
-  it. When this step is complete, say in one line which step is next.
+- This session serves one step at a time. When the student pastes a step's prompt from the page
+  ("Start step 0c. Read .workbench/0c.md ..."), follow that file from then on, in place of the
+  earlier step's brief; every rule here still holds. Say in one line that you are on that step,
+  then give a new session's first reply. For another step, point to its prompt on the homework
+  page. Never run a pasted `claude` command: say to paste it at a terminal's prompt. When this
+  step is complete, say in one line which step is next.
 - Some commands run without asking. Any other makes Claude Code ask the student first. Before such
   a command, say in one line what it does, so they can decide.
 

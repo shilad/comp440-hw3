@@ -22,7 +22,9 @@ no network, takes a few seconds, and costs nothing.
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. Read `agent.py` with Claude: the four tools, the evidence check and `finish()`.
 3. In your editor, in `my_loop.py`, write the loop below the line that says where it goes, one rule at a
    time. Remember, Claude can help you!
@@ -147,7 +149,9 @@ The claim you check in this step:
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. Decide on one lookup: which tool, and what to ask it. Use only the agent's tools, not your browser,
    so that you see only what the agent sees.
 3. Ask Claude to run your lookup, read what comes back, and note why you chose it.
@@ -202,7 +206,9 @@ numbered line of it.
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. Ask Claude to run the agent on your 12 development claims, and read the two tables it prints.
 3. Open **Results** at the top of the homework page, then "runs/part1/before".
 4. Choose three claims, one each that needs 2, 3 and 4 Wikipedia articles, where your development claims
@@ -246,7 +252,9 @@ finish, and says nothing about how to look things up.
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. In your editor, write your instructions in `instructions.md` and save. Add to its three sentences or
    rewrite them, but keep what they say about finishing with `answer` and the three verdict words. At a
    minimum your instructions must say:
@@ -298,7 +306,9 @@ are the 100 claims in `data/eval.jsonl`.
 
 **Actions:**
 
-1. Start this step's Claude session (type `/exit` first if another one is open).
+1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
+   have open, or start a new session with its command (type `/exit` first if another session is
+   open in that terminal).
 2. In another terminal tab in the homework's folder, start the full run:
    `uv run python evaluate.py data/eval.jsonl --out runs/part2`.
 3. Leave that tab open and your laptop awake until the run ends with two tables.

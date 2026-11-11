@@ -2,7 +2,7 @@
 
     uv run python -m workbench.claude_md
 
-Each step's own session leaves this file out (its command has `--setting-sources user`), so it
+A session the page starts leaves this file out (its command has `--setting-sources user`), so it
 reaches only a Claude started in this folder some other way. It sends the student to the homework
 page, helps if the page won't start, and gives the homework's tutor rules from steps.toml for a
 student who keeps working there anyway. tests/test_workbench.py fails when this file and
@@ -30,8 +30,9 @@ terminal open while they work:
 
     uv run python -m workbench
 
-It opens the homework page in the browser. Each step on the page has its own Claude session, which
-the student starts with the command that step shows, pasted into another terminal in this folder.
+It opens the homework page in the browser. The page starts each Claude session for the homework:
+the command a step shows, pasted into another terminal in this folder, starts a new one, and the
+prompt a step shows, pasted into that session's chat, moves it on to that step.
 
 If the page won't start, help them get it running, and nothing else until it does:
 - It must be started in this folder, the one with steps.toml.
