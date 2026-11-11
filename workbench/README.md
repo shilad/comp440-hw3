@@ -149,12 +149,32 @@ claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus
 - `--plugin-dir` loads the `page` skill: Claude posts a status line, the student's prediction,
   and the checkpoints it ticks, by running `.workbench/page.py`, which finds the server's port in
   `.workbench/server.json`.
-- Every step's Tasks list begins with when to start the step's Claude session and ends with when
-  to stop it (`start_task` and `stop_task` in the steps file, which a step may reword or leave
-  out). The page ticks the first once the session has started. It cannot see `/exit`, so the
-  last has no tick. Above a step's first write-up question the list shows `answers_task`, one
-  sentence on where the answers are typed, and an unanswered question then says only "Not written
-  yet."
+- **Going on in the same session.** Every step after the first also shows a prompt to paste into
+  the Claude session the student already has open: `Start step 0c. Read .workbench/0c.md and
+  follow it from now on, in place of your instructions for any other step.` The session then
+  serves 0c; the tutor rules say so. It keeps the settings it was started with, so every step's
+  settings allow every step's `Bash(...)` rules (other rules, such as `Edit(instructions.md)`,
+  stay with their own step); the hook is the same file for every step. What is lost: a command
+  another step needs no longer asks first (an `evaluate.py` run in Part 0, say), so only the
+  briefs keep each step to its own commands.
+- **Each step's record follows the step, not the session.** The page reads every conversation
+  it started (the session ids in `.workbench/state.json`) and cuts each one at every message that
+  starts with "Start step <label>.": a stretch serves that step until the next such message;
+  anything before the first serves the step the session was started for. A step's record, its
+  state line and its saved `record/` file come from its stretches, wherever they are, and the hook
+  log's lines are matched to a stretch by session id and time. A step whose latest stretch is
+  followed by another step's says that the session went on to that step. Its terminal command is
+  then `claude --resume <that session> ... "Start step <label>. Read ..."`, which reopens the
+  conversation and moves it back onto the step; before the step has any stretch, it is the new
+  session command. `TRANSCRIPT.md` writes each conversation once, under the step it was started
+  for, and gives each other step it served one line saying where. A session the page did not start
+  (plain `claude`) is not read for the record.
+- Every step's Tasks list begins with how to start the step with Claude (`start_task` in the steps
+  file, which a step may reword or leave out); the page ticks it once Claude has started on the
+  step. A `stop_task` would end the list, with no tick; HW3 leaves it empty, and the new-session
+  box says to type `/exit` first if another session is open in that terminal. Above a step's
+  first write-up question the list shows `answers_task`, one sentence on where the answers are
+  typed, and an unanswered question then says only "Not written yet."
 - `top_note`, one sentence on what happens where (talking with Claude, typing in `WRITEUP.md`),
   shows near the top of the page, under the learning goals.
 - The page says nothing under the command about a model that is not available. Step 0a's

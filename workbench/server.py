@@ -278,7 +278,7 @@ class App:
         with self.commit_lock:
             ids = {s.id: self.hub.session_id(s.id) for s in self.a.steps}
             try:
-                transcript.write(self.repo, self.a, ids)
+                transcript.write(self.repo, self.a, ids, self.hub.worked_in())
             except Exception as err:  # noqa: BLE001  never let the record stop the commit
                 traceback.print_exc()
                 say(f"Couldn't write {transcript.NAME}: {err}")

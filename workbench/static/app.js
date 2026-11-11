@@ -270,10 +270,10 @@ function update() {
 // Tasks: the step's checkpoints. One that the student's answers complete shows each question
 // and their answer; the rest show their task, a full sentence saying what to do. A setup step
 // shows every task, numbered, each with its tick (and the student's answer under one they answer).
-// The list begins with when to start the step's Claude session, ticked once it has started, and
-// ends with when to stop it. The page cannot see /exit, so that last task has no tick, and nor
-// does a task only the student can see done (`tick: false`, as reading a trace). Above the first
-// question, one sentence (`answers_task`) says where the answers are typed.
+// The list begins with how to start the step with Claude (`start_task`), ticked once Claude has
+// started on it, and may end with a last task (`stop_task`), which has no tick because the page
+// cannot see it done. Nor does a task only the student can see done (`tick: false`, as reading a
+// trace). Above the first question, one sentence (`answers_task`) says where the answers are typed.
 function counts(s, st, rec, started) {
   const row = (ok, text, sub, mine) => `<div class="check ${ok ? "ok" : ""}"><span class="tick">${ok ? "✓" : "○"}</span>
       <div><span class="q">${codeText(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
@@ -389,10 +389,23 @@ function resultsLink(ss) {
   return `<a href="/results/open?path=${encodeURIComponent(ss.results)}" target="_blank" rel="noopener">Open these results</a>`;
 }
 
-function command(label, cmd) {
+// A box to copy from: its label, the text, a Copy button, and one sentence on where to paste it.
+function command(label, cmd, where) {
   return `<div class="cmd"><span class="label">${label}</span>
     <div class="cmd-row"><code title="${esc(cmd)}">${esc(cmd)}</code><button class="copy" data-copy="${esc(cmd)}" type="button">Copy</button></div>
-    <span class="small">Paste this into a terminal in your homework folder, not into a Claude chat. If the last step's Claude is still open in that terminal, type /exit first.</span></div>`;
+    <span class="small">${where}</span></div>`;
+}
+const IN_CHAT = "Paste this into the Claude session you already have open from this page, as a message. Claude then works on this step.";
+const IN_TERMINAL = "Paste this into a terminal in your homework folder, not into a Claude chat. If another Claude session is open in that terminal, type /exit first.";
+
+// How to work on a step with Claude: go on in the session already open (every step after the
+// first), or the terminal command, which starts a new session or, once the step has been worked
+// on, opens its conversation again.
+function claudeBoxes(ss) {
+  if (!ss.command) return "";
+  const go = ss.continue_prompt ? command("Continue in the Claude session you have open", ss.continue_prompt, IN_CHAT) : "";
+  const label = ss.started ? "Or go back to this step's conversation" : go ? "Or start a new Claude session" : "Start a new Claude session";
+  return go + command(label, ss.command, IN_TERMINAL);
 }
 
 // A command the student runs in a terminal tab of their own (a long run), under the Claude command.
@@ -406,11 +419,10 @@ function yourself(s) {
 
 function recordCol(s, st, ss) {
   const when = st.waiting_on.map(labelOf).join(", ");
-  const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command)
-    + yourself(s) : "";
+  const cmd = ss.command ? claudeBoxes(ss) + yourself(s) : "";
   if (!ss.started) {
-    const state = st.locked ? `This record is empty. This step's Claude opens when you finish ${when}.`
-      : "This record is empty. Start this step's Claude in a terminal.";
+    const state = st.locked ? `This record is empty. This step opens when you finish ${when}.`
+      : "This record is empty. Start this step with Claude, below.";
     return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(state)} What you ask Claude, and what comes back, will be recorded here.</span></div>${ss.results ? `<p class="small">${resultsLink(ss)}</p>` : ""}${cmd}`;
   }
   return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(stateLine(ss))}</span></div>
@@ -431,7 +443,7 @@ function closePanel() {
 }
 function conversation(ss) {
   return ss.events.map((e) => {
-    if (e.kind === "student" && e.opening) return `<span class="note">Started in the terminal with “${esc(e.text)}”</span>`;
+    if (e.kind === "student" && e.opening) return `<span class="note">Started with “${esc(e.text)}”</span>`;
     if (e.kind === "student") return `<div class="msg you"><span class="label">You</span>${md(e.text)}</div>`;
     if (e.kind === "claude") return `<div class="msg claude"><span class="label">Claude</span>${md(e.text)}</div>`;
     if (e.kind === "tool") return `<p class="tool">Claude ${esc(e.label.replace(/^(\w)/, (c) => c.toLowerCase()))}${e.detail ? `: <code>${esc(trim(e.detail, 160))}</code>` : ""}</p>`;

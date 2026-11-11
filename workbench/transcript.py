@@ -5,6 +5,9 @@
 Claude Code saves every conversation under ~/.claude/projects/ (or $CLAUDE_CONFIG_DIR/projects/).
 The page keeps each step's session id in .workbench/state.json, so each step's conversation goes
 under a heading naming the step, in step order, however many times the student came back to it.
+A conversation that went on to other steps (the student pasted a step's "Start step 0c. ..."
+prompt into it) is written once, under the step it was started for; each other step it served
+gets a line under its own heading saying so, and its stretch starts at that message.
 Conversations started in this folder some other way (plain `claude`) follow, under their own
 heading.
 
@@ -207,8 +210,10 @@ def section(session_id: str, start: str, body: str) -> str:
     return f"<!-- transcript-session: {session_id} | {start} -->\n{body}<!-- end-session: {session_id} -->\n"
 
 
-def build(repo: Path, a: Assignment, session_ids: dict[str, str]) -> str:
-    """The whole file. `session_ids` maps each step's id to its session id."""
+def build(repo: Path, a: Assignment, session_ids: dict[str, str],
+          worked: dict[str, list[str]] | None = None) -> str:
+    """The whole file. `session_ids` maps each step's id to its own session id; `worked`, each
+    step's id to the sessions whose conversation served it, as the page reads them."""
     old: dict[str, tuple[str | None, str, str]] = {}   # session id -> (step label, start, body)
     path = repo / NAME
     if path.exists():
@@ -226,11 +231,16 @@ def build(repo: Path, a: Assignment, session_ids: dict[str, str]) -> str:
         return section(sid, old[sid][1], old[sid][2]) if sid in old else ""
 
     out, mine = [HEADER], set(session_ids.values())
+    home = {sid: step for step, sid in session_ids.items()}     # where each conversation is written
     for s in a.steps:
         label = a.label(s)
         ids = [session_ids[s.id]] if s.id in session_ids else []
         ids += [k for k, v in old.items() if v[0] == label and k not in ids and k not in mine]
         done = [x for x in (one(sid) for sid in ids) if x]
+        # A conversation written under another step that also served this one.
+        elsewhere = [sid for sid in (worked or {}).get(s.id, []) if home.get(sid, s.id) != s.id]
+        done += [f"This step was done in the conversation under {a.label(a.step(home[sid]))}, session "
+                 f"`{sid[:8]}`, from the message “Start step {label}.”\n" for sid in elsewhere]
         if done:
             out.append(f"\n# {label}. {s.title}\n\n" + "\n".join(done))
     found = {f.stem for f in projects().glob("*/*.jsonl") if f.stem not in mine and started_here(f, repo)} \
@@ -243,9 +253,10 @@ def build(repo: Path, a: Assignment, session_ids: dict[str, str]) -> str:
     return redact("".join(out))
 
 
-def write(repo: Path, a: Assignment, session_ids: dict[str, str]) -> bool:
+def write(repo: Path, a: Assignment, session_ids: dict[str, str],
+          worked: dict[str, list[str]] | None = None) -> bool:
     """Write TRANSCRIPT.md if it changed. True if the file now holds at least one conversation."""
-    text = build(repo, a, session_ids)
+    text = build(repo, a, session_ids, worked)
     path = repo / NAME
     if not (path.exists() and path.read_text(encoding="utf-8", errors="replace") == text):
         path.write_text(text, encoding="utf-8", newline="\n")

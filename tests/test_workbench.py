@@ -154,14 +154,15 @@ def subjects(where, ref="HEAD"):
     return git(where, "log", "--format=%s", ref).splitlines()
 
 
-def save_session(repo, session_id, lines, folder="-tmp-student"):
-    """A conversation as Claude Code saves it, under CLAUDE_CONFIG_DIR/projects/."""
+def save_session(repo, session_id, lines, folder="-tmp-student", hour=19):
+    """A conversation as Claude Code saves it, under CLAUDE_CONFIG_DIR/projects/: one line a minute
+    from `hour` o'clock on Nov 10."""
     d = Path(transcript.projects()) / folder
     d.mkdir(parents=True, exist_ok=True)
     out = []
     for n, (kind, content) in enumerate(lines):
         out.append(json.dumps({"type": kind, "uuid": f"{session_id}-{n}", "sessionId": session_id,
-                               "cwd": str(repo), "timestamp": f"2026-11-10T19:{n:02d}:00.000Z",
+                               "cwd": str(repo), "timestamp": f"2026-11-10T{hour}:{n:02d}:00.000Z",
                                "message": {"role": kind, "content": content}}))
     (d / f"{session_id}.jsonl").write_text("\n".join(out) + "\n")
 
@@ -500,6 +501,148 @@ def test_a_step_whose_only_task_has_no_tick_is_still_done_when_claude_marks_it(t
     assert {x["id"]: x for x in steps.status(app.a, h.student, app.hub.marked())}["1a"]["complete"]
 
 
+# -- going on to another step in the same session (instructor, Nov 11: "i'd like to rework so that i
+# always have the option of continuing an existing claude session (from a previous step) or
+# starting a new one. Give both in the web ui.") ---------------------------------------------------
+
+def go_on(label):
+    from workbench.sessions import continue_prompt
+    return continue_prompt(label)
+
+
+def test_one_conversation_can_serve_several_steps_and_each_record_follows_its_step(tmp_path):
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    hub = app.hub
+    sid = hub.session_id("0b")
+    lines = [
+        ("user", "Start step 0b."),                                                      # 19:00
+        ("assistant", [{"type": "text", "text": "This step asks the model. Ask me to run it."}]),
+        ("user", "Run it."),
+        ("assistant", [tool_use(1, "uv run python check.py --method no-tools --out runs/part0 \"x\"")]),
+        ("user", [tool_result(1, CHECK_OUTPUT)]),
+        ("assistant", [{"type": "text", "text": "Next, type your answers in WRITEUP.md."}]),
+        ("user", go_on("1a")),                                                           # 19:06
+        ("assistant", [{"type": "text", "text": "I am now on step 1a. Read the loop first."}]),
+        ("user", "What does Claude get sent?"),
+        ("assistant", [{"type": "text", "text": "The whole conversation so far."}]),
+    ]
+    save_session(h.student, sid, lines)
+    with (hub.dir / "hooks.jsonl").open("a") as f:      # one refusal while it served 1a
+        f.write(json.dumps({"t": stamp("2026-11-10T19:08:30.000Z"), "session_id": sid, "kind": "refused",
+                            "text": "The page refused a git command, because the page makes the commits."}) + "\n")
+    b, a1 = hub.sessions["0b"], hub.sessions["1a"]
+    for s in (b, a1):
+        s.refresh()
+    asked = lambda s: [x["text"] for x in s.record()["entries"] if x["kind"] == "asked"]   # noqa: E731
+    ran = lambda s: [x["text"] for x in s.record()["entries"] if x["kind"] == "ran"]       # noqa: E731
+    assert asked(b) == ["Run it."] and len(ran(b)) == 1
+    assert asked(a1) == ["What does Claude get sent?"] and ran(a1) == []
+    assert [e["text"] for e in a1.events if e["kind"] == "student" and e["opening"]] == [go_on("1a")]
+    assert any("refused a git command" in e.get("text", "") for e in a1.events)
+    assert not any("refused a git command" in e.get("text", "") for e in b.events)
+    assert b.state == "moved on" and "went on to step 1a" in b.now and not b.busy
+    assert a1.state != "moved on"                      # old test times: "stopped", not "moved on"
+    assert hub.worked_in() == {"0b": [sid], "1a": [sid]}
+    flags = f"--model claude-opus-5-5 --effort medium --setting-sources user"
+    # Back to 1a: reopen the conversation as it is. Back to 0b: reopen it and move it back onto 0b.
+    assert a1.command().startswith(f"claude --resume {sid} {flags} --settings .workbench/1a.json ")
+    assert not a1.command().endswith('."')
+    assert b.command().startswith(f"claude --resume {sid} {flags} --settings .workbench/0b.json ")
+    assert b.command().endswith(f' "{go_on("0b")}"')
+    # TRANSCRIPT.md: the conversation once, under 0b; 1a says where its part is.
+    ids = {s.id: hub.session_id(s.id) for s in app.a.steps}
+    text = transcript.build(h.student, app.a, ids, hub.worked_in())
+    assert text.count(f"<!-- transcript-session: {sid} |") == 1
+    assert text.index("# 0b.") < text.index(sid) < text.index("# 1a.")
+    assert f"This step was done in the conversation under 0b, session `{sid[:8]}`, from the message “Start step 1a.”" in text
+
+    # The student goes back to 0b in the same conversation.
+    save_session(h.student, sid, lines + [("user", go_on("0b")),
+                                          ("assistant", [{"type": "text", "text": "I am now on step 0b."}])])
+    for s in (b, a1):
+        s.refresh()
+    assert a1.state == "moved on" and b.state != "moved on"
+    assert not b.command().endswith('."') and a1.command().endswith(f' "{go_on("1a")}"')
+
+    # 1a goes on later in a new session of its own: its record holds both stretches.
+    own = hub.session_id("1a")
+    save_session(h.student, own, [("user", "Start step 1a."), ("user", "And the tools?"),
+                                  ("assistant", [{"type": "text", "text": "Four of them."}])], hour=20)
+    assert own in hub.missed                         # looked for a moment ago: the page waits 2 seconds
+    hub.missed.clear()                               # before it looks for a new session again
+    a1.refresh()
+    assert asked(a1) == ["What does Claude get sent?", "And the tools?"]
+    assert hub.worked_in()["1a"] == [sid, own] and a1.state != "moved on"
+    assert a1.command().startswith(f"claude --resume {own} ")
+
+
+def test_a_start_message_for_a_step_that_does_not_exist_starts_nothing(tmp_path):
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    sid = app.hub.session_id("0b")
+    save_session(h.student, sid, [("user", "Start step 0b."), ("user", "Start step 9z. Read .workbench/9z.md"),
+                                  ("assistant", [{"type": "text", "text": "There is no such step."}])])
+    assert [st["step"] for st in app.hub.stretches()] == ["0b"]
+
+
+def test_every_steps_settings_allow_every_steps_shell_commands_and_share_the_hook(tmp_path):
+    """A continued session keeps the settings it was started with, so no step's commands ask
+    first in it. An Edit rule (3b's instructions.md) stays with its own step."""
+    import shutil as sh
+    h = homework(tmp_path)
+    for name in ("steps.toml", "WRITEUP.md", "README.md", "instructions"):
+        src = ROOT / name
+        (sh.copytree if src.is_dir() else sh.copyfile)(src, h.student / name)
+    app = server.App(h.student)
+    shells = {r for s in app.a.steps for r in s.allow if r.startswith("Bash(")}
+    hooks = set()
+    for s in app.a.steps:
+        app.hub.sessions[s.id].prepare()
+        settings = json.loads((app.hub.dir / f"{app.a.label(s)}.json").read_text())
+        allow = settings["permissions"]["allow"]
+        assert shells <= set(allow), s.id
+        assert ("Edit(instructions.md)" in allow) == (s.id == "3b"), s.id
+        hooks.add(json.dumps(settings["hooks"], sort_keys=True))
+    assert len(hooks) == 1                                   # the same guard for every step
+
+
+def test_the_page_offers_both_ways_and_only_the_command_for_the_first_step(tmp_path):
+    h = homework(tmp_path)
+    (h.student / "WRITEUP.md").write_text(WRITEUP.replace("Name:", "Name: Sam"))
+    app = server.App(h.student)
+    first, second = app.hub.sessions["0a"].snapshot(), app.hub.sessions["0b"].snapshot()
+    assert first["continue_prompt"] is None and first["command"].startswith('claude -n "0a ')
+    assert second["continue_prompt"] == ("Start step 0b. Read .workbench/0b.md and follow it from now on, in "
+                                         "place of your instructions for any other step.")
+    assert second["command"].startswith('claude -n "0b ')
+    assert (app.hub.dir / "0b.md").exists()                  # the file the prompt names
+    prompt = " ".join((app.hub.dir / "0b.md").read_text().split())
+    assert "In a session that was on another step, first say in one line that you are now on step 0b." in prompt
+    assert "its prompt, pasted into this chat, moves this session onto it" in prompt
+    node = node_or_none()
+    if not node:
+        return
+    js = (ROOT / "workbench/static/app.js").read_text()
+    lines = js.splitlines()
+    first_line = next(i for i, x in enumerate(lines) if x.startswith("const esc ="))
+    last_line = next(i for i, x in enumerate(lines) if x.startswith("let A"))
+    consts = [x for x in lines if x.startswith(("const IN_CHAT =", "const IN_TERMINAL ="))]
+    run = "\n".join(lines[first_line:last_line] + consts + [page_function(js, "command"), page_function(js, "claudeBoxes")])
+    cases = [{"command": "claude -n x", "continue_prompt": None, "started": False},
+             {"command": "claude -n y", "continue_prompt": "Start step 0b. Read it.", "started": False},
+             {"command": "claude --resume z", "continue_prompt": "Start step 0b. Read it.", "started": True}]
+    run += "\n" + "\n".join(f"console.log(JSON.stringify(claudeBoxes({json.dumps(c)})));" for c in cases)
+    out = [json.loads(x) for x in subprocess.run([node, "-e", run], capture_output=True, text=True).stdout.splitlines()]
+    labels_of = lambda html_text: __import__("re").findall(r'<span class="label">([^<]*)</span>', html_text)  # noqa: E731
+    assert labels_of(out[0]) == ["Start a new Claude session"]
+    assert labels_of(out[1]) == ["Continue in the Claude session you have open", "Or start a new Claude session"]
+    assert labels_of(out[2]) == ["Continue in the Claude session you have open", "Or go back to this step's conversation"]
+    assert out[1].index("Start step 0b. Read it.") < out[1].index("claude -n y")    # the easier one first
+    assert "Paste this into the Claude session you already have open from this page, as a message." in out[1]
+    assert "If another Claude session is open in that terminal, type /exit first." in out[1]
+
+
 def test_the_name_has_its_own_plain_now_line(tmp_path):
     h = homework(tmp_path, {"steps.toml": STEPS.replace('slots = ["Name"]', 'slots = ["Name"]\ncheckpoints = [{ text = "Your name", slots = ["Name"] }]')})
     app = server.App(h.student)
@@ -508,8 +651,8 @@ def test_the_name_has_its_own_plain_now_line(tmp_path):
     slot = rec["checkpoints"][0]["slots"][0]
     assert slot["todo"] == "Not written yet. Type it after Name: at the top of WRITEUP.md."
     js = (ROOT / "workbench/static/app.js").read_text()
-    assert "Paste this into a terminal in your homework folder, not into a Claude chat. If the last step's " \
-           "Claude is still open in that terminal, type /exit first." in js
+    assert "Paste this into a terminal in your homework folder, not into a Claude chat. If another Claude " \
+           "session is open in that terminal, type /exit first." in js
 
 
 def test_a_step_can_carry_a_command_the_student_runs_themselves(tmp_path):
@@ -1722,17 +1865,25 @@ def test_claude_md_is_in_step_with_the_steps_file():
     assert a.tutor.strip() in (ROOT / "CLAUDE.md").read_text()
 
 
-def test_every_step_lists_when_to_start_and_when_to_stop_its_claude_session():
-    """The instructor, Nov 11: the tasks say when to start and stop each step's Claude session."""
+def test_every_step_says_how_to_start_it_with_claude_either_way():
+    """The instructor, Nov 11: the tasks say how to start each step with Claude, and "i always have
+    the option of continuing an existing claude session ... or starting a new one". There is no
+    /exit task: the new-session box says to type /exit first if another session is open there."""
     a = steps.load(ROOT / "steps.toml")
     for s in a.steps:
         ask = a.session_tasks(s)
-        assert "/exit" in ask["stop"] and ask["stop"].endswith("."), s.id
+        assert ask["stop"] == "", s.id
         own = [c.task for c in steps.checkpoints(s) if "start this step's claude session" in c.task.lower()]
         if own:   # the step's own task says when to start (0a: after .env and the name)
             assert ask["start"] == "", s.id
         else:
-            assert ask["start"].startswith("First, start this step's Claude session") and ask["start"].endswith("."), s.id
+            assert ask["start"] == ("First, start this step with Claude: paste the prompt on this page into the "
+                                    "Claude session you have open, or paste the command into a terminal in your "
+                                    "homework folder to start a new session."), s.id
+    assert [s.id for s in a.steps if any("start this step's claude session" in c.task.lower()
+                                         for c in steps.checkpoints(s))] == ["0a"]
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert "If another Claude session is open in that terminal, type /exit first." in js
 
 
 def test_the_page_receives_the_two_session_tasks_and_ticks_only_the_first(tmp_path):
