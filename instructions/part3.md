@@ -17,7 +17,7 @@ not match the dataset's label.
 
 **Actions:**
 
-1. Start this step's Claude session in the homework's folder.
+1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Open **Results** at the top of the homework page, then "runs/part2".
 3. Click "Clear the filters", then set "Result" in "The agent" box to "does not match the dataset's label
    (any reason)"; leave "Order" at "Order of the claims file".
@@ -56,7 +56,7 @@ failure on your evaluation claims.
 
 **Actions:**
 
-1. Start this step's Claude session in the homework's folder.
+1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Decide on **one** change aimed at your most common failure from 3a (see the Hint).
 3. Make the change in your editor, or tell Claude exactly what to change.
 4. Start the run yourself, in another terminal tab in the homework's folder:
@@ -97,7 +97,7 @@ In this step you say what you learned, in your own words.
 
 **Actions:**
 
-1. Start this step's Claude session in the homework's folder.
+1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Ask Claude to show you any of your numbers or results.
 3. Answer the three questions.
 
