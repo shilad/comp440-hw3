@@ -85,8 +85,11 @@ out in Part 1, and your 100 *evaluation claims*, for the full run in 1e and ever
 3. Open **Find claims** at the top of the homework page.
 4. Search your first topic, in a few words. Try the three ways of searching (by keyword, by meaning and
    both), and other words for the topic.
-5. Read down the list, and press **Select** on each claim that is on your topic.
-6. When the claims stop being about your topic, search your next topic.
+5. Read down the list. Press **Select all 50 shown**, above the list, to select every claim it is
+   showing, then press **Remove** on each claim that is not on your topic. You can also press
+   **Select** on one claim at a time.
+6. Press **Show 50 more** for more claims on the same topic. When the claims stop being about your
+   topic, search your next topic.
 7. When the line at the top says you have selected 112 of 112 claims, press **Save these as my claims**.
 8. Read through the retrieval code, lines 1 to 165 of `finder/search.py`, and answer the two questions.
 
@@ -105,8 +108,9 @@ the list for a topic of one or two words stays on the topic when about 200 claim
 of its words, and the screen warns you when fewer do. In every case, you judge a list by reading it.
 Each claim shows the dataset's label, the number of articles it needs, the titles of those articles with
 Wikipedia's one-line description of each, and its rank by keyword and by meaning (1 is best). A claim
-you have selected says so, and its button says **Remove**. **Show my selection** lists the claims you
-have selected. Your selection is kept in your browser, so another search or reloading the page does not
+you have selected says so, and its button says **Remove**. **Select all 50 shown** selects every claim
+the list is showing that you have not selected yet; the number on the button is how many that is, and
+it never takes your selection past 112. **Show my selection** lists the claims you have selected. Your selection is kept in your browser, so another search or reloading the page does not
 lose it.
 
 **Save these as my claims** saves only when three things are true, and when one is not, it says which.

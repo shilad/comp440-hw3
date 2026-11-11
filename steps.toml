@@ -417,7 +417,11 @@ one-line description of each article. There are three ways to search:
 
 The claim finder does not pick claims. The student searches one topic at a time, reads down the
 ranked list (50 at a time, with "Show 50 more"), and presses Select on each claim they want; a
-selected claim's button becomes Remove. Then they search another topic and select more. A line at
+selected claim's button becomes Remove. A button beside the count above the list, "Select all 50
+shown" (the number is the claims shown and not selected yet), selects every claim the list is
+showing; it never takes the selection past 112, and then reads "Select the first N shown". The
+student removes the claims that are off their topic with Remove. Which claims stay is still their
+choice. Then they search another topic and select more. A line at
 the top counts the selection and its labels, and "Show my selection" lists it. The selection is
 kept in the browser, so a new search or a reload does not lose it. Above the results, the screen
 says how many claims contain all of the student's words. The dataset has hundreds of claims on a
