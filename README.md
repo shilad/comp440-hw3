@@ -278,7 +278,6 @@ the agent. Then run the agent on your evaluation claims again. When do the two s
 should the agent decide which to believe?
 
 Write what you found for the last two under a heading `## Extra credit` at the end of `WRITEUP.md`.
-Keep the homework page running while you work on it: once Part 3 is done, the page commits and pushes
-any further change about a minute after you save it, as `Part 3 updated`. If you did not do Part 3,
-commit and push it yourself in a terminal in the homework's folder, with `git add -A`, then
-`git commit -m "Extra credit"`, then `git push`. Check on GitHub that your fork shows it.
+Keep the homework page running while you work on it: once Part 2 is done, the page commits and pushes
+any further change about a minute after you save it, as `Part 2 updated`, or as `Part 3 updated` if
+you did Part 3. Check on GitHub that your fork shows it.
