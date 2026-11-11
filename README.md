@@ -27,7 +27,7 @@ I chose it because it is short and about a recording few people know, so it is a
 the model remembers.
 
 The agent has to give a *verdict*: *supported*, *refuted* or *doesn't say*. It also has to quote the
-sentences from Wikipedia that its verdict rests on, its *evidence*. No source comes with the claim.
+sentences from Wikipedia that its verdict is based on, its *evidence*. No source comes with the claim.
 The agent finds its own evidence by searching and reading Wikipedia as it is today.
 
 The claims in this homework come from HoVer, a public dataset of claims that each need two, three or
@@ -143,7 +143,7 @@ over an hour more, and its run about 6 minutes.
 
 - A **claim** is one sentence that is either true or false.
 - A **verdict** is the answer to a claim, always one of *supported*, *refuted* or *doesn't say*.
-- The **evidence** is the sentences quoted from Wikipedia that a verdict rests on.
+- The **evidence** is the sentences quoted from Wikipedia that a verdict is based on.
 - **The agent** is the program in `agent.py` and the loop that drives it: `my_loop.py` once yours
   passes, `reference_loop.py` until then. In the loop, the model picks the next lookup, reads what comes
   back, and decides when to answer.
