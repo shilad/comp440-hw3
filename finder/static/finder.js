@@ -64,6 +64,7 @@ async function search(more = false) {
   byId("status").textContent = mine === 1
     ? "Searching. The first search takes a few seconds, because the claims are loaded then."
     : "Searching.";
+  byId("all-said").textContent = "";
   const start = more ? shown.size : 0;
   let answer;
   try {
@@ -88,6 +89,8 @@ async function search(more = false) {
   byId("status").textContent = answer.total ? "" : "Nothing matches these words. Try other words, or another way of searching.";
   byId("more-row").hidden = shown.size >= answer.total;
   byId("shown").textContent = `These are the first ${shown.size} of the ${answer.total} claims this search found.`;
+  byId("above").hidden = shown.size === 0;
+  allButton();
 }
 
 // How many claims contain all of the student's words, and a calm warning when that is few. For a
@@ -148,12 +151,60 @@ function toggle(id) {
   if (selection.has(id)) selection.delete(id);
   else selection.set(id, { ...shown.get(id), query: current.query });
   keep();
+  paint(id);
+  tally();
+  allButton();
+  byId("all-said").textContent = "";
+  if (!byId("mine").hidden) drawSelection();
+}
+
+// Show on every card of this claim whether it is selected.
+function paint(id) {
   document.querySelectorAll(`.claim[data-id="${CSS.escape(id)}"]`).forEach((card) => {
     card.classList.toggle("chosen", selection.has(id));
     card.querySelector(".pick").textContent = selection.has(id) ? "Remove" : "Select";
   });
+}
+
+// ---- selecting every claim shown -------------------------------------------------------------------
+
+// What "Select all shown" would select now: the claims shown and not selected yet, from the top of
+// the list, as many as there is room for under 112.
+function selectable() {
+  const left = [...shown.values()].filter((c) => !selection.has(c.id));
+  return { left: left, take: left.slice(0, Math.max(0, NEEDED - selection.size)) };
+}
+
+// The button's label says how many claims it would select. With none to select, it is disabled.
+function allButton() {
+  const { left, take } = selectable();
+  byId("all").disabled = take.length === 0;
+  byId("all").textContent = allLabel(left.length, take.length);
+}
+
+function allLabel(left, take) {
+  if (take === 0) return "Select all shown";
+  if (take < left) return take === 1 ? "Select the first one shown" : `Select the first ${take} shown`;
+  return left === 1 ? "Select the 1 shown" : `Select all ${left} shown`;
+}
+
+// Select every claim shown, each as if its own Select had been pressed, but never more than 112.
+function selectAll() {
+  const { left, take } = selectable();
+  take.forEach((c) => selection.set(c.id, { ...c, query: current.query }));
+  keep();
+  take.forEach((c) => paint(c.id));
   tally();
-  if (!byId("mine").hidden) drawSelection();
+  allButton();
+  byId("all-said").textContent = allSentence(take.length, left.length);
+}
+
+// What the button did, in a sentence.
+function allSentence(took, left) {
+  const more = `You selected ${took} more ${took === 1 ? "claim" : "claims"}`;
+  const first = took === 1 ? "the first one" : `the first ${took}`;
+  if (took < left) return `${more}, ${first} in the list. You have ${selection.size}, which is all you need.`;
+  return `${more}. You have now selected ${selection.size} of ${NEEDED}.`;
 }
 
 // The line at the top: how many are selected, and of which label.
@@ -238,6 +289,7 @@ document.addEventListener("click", (ev) => {
   if (id) toggle(id);
 });
 byId("more").addEventListener("click", () => search(true));
+byId("all").addEventListener("click", selectAll);
 byId("toggle").addEventListener("click", () => showSelection(byId("mine").hidden));
 byId("save").addEventListener("click", save);
 

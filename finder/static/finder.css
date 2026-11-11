@@ -27,6 +27,11 @@
 .status, .matches { margin: 8px 0; max-width: 76ch; }
 .matches { color: var(--ink); }
 .status:empty, .matches:empty { display: none; }
+/* The count of claims with all the words, and beside it the button that selects every claim shown */
+.above { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 8px 0; }
+.above .matches { margin: 0; flex: 1 1 40ch; }
+.all-said { margin: 0 0 8px; color: var(--ink); max-width: 76ch; }
+.all-said:empty { display: none; }
 
 /* A claim. Select is a large target; a selected claim has a blue edge and says so. */
 .claims { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
@@ -42,6 +47,7 @@
 .pick { min-width: 96px; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; border: 1px solid var(--link); background: var(--surface); color: var(--link); }
 .pick:hover { background: var(--you-bg); }
 .chosen .pick { background: var(--you-bg); }
+.pick:disabled { opacity: .45; cursor: default; background: var(--surface); }
 
 .more { display: grid; gap: 8px; justify-items: start; padding-block: 16px 30px; }
 .more p { margin: 0; }

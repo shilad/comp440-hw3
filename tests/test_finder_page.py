@@ -1,11 +1,13 @@
 """Offline tests of the claim finder's screen (finder/web.py and finder/static/), with the search
 functions replaced by the stand-in in finder_standin.py: the search address and its pages of 50,
 saving the selected claims by id, the note about claims saved already, that the screen loads inside
-the homework page even without the search package, and that a refusal from save reaches the browser
-as its own sentence."""
+the homework page even without the search package, that a refusal from save reaches the browser
+as its own sentence, and the "Select all shown" button, whose tests run the screen's script in
+Node (they skip where Node is not installed)."""
 
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -152,6 +154,9 @@ def test_the_screen_uses_the_names_the_student_sees():
         assert name in page, name
     for name in ('"Remove" : "Select"', "Back to the search results", "localStorage"):
         assert name in js, name
+    # The button that selects every claim shown sits beside the count of claims with all the words.
+    assert re.search(r'<p class="matches" id="matches"></p>\s*<button class="pick" id="all" type="button">'
+                     r"Select all shown</button>", page)
     for sentence in (
             # the line at the top, and a selected claim
             "You have selected ${n} of ${NEEDED} claims: ${yes} supported and ${n - yes} not ",
@@ -252,6 +257,143 @@ def test_the_intro_states_the_search_packages_numbers():
     assert f"You need exactly {saved}, with at least {least} supported and {least} not supported," in intro
     assert len(re.findall(r"^const NEEDED = (\d+);", (STATIC / "finder.js").read_text(), re.M)) == 1
     assert f"const NEEDED = {saved};" in (STATIC / "finder.js").read_text()
+
+
+# -- "Select all shown", run in Node -----------------------------------------------------------------
+#
+# These run finder.js itself in Node, with a small stand-in for the browser's page, storage and
+# network, and then the test's own lines. They skip where Node is not installed.
+
+BROWSER = r"""
+const fs = require("fs"), vm = require("vm");
+// Anything the script touches that the tests do not look at: it accepts every call and every property.
+const any = new Proxy(function () {}, {
+  get: (t, p) => (p === Symbol.toPrimitive ? () => "" : p === "then" ? undefined : any),
+  apply: () => any,
+  construct: () => any,
+});
+const elements = {}, storage = {}, sent = [];
+const element = () => new Proxy({ textContent: "", hidden: false, disabled: false },
+                                 { get: (t, p) => (p in t ? t[p] : any) });
+const context = vm.createContext({
+  document: { getElementById: (id) => (elements[id] ||= element()), querySelectorAll: () => [],
+              querySelector: () => any, addEventListener: () => {} },
+  localStorage: { getItem: (k) => storage[k] ?? null, setItem: (k, v) => { storage[k] = v; } },
+  fetch: (url, options) => { sent.push({ url: url, body: options && options.body }); return new Promise(() => {}); },
+  location: { search: "" }, URLSearchParams, CSS: { escape: (s) => s }, DOMParser: any,
+  elements, storage, sent,
+});
+vm.runInContext(fs.readFileSync(process.argv[2], "utf8"), context);
+vm.runInContext("current = { query: 'jazz', how: 'both', total: 60 };", context);
+console.log(JSON.stringify(vm.runInContext(process.argv[3], context)));
+"""
+# Fifty claims shown, c1 to c50, every other one supported, and a function that says what is on the
+# screen: the button's label, whether it is disabled, the sentence under it and the line at the top.
+SHOWN = """
+for (let i = 1; i <= 50; i++) {
+  shown.set("c" + i, { id: "c" + i, claim: "Claim " + i, label: i % 2 ? "SUPPORTED" : "NOT_SUPPORTED", hops: 2,
+                       articles: ["A"], about: [""], keyword_rank: i, meaning_rank: i });
+}
+allButton();
+var screen = () => ({ label: byId("all").textContent, disabled: byId("all").disabled,
+                      said: byId("all-said").textContent, count: byId("count").textContent,
+                      selected: [...selection.keys()] });
+"""
+
+
+def run_screen(tmp_path, lines):
+    """What finder.js shows after `lines` run, in Node."""
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node is not installed, so the screen's script cannot run outside a browser")
+    (tmp_path / "browser.js").write_text(BROWSER)
+    r = subprocess.run([node, str(tmp_path / "browser.js"), str(STATIC / "finder.js"), SHOWN + lines],
+                       capture_output=True, text=True, timeout=30)
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout)
+
+
+def test_select_all_says_how_many_it_would_select(tmp_path):
+    s = run_screen(tmp_path, "screen()")
+    assert (s["label"], s["disabled"]) == ("Select all 50 shown", False)
+    s = run_screen(tmp_path, "toggle('c2'); toggle('c7'); screen()")       # selected one at a time
+    assert s["label"] == "Select all 48 shown"
+    s = run_screen(tmp_path, """
+      for (let i = 51; i <= 100; i++) shown.set("c" + i, { id: "c" + i, label: "SUPPORTED" });   // Show 50 more
+      allButton(); screen()""")
+    assert s["label"] == "Select all 100 shown"
+
+
+def test_select_all_selects_every_claim_shown_as_select_would(tmp_path):
+    s = run_screen(tmp_path, """
+      const KEPT = "comp440-hw3-claim-finder-selection";
+      selectAll();
+      const afterAll = screen(), kept = JSON.parse(storage[KEPT]);
+      toggle("c1"); toggle("c1");                  // c1 removed, then selected again with its own Select
+      ({ afterAll, kept, one: JSON.parse(storage[KEPT]).at(-1), said: byId("all-said").textContent })""")
+    assert s["afterAll"]["selected"] == [f"c{i}" for i in range(1, 51)]
+    assert s["afterAll"]["count"] == "You have selected 50 of 112 claims: 25 supported and 25 not supported."
+    assert [c["id"] for c in s["kept"]] == [f"c{i}" for i in range(1, 51)]
+    # Each claim is stored as its own Select stores it: the claim's data and the search that found it.
+    assert s["kept"][0] == s["one"]
+    assert s["one"] == {"id": "c1", "claim": "Claim 1", "label": "SUPPORTED", "hops": 2, "articles": ["A"],
+                        "about": [""], "keyword_rank": 1, "meaning_rank": 1, "query": "jazz"}
+    assert s["said"] == ""                         # a single Select clears the button's sentence
+
+
+def test_select_all_says_what_it_did_and_then_has_nothing_left(tmp_path):
+    s = run_screen(tmp_path, "selectAll(); screen()")
+    assert s["said"] == "You selected 50 more claims. You have now selected 50 of 112."
+    assert (s["label"], s["disabled"]) == ("Select all shown", True)
+
+
+def test_select_all_skips_claims_already_selected(tmp_path):
+    s = run_screen(tmp_path, "toggle('c3'); toggle('c10'); selectAll(); screen()")
+    assert s["selected"][:2] == ["c3", "c10"] and len(s["selected"]) == 50 and len(set(s["selected"])) == 50
+    assert s["said"] == "You selected 48 more claims. You have now selected 50 of 112."
+
+
+def test_select_all_never_goes_past_112(tmp_path):
+    hundred = """
+      for (let i = 1; i <= 100; i++) selection.set("old" + i, { id: "old" + i, label: "SUPPORTED", query: "film" });
+      allButton();
+    """
+    s = run_screen(tmp_path, hundred + "screen()")
+    assert (s["label"], s["disabled"]) == ("Select the first 12 shown", False)
+    s = run_screen(tmp_path, hundred + "selectAll(); screen()")
+    assert s["selected"][100:] == [f"c{i}" for i in range(1, 13)]          # from the top of the list
+    assert s["said"] == "You selected 12 more claims, the first 12 in the list. You have 112, which is all you need."
+    assert s["count"] == "You have selected 112 of 112 claims: 106 supported and 6 not supported."
+    assert (s["label"], s["disabled"]) == ("Select all shown", True)
+    # With room for one more claim, the label and the sentence say "one".
+    room_for_one = hundred.replace("i <= 100", "i <= 111")
+    assert run_screen(tmp_path, room_for_one + "screen()")["label"] == "Select the first one shown"
+    s = run_screen(tmp_path, room_for_one + "selectAll(); screen()")
+    assert s["said"] == "You selected 1 more claim, the first one in the list. You have 112, which is all you need."
+    s = run_screen(tmp_path, room_for_one + "shown.clear(); shown.set('c9', { id: 'c9' }); allButton(); screen()")
+    assert s["label"] == "Select the 1 shown"
+
+
+def test_select_all_is_disabled_with_nothing_to_select(tmp_path):
+    assert run_screen(tmp_path, "shown.clear(); allButton(); screen()")["disabled"] is True
+    s = run_screen(tmp_path, """
+      for (let i = 1; i <= 113; i++) selection.set("old" + i, { id: "old" + i, label: "SUPPORTED", query: "film" });
+      allButton(); screen()""")
+    assert (s["label"], s["disabled"]) == ("Select all shown", True)
+
+
+def test_a_selection_made_with_select_all_saves_like_any_other(stand_in, tmp_path):
+    # The screen shows the stand-in's first eight claims for "jazz"; Select all, then Save.
+    eight = get("/search", tmp_path, q="jazz")[1]["results"][:8]
+    s = run_screen(tmp_path, f"""
+      shown.clear();
+      {json.dumps(eight)}.forEach((c) => shown.set(c.id, c));
+      selectAll(); save();
+      sent.filter((s) => s.url === "/claims/save").map((s) => JSON.parse(s.body))""")
+    body = s[0]
+    assert body == {"selected": [{"id": c["id"], "query": "jazz"} for c in eight]}
+    assert post("/save", tmp_path, body)[1]["ok"] is True
+    assert len((tmp_path / "data/eval.jsonl").read_text().splitlines()) == 4
 
 
 def test_the_homework_page_links_to_the_screen():
