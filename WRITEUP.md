@@ -2,10 +2,10 @@
 
 Name:
 
-Type each answer after the `>` under its question. A longer answer can go on over the following lines,
-with no blank line inside it (to start a new paragraph, put a line with just `>` between the two). In a
-table, fill every cell of every numbered row. Claude may paste a program's output where a question asks
-for it, never an answer, and the homework page ticks a step when every answer in its section is filled in.
+Type each answer after the `>` under its question. An answer can run over several lines, but a blank line
+ends it: to start a new paragraph, put a line with just `>` between the two. In a table, fill every cell
+of every numbered row. Claude may paste a program's output where a question asks for it, but never an
+answer. The homework page ticks a step when every answer in its section is filled in.
 
 ## Learning goals
 
