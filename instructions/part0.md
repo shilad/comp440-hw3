@@ -39,10 +39,6 @@ fraction of a cent.
 
 **Write-up:** Write only your name, after `Name:` at the top of `WRITEUP.md`.
 
-**Completion:** The check's last line reads "Everything is ready." and the homework page ticks 0a:
-the saved `WRITEUP.md` has your name after `Name:`, and the check has passed (it then saves
-`runs/part0/setup-check.txt`, which is how the page knows).
-
 **Troubleshooting:**
 
 - Claude Code asks whether you trust this folder. Say yes.
@@ -123,9 +119,6 @@ claims in step 1c.
 - Why did you choose the topics you did?
 - Read through the [retrieval code](https://github.com/shilad/comp440-hw3/blob/main/finder/search.py#L1-L165) in `finder/search.py`. Describe its overall approach in three sentences.
 
-**Completion:** The homework page ticks 0b: `data/my-topic.json` exists (saving writes it), and both
-answers have text after the `>`.
-
 **Troubleshooting:**
 
 - Saving says you need more claims of one label. Search one of your topics again and select more claims
@@ -197,9 +190,6 @@ tokens, cost and time. The explanation is the model's own reason for its verdict
 
 - What verdict did the model give (*supported*, *refuted* or *doesn't say*), and what reason did it give? Quote the lines of the output that show them.
 
-**Completion:** The homework page ticks 0c: a `runs/part0/no-tools-<number>.json` file exists,
-and the answer has text after the `>`.
-
 **Troubleshooting:** If the run says the API key is missing or wrong, check in your editor that
 your key comes right after `ANTHROPIC_API_KEY=` in `.env`. Never paste the key into the chat.
 
@@ -242,9 +232,6 @@ results viewer, a long result is folded: click "+ Show the whole result".
 
 - Which Wikipedia page did it read? Quote the line of the output that shows it.
 - Did that page settle the claim correctly? If not, why do you think the search led there?
-
-**Completion:** The homework page ticks 0d: a `runs/part0/one-search-<number>.json` file exists,
-and both answers have text after the `>`.
 
 **Troubleshooting:**
 
@@ -303,10 +290,6 @@ in a search result does not count as read.
 
 - In one or two sentences, how did the agent get from the claim to its verdict? Point to the trace entries by their numbers.
 - Which lookup would you have done differently, and how? If none, which one surprised you?
-
-**Completion:** The homework page ticks 0e: a `runs/part0/agent-<number>.json` file exists, and
-both answers have text after the `>`. That finishes Part 0, so the page commits your work as
-`Part 0 done` and pushes it to your fork.
 
 **Troubleshooting:**
 

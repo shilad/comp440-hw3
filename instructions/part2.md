@@ -49,9 +49,6 @@ viewer shows the same counts with percentages. In your answers, counts and perce
 - Does the gap between the agent and the one-search baseline grow with the number of articles? If it does not, what might explain that?
 - The no-tools baseline read nothing. How did it do, and what does that tell you about these claims?
 
-**Completion:** The homework page ticks 2a: `runs/part2/report.txt` exists, the block holds the
-report, and the three answers have text after the `>`.
-
 ## 2b. Check the evidence yourself
 
 In this step you find out whether the agent's quoted evidence really supports its verdicts.
@@ -92,15 +89,12 @@ uv run python lookup.py --no-log read "<page title>" "<section>"
 - Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
-**Completion:** The homework page ticks 2b: all five rows are filled, and both answers have text
-after the `>`. That finishes Part 2, so the page commits your work as `Part 2 done` and pushes it to
-your fork.
-
 **Hint:** You type all the columns. Claude can show you each claim's first words and the agent's
 verdict in the chat. Claude will not say whether the quoted evidence supports a verdict, because that
 judgment is what this step is about. Some of the dataset's claims are worded oddly, because people
 made them by rewriting other claims. Take a claim as it is written, and if you cannot tell what it
-asserts, say so in its row.
+asserts, say so in its row. When 2b is ticked, the required work is done: the page commits and pushes
+it as `Part 2 done`, and you still submit it yourself, as the Submitting section of the README says.
 
 The loop already checks that every quoted sentence appears in something the agent read. A quote can be
 real and still not support the verdict. For a verdict of *refuted*, the question is whether the quotes
@@ -168,11 +162,10 @@ What does this tell you about using a fixed dataset to judge a system that reads
 >
 ```
 
-**Completion:** Both rows are filled and the question has an answer. The homework page does not
-tick extra credit. It commits it with the rest of your work, as the Extra credit section of the README
-says.
-
 **Hint:** For a claim you think qualifies, open the Wikipedia page that holds the fact. Choose "View
 history", open "Filter revisions", set "To date" to 31 December 2017 and press "Show revisions". The
 first row is the page as it was at the end of 2017. This is for the table's last column; if you can't
 tell what changed, say so there.
+
+The homework page does not tick extra credit, but it commits it with the rest of your work, as the Extra
+credit section of the README says.

@@ -83,12 +83,11 @@ You used all of these in earlier homeworks:
 
 ## How this homework works
 
-- The homework page lists every step, 0a to 3c, and ticks each one when it is done. For each step it
-  shows a short summary and its tasks. Part 3 is extra credit. Under "If you're stuck" it shows the
-  step's full instructions, from the pages in `instructions/`. Open it for every step, stuck or not: it
-  has the exact commands and what I am looking for. Step 0a, the set-up step, shows them in full. In the
-  instructions, the actions and the write-up are open, and the other parts (Words in this step,
-  Interpreting output, Completion, Troubleshooting and Hint) open with a click.
+- The homework page lists every step, 0a to 3c, and ticks each one when it is done. Part 3 is extra
+  credit. For each step it shows a short summary and its tasks. Below the tasks, the step's instructions,
+  from the pages in `instructions/`, open with a click, part by part: Words in this step, Actions,
+  Interpreting output, Write-up, Troubleshooting and Hint (and in 1a, The six rules). Open Actions for
+  the exact commands.
 - Each step has its own Claude session: a Claude Code session that is your tutor and lab assistant for
   that step. The homework page shows the command that starts it, with a **Copy** button. Open a new
   terminal tab, go into the homework's folder, paste the command and press Enter. When you finish a
@@ -230,7 +229,8 @@ In your repository I look for:
   homework's folder.
 - **A step will not tick.** Save `WRITEUP.md`, since the page reads the saved file. Then check that
   every answer in that step's section has text right after its `>`, and that every numbered row of its
-  tables has every cell filled.
+  tables has every cell filled. A step that runs a program also waits for the file the run saves, so
+  check that the run has finished; step 1e is the one exception, and ticks once its run has started.
 
 If you're still stuck, ask in `#comp440-f26` on Slack.
 

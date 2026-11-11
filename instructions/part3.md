@@ -57,9 +57,6 @@ judgment, from what you know about your topics.
 - Where did you and Claude disagree, and who do you think is right?
 - Which kind of failure was most common? If no kind repeats, say which failure you will aim at in 3b, and why.
 
-**Completion:** The homework page ticks 3a: every numbered row of the table is filled, Claude's
-labels included, and both answers have text after the `>`.
-
 **Hint:** The dataset's labels were made by people, from the Wikipedia of 2017, and you may know your
 topics better than they did. A label that looks wrong to you is not a mistake in your run: say so in
 that row. Claude will not tell you which label to give a trace, because reading the traces is what this
@@ -109,9 +106,6 @@ runs can be chance.
 - How many of your evaluation claims did the agent match before the change and after it? Which of your eight failures from 3a now match?
 - Quote one claim the agent matched before the change and not after it, if there is one, and say what you think happened. If there is none, say so.
 
-**Completion:** The homework page ticks 3b: `runs/part3/after/report.txt` exists, and the three
-answers have text after the `>`.
-
 **Troubleshooting:**
 
 - The run stops partway. Run the same command again. It keeps every claim it already finished.
@@ -142,13 +136,10 @@ In this step you say what you learned, in your own words.
 - What did your topics show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
 - Your numbers rest on 100 claims about the topics you chose. Which of your conclusions would you trust on another 100 claims, which might be chance, and what would you measure to find out?
 
-**Completion:** The homework page ticks 3c: all three answers have text after the `>`. That
-finishes Part 3, so the page commits your work as `Part 3 done` and pushes it to your fork. The page does
-not hand your homework in: submit it yourself, as the Submitting section of the README says.
-
 **Hint:** An answer can be as long as you need, but keep it in one block with no blank line inside it,
 since a blank line ends the answer. To start a new paragraph, put a line with just `>` between the two.
-Claude will not write or suggest a sentence, because the write-up is yours.
+Claude will not write or suggest a sentence, because the write-up is yours. The page does not hand
+your homework in: submit it yourself, as the Submitting section of the README says.
 
 ## What I look for
 

@@ -141,10 +141,6 @@ their output with `Agent loop: yours (my_loop.py)`.
 - What are the ways your loop can end? Give the line number of each.
 - Now open `reference_loop.py` and compare it with your loop. Describe one difference in implementation and the resulting effects on agent behavior.
 
-**Completion:** The homework page ticks 1a: the check has passed (it then saves
-`runs/part1/loop-check.txt`), or you have chosen the reference loop as below, and the three answers have
-text after the `>`.
-
 **Troubleshooting:**
 
 - The check reports an error in your code. Its line names the error and the line of `my_loop.py`. Ask
@@ -219,9 +215,6 @@ there is no `answer` call.
 - List your lookups, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type "Why you chose it" yourself.
 - What is your verdict on the claim, and which sentence or sentences are most important?
 
-**Completion:** The homework page ticks 1b: `runs/part1/lookups.jsonl` exists, every numbered row
-of the table has every cell filled, and the answer has text after the `>`.
-
 **Troubleshooting:**
 
 - A lookup finds no page, or no such section. That is a result like any other, and the agent would have
@@ -276,9 +269,6 @@ it.
 - List the three traces you read closely. At least one should be a claim the agent got wrong (if it had errors).
 - Which trace did you find most interesting, and what did the agent do well or badly in it?
 
-**Completion:** The homework page ticks 1c: `runs/part1/before/report.txt` exists (the run saves
-it when it finishes), all three rows are filled, and the answer has text after the `>`.
-
 **Troubleshooting:** If the run stops partway, ask Claude to run the same command again. It
 keeps every claim it already finished.
 
@@ -328,9 +318,6 @@ the two runs side by side.
 **Write-up:** Answer this question in `WRITEUP.md`, under 1d:
 
 - What changed in the agent's traces after you wrote your instructions? Give one claim as an example.
-
-**Completion:** The homework page ticks 1d: `runs/part1/after/report.txt` exists, and the answer has
-text after the `>`.
 
 **Troubleshooting:**
 
@@ -384,11 +371,6 @@ tables in 2a.
 - Predict the share of claims each version will get right (its verdict matches the dataset's label), as a percentage. A guess is fine; the reasons are what I grade.
 - How many lookups will the agent make per claim, on average? Will that grow with the number of articles? Why?
 
-**Completion:** The homework page ticks 1e: the run has started (`runs/part2/no-tools.jsonl`
-exists), every cell of the table's three rows is filled, and the answer has text after the `>`. The run
-need not have finished. That finishes Part 1, so the page commits your work as `Part 1 done` and pushes
-it to your fork. Once the run has ended, this is a good place to stop for the day.
-
 **Troubleshooting:**
 
 - The run stops (you closed the tab, your laptop slept, or Wikipedia refused requests for too long). Run
@@ -399,7 +381,9 @@ it to your fork. Once the run has ended, this is a good place to stop for the da
 
 **Hint:** Start the run in your own tab, because a run started by Claude stops if you close that Claude
 session. Leave `instructions.md` alone while it runs, because the agent reads it again for every claim.
-Claude will not suggest a number for your predictions, because they are yours.
+Claude will not suggest a number for your predictions, because they are yours. The page ticks 1e once
+the run has started, so the run need not have finished. Once the run has ended, this is a good place to
+stop for the day.
 
 ## What I look for
 

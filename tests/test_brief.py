@@ -43,14 +43,13 @@ PARTS = {
 ALL_STEPS = [step for _, _, steps in PARTS.values() for step in steps]
 
 # Each step's section of a page opens with a paragraph of full sentences saying what the step is for,
-# with no label over it. After it come these labels, in this order. The three marked True are
+# with no label over it. After it come these labels, in this order. The two marked True are
 # required; the others appear only where a step needs them.
 LABELS = [
     ("**Words in this step:**", False),
     ("**Actions:**", True),
     ("**Interpreting output:**", False),
     ("**Write-up:**", True),
-    ("**Completion:**", True),
     ("**Troubleshooting:**", False),
     ("**Hint:**", False),
 ]
@@ -59,7 +58,9 @@ LABELS = [
 # phrase, with a full sentence after it. No page uses the old ones.
 OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**", "**What to do:**",
                     "**What you'll see:**", "**What to write:**", "**You're done when:**",
-                    "**If something goes wrong:**", "**Output:**"]
+                    "**If something goes wrong:**", "**Output:**",
+                    # Every Completion part said only when the page ticks the step, which the page shows.
+                    "**Completion:**"]
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
@@ -337,12 +338,13 @@ def test_0b_links_the_retrieval_code_and_the_lines_hold_the_search():
     assert start["search"] <= 165 < start["pick"], start
 
 
-# ---- what stays open on the homework page ------------------------------------------------------
+# ---- what each part holds -----------------------------------------------------------------------
 
-# The page folds these parts away; a student sees the rest without a click: the step's opening (its
-# summary, and in Part 0 and 1b the claim it checks), Actions, Write-up, and in 1a The six rules. So
-# the open parts hold only what the student needs to do the step: an explanation goes in a fold.
-FOLDED = ["Words in this step", "Interpreting output", "Completion", "Troubleshooting", "Hint"]
+# The page shows a step's opening (its summary, and in Part 0 and 1b the claim it checks) and then each
+# labeled part as a line that opens with a click. Actions, Write-up and, in 1a, The six rules hold only
+# what the student does and answers, as lists, so that a student who opens them finds the steps and
+# not an explanation; explanations go under the other labels.
+FOLDED = ["Words in this step", "Interpreting output", "Troubleshooting", "Hint"]
 OPEN_LABELS = ["Actions", "Write-up", "The six rules"]
 
 
@@ -369,7 +371,7 @@ def parts(section):
 
 
 @pytest.mark.parametrize("step", ALL_STEPS)
-def test_the_open_parts_hold_no_loose_explanation(step):
+def test_actions_and_write_up_hold_no_loose_explanation(step):
     page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
     cut = parts(page)
     loose = []
@@ -387,11 +389,11 @@ def test_the_open_parts_hold_no_loose_explanation(step):
         leads_to_quote = i + 1 < len(opening) and opening[i + 1].startswith(">") and para.endswith(":")
         if not (is_quote or leads_to_quote):
             loose.append(f"opening: {one_line(para)[:70]}")
-    assert not loose, f"{step}: move these under a folding label: {loose}"
+    assert not loose, f"{step}: move these under Words in this step, Interpreting output, Troubleshooting or Hint: {loose}"
 
 
 @pytest.mark.parametrize("step", ALL_STEPS)
 def test_every_label_is_one_the_page_knows(step):
     page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
     unknown = [label for label in parts(page) if label != "(opening)" and label not in FOLDED + OPEN_LABELS]
-    assert not unknown, f"{step} has labels the page neither folds nor knows: {unknown}"
+    assert not unknown, f"{step} has labels the homework does not use: {unknown}"
