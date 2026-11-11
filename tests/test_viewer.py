@@ -861,7 +861,7 @@ def test_a_version_of_the_agent_includes_its_loop(repo):
     def said(url):  # text_of puts a space inside "(<code>my_loop.py</code>": take it out
         return text_of(get(repo, url)[2]).replace("( ", "(").replace(" )", ")")
     words = said("/results/compare?a=runs/part2&b=runs/b")
-    assert f"A and B were made with the same {files}." in words
+    assert f"A and B used the same version of the agent: the same {files}." in words
     rows[0]["agent_version"] = "bbb"  # one result made with another loop
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", rows)
     words = said("/results/run?dir=runs/b")
@@ -898,7 +898,7 @@ def test_compare_says_whether_the_agent_changed(repo):
     write_jsonl(repo / "runs" / "part2" / "agent.jsonl", with_version(full_rows()["agent"], "aaa"))
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", with_version(full_rows()["agent"], "aaa"))
     words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
-    assert "A and B were made with the same" in words
+    assert "A and B used the same version of the agent" in words
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", with_version(full_rows()["agent"], "bbb"))
     words = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/b")[2])
     assert "made with the same" not in words  # different: say nothing

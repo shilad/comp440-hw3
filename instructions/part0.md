@@ -64,7 +64,8 @@ them in the claim finder. You will use 12 claims for development and 100 for eva
 about 11,700 claims from HoVer, the public dataset this homework uses. A search *by keyword* finds the
 claims that contain your words. A search *by meaning* finds claims whose words are close in meaning to
 yours, using word vectors (lists of numbers that are close for words used in similar ways). A search by
-*both* combines the two rankings.
+*both* combines the two rankings. *Retrieval* is finding the items in a collection that best match a
+request; `finder/search.py` holds the claim finder's retrieval code.
 
 **Actions:**
 
@@ -83,14 +84,14 @@ yours, using word vectors (lists of numbers that are close for words used in sim
 Each shows the dataset's label, the number of articles it needs, those articles' titles with
 Wikipedia's one-line description of each, and its rank by keyword and by meaning (1 is best). Above the
 list, a count says how many claims contain all your words. For a topic of one or two words, a count
-under about 200 means the list may leave the topic further down, and the screen says so. **Select all 50
+under about 200 means the list may stop being about the topic further down, and the screen says so. **Select all 50
 shown** selects every claim shown that you have not selected yet; its number says how many, and it never
 takes you past 112. **Show my selection** lists your selection.
 
 **Save these as my claims** works only when you have exactly 112 claims, at least 30 labeled
 *supported* and at least 30 *not supported*, and the agent has not yet run on them. The labels rule is so
 that an agent that always gives the same answer cannot score well; about six in ten claims are
-*supported*, so your selection will lean that way. The last rule is because runs on other claims would
+*supported*, so more of your claims will be *supported*. The last rule is because runs on other claims would
 not match your new ones. Saving puts six claims of each label in `data/dev.jsonl` as your development
 claims and the other 100 in `data/eval.jsonl` as your evaluation claims, in an order that mixes your
 topics, and notes your topics in `data/my-topic.json`. You can save again until you run the agent on

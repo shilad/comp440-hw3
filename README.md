@@ -186,7 +186,7 @@ In your repository I look for:
   to `.env`, in your editor. Without it, your runs share one Wikipedia allowance with the whole class and
   may slow down.
 - **A run prints "Wikipedia asked this program to slow down, so it is waiting...".** The program waits
-  and carries on by itself, and this happens much less once `WIKIPEDIA_CONTACT` is filled in. If a run
+  and then continues by itself, and this happens much less once `WIKIPEDIA_CONTACT` is filled in. If a run
   stops anyway, start the same command again: it keeps every claim it already finished.
 - **The homework page shows an update banner.** Press **Update**. The page saves your work first.
 - **The page says your work is committed but not pushed.** Run `git push` in a terminal in the

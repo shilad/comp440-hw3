@@ -86,7 +86,7 @@ You type every column. Claude can show you each claim's first words and verdict,
 whether the quoted evidence supports it.
 
 When 2b is ticked, the page commits and pushes your work as `Part 2 done`. Submit it yourself, as the
-README's Submitting section says.
+README's Submitting section says (after Part 3, if you do the extra credit).
 
 ## What I look for
 

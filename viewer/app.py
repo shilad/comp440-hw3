@@ -1121,7 +1121,7 @@ def compare_page(repo: Path, q: dict) -> str:
             out.append(f'<p class="note"><code>{e(run.rel)}</code> has not finished.</p>')
     if "agent" in shared and A.versions_complete and B.versions_complete and \
             len(set(A.versions) | set(B.versions)) == 1:
-        out.append(f'<p class="note">A and B were made with the same {AGENT_FILES}.</p>')
+        out.append(f'<p class="note">A and B used the same version of the agent: the same {AGENT_FILES}.</p>')
     if "agent" in shared and A.limit != B.limit:
         out.append(f'<p class="note">A was made with a limit of {A.limit} lookups per claim, and B with a limit '
                    f'of {B.limit}.</p>')
