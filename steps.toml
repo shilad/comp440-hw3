@@ -189,8 +189,9 @@ Grep tool and read only that line (the Read tool's offset and limit).
 
 Facts about the programs:
 
-- evaluate.py saves each claim's result as it finishes. The same command started again picks up
-  where a stopped run left off; on a finished run it prints the tables again and costs nothing.
+- evaluate.py saves each claim's result as it finishes. If a run stops, the same command started
+  again keeps every claim it already finished and checks only the rest; on a finished run it
+  prints the tables again and costs nothing.
 - check.py and evaluate.py first print which loop drove the agent: "Agent loop: yours
   (my_loop.py)" once check_loop.py has passed the student's loop, or "Agent loop: the reference
   loop (reference_loop.py)" before that (all of Part 0) or if they chose to keep it.
@@ -418,7 +419,7 @@ the top counts the selection and its labels, and "Show my selection" lists it. T
 kept in the browser, so a new search or a reload does not lose it. Above the results, the screen
 says how many claims contain all of the student's words. The dataset has hundreds of claims on a
 broad area such as film or basketball and only a few dozen on a narrow one, and the best claims
-for a search come first, so the list drifts off a narrow topic further down. That is why most
+for a search come first, so further down the list stops being about a narrow topic. That is why most
 students need two to four topics to reach 112.
 
 "Save these as my claims" works only with exactly 112 claims, at least 30 labeled supported and at
@@ -670,6 +671,11 @@ they can still come back and finish later. Run this only when they ask for exact
 
     uv run python check_loop.py --use-reference
 
+The step still needs its three answers. A student who keeps the reference loop opens
+reference_loop.py in their own editor, answers the first two questions about it, with its line
+numbers, and for the third says how far their own loop got and what stopped them. You still cannot
+open reference_loop.py: talk about the lines they paste into the chat.
+
 The three questions in WRITEUP.md ask what their loop sends the model on each turn, the ways their
 loop can end (each with its line number in my_loop.py), and one difference in implementation from
 reference_loop.py and its effect on the agent's behavior. All three are theirs: do not say which
@@ -772,8 +778,7 @@ checkpoints = [
   { text = "Your table and answer are in WRITEUP.md", slots = ["1c.*"] },
 ]
 brief = '''
-The command, for the student's 12 development claims (about a minute, about 2 to 3 cents on their
-key):
+The command, for the student's 12 development claims (about a minute, about 2 cents on their key):
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/before
 
@@ -853,7 +858,8 @@ When they say they have written their instructions, check that the file has chan
 `git diff --stat -- instructions.md`, and tick checkpoint 1.
 
 The step has one round: the student writes their instructions once, and you run the agent once
-after that, on their 12 development claims (about a minute, about 2 to 3 cents):
+after that, on their 12 development claims (about a minute, and about 2 cents, or more if their
+instructions make the agent do more):
 
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after
 
@@ -913,12 +919,12 @@ The full run is the student's to start, in a new terminal tab, in the homework's
 It runs the no-tools baseline, the one-search baseline and the agent on their 100 evaluation
 claims, one version after another. It takes about 10 minutes and costs about 28 cents on their
 key; their own instructions can make it slower and dearer, so say "about". It prints a progress
-line every ten claims and saves each result as it finishes. If it stops, the same command picks
-up where it left off. When it is done it prints two tables and saves them in
-runs/part2/report.txt. If they ask how to start it, give them the command above. If they ask you
-to start it instead, do it in the background, and say once that it will stop if this session is
-closed. Never add `--fresh` to it. They must not change instructions.md while it runs, because
-the agent reads it again for every claim.
+line every ten claims and saves each result as it finishes. If it stops, the same command keeps
+every claim it already finished and checks only the rest. When it is done it prints two tables
+and saves them in runs/part2/report.txt. If they ask how to start it, give them the command above.
+If they ask you to start it instead, do it in the background, and say once that it will stop if
+this session is closed. Never add `--fresh` to it. They must not change instructions.md while it
+runs, because the agent reads it again for every claim.
 
 While it runs, the student fills in the predictions table under 1e in WRITEUP.md. For each
 version they guess the share of claims it will get right, as a percentage, for claims that need
@@ -955,7 +961,7 @@ brief = '''
 The full run from 1e should be finished: its terminal tab ends with two tables, and
 runs/part2/report.txt exists. Check with `ls runs/part2`. If report.txt is missing, the run
 stopped early or is still going. The student starts the same command again in their own terminal
-tab, and it picks up where it left off:
+tab: it keeps every claim it already finished and checks only the rest.
 
     uv run python evaluate.py data/eval.jsonl --out runs/part2
 
