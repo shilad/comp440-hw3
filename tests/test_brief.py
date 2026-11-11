@@ -254,8 +254,8 @@ def test_each_page_title_names_its_part():
 # Word for word in README.md (after its opening sentence) and in WRITEUP.md (its "Learning goals"
 # section). The tutor's copy in steps.toml is checked with the steps.
 LEARNING_GOALS = [
-    "Understand what makes a program an *agent*: a language model that picks the next thing to look up, "
-    "reads what comes back, and decides when to stop.",
+    "Understand what makes a program an *agent*. You will study a language model that picks the next "
+    "Wikipedia search query, reads the page that comes back, and decides when to stop.",
     "Gain hands-on experience with the loop around the model by writing it yourself: its tools, its "
     "instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in "
     "what it read.",
@@ -421,7 +421,7 @@ def test_the_due_date_is_stated_once_at_the_top_of_readme():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     flat = one_line(readme)
     assert flat.count(DUE) == 1
-    assert flat.index(EXTRA_CREDIT_GOAL) < flat.index(DUE) < flat.index("## The task")
+    assert flat.index(EXTRA_CREDIT_GOAL) < flat.index(DUE) < flat.index("## The claim checking task")
     lines = [line for line in readme.splitlines() if re.search(r"November 24|Nov\.? 24|\bdue\b", line, re.I)]
     assert lines == [DUE], lines
 
