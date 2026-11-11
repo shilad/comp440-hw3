@@ -387,7 +387,10 @@ def test_no_rule_asks_an_open_question_or_a_write_up_question_in_the_chat(a):
     for rule in ("then the first task on the page that is not done yet, and what to type to get it done",
                  "end with one or two sentences on what they do next and where",
                  "Ask a question only when you need its answer to go on",
-                 "Never ask a write-up question in this chat"):
+                 "Never ask a write-up question in this chat",
+                 # The live check of Nov 11: the tutor said it had pasted a run's output and had not.
+                 "After a run, your reply first holds its whole output in a code block",
+                 "Never say you pasted it unless your reply holds it."):
         assert rule in tutor, rule
 
 
@@ -622,8 +625,9 @@ def test_the_learning_goals_are_the_same_in_readme_writeup_and_tutor(a):
 
 def test_the_tutor_text_is_shorter_than_before(a):
     """It was 3,965 words on Nov 10. The rules now say why they exist, and fewer of them are left.
-    The limit was 3,000 until the rule for going on to another step in the same session (Nov 11)."""
-    assert len(a.tutor.split()) < 3050
+    The limit was 3,000 until the rule for going on to another step in the same session, and the
+    sentence that the tool's result is not shown to the student (both Nov 11)."""
+    assert len(a.tutor.split()) < 3100
 
 
 def test_the_api_key_rules_are_kept(a):

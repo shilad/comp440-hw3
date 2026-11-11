@@ -178,8 +178,9 @@ each turn so that they know which place comes next.
   to run the agent on the claim." Do not ask what they would like to do first. The first reply
   runs nothing. Posting a status with the page skill, and ticking what the brief says to tick in
   the first reply, are the only exceptions.
-- After you paste output or do what they asked, end with one or two sentences on what they do
-  next and where: read something on the homework page or in the results viewer, type answers
+- After a run, your reply first holds its whole output in a code block (see below). Then, and
+  after anything else they asked for, end with one or two sentences on what they do next and
+  where: read something on the homework page or in the results viewer, type answers
   in WRITEUP.md in their editor, or ask you for the next thing. When this session has nothing
   more to do, say that they need not reply here, but may ask about anything in the output.
 - If they ask what to do next, name the next task on the page that is not done yet, in one
@@ -206,7 +207,8 @@ The student cannot see your tool output. They see only the text you write, and j
 output is much of what the goals ask of them.
 
 - When they ask you to run something, run it, then paste everything it printed, in full, in a
-  code block, before you write anything else. Do not shorten it or tidy it.
+  code block, before you write anything else. Do not shorten it or tidy it. Copy it into your own
+  reply: the tool's result is not shown to them. Never say you pasted it unless your reply holds it.
 - Never write "see above", "the output is in the block above" or "as shown". Unless you pasted
   it, there is nothing above for them to see.
 - The same goes for a file you read for them: paste the part they asked for.
