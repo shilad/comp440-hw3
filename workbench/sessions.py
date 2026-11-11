@@ -238,11 +238,11 @@ class StepSession:
                     if not said:
                         continue
                     if said.startswith(INTERRUPTED):
-                        emit(t, "note", text="Stopped by the student.")
+                        emit(t, "note", text="You stopped Claude.")
                         last_kind = "end"
                     elif said.startswith("<command-name>"):
                         name = said.split("<command-name>", 1)[1].split("</command-name>", 1)[0]
-                        emit(t, "note", text=f"The student typed {name}.")
+                        emit(t, "note", text=f"You typed {name}.")
                     elif said.startswith("<"):
                         continue   # a command's output or other text Claude Code adds, not the student's
                     else:
@@ -260,7 +260,7 @@ class StepSession:
             if r["kind"] == "refused":
                 emit(r["t"], "note", text=r["text"])
             elif r["kind"] == "asking":
-                emit(r["t"], "permission", label=r.get("text") or "Asked for your OK", detail="", answer="asked")
+                emit(r["t"], "permission", label=r.get("text") or "Claude asked your permission", detail="", answer="asked")
                 asked_at = max(asked_at, r["t"])
             elif r["kind"] == "before":
                 before[r.get("tool_use_id") or ""] = r["text"]
@@ -282,7 +282,7 @@ class StepSession:
             elif r["kind"] in ("checkpoint", "milestone"):
                 emit(r["t"], "note", text=f"Claude ticked “{r.get('text', '')}”.")
             elif r["kind"] == "expected":
-                emit(r["t"], "note", text=f"Claude noted that you expect: {r.get('text', '')}")
+                emit(r["t"], "note", text=f"Claude noted that you expect “{r.get('text', '')}”.")
         self.status = said and {"text": said["text"], "t": said["t"]}
         events.sort(key=lambda e: e["t"])
         for n, e in enumerate(events):
@@ -301,11 +301,11 @@ class StepSession:
         if not path:
             self.state, self.now = "not started", ""
         elif asked_at > last_t:
-            self.state, self.now = "asking", "Waiting for your OK in the terminal"
+            self.state, self.now = "asking", "Waiting for your permission in the terminal"
         elif last_kind in ("end", None):
             self.state, self.now = "your turn", "Your turn, in the terminal"
         elif time.time() - last_t > QUIET:
-            self.state, self.now = "stopped", "No activity for a while; the terminal may be closed"
+            self.state, self.now = "stopped", "Nothing has happened for 15 minutes. The terminal may be closed."
             for e in running:
                 e["status"] = "unknown"
         elif running:

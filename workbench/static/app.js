@@ -16,14 +16,17 @@ const $ = (s, el = document) => el.querySelector(s);
 const byId = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 // A task, a question or a record line as the steps file or the write-up writes it: plain text,
-// escaped first, except that a `code` span shows as code and a [link](address) as a link in a new
-// tab when the address starts with https://, http:// or one / (a page of this homework page, such
-// as /claims/). Any other link shows as its words. Nothing else in the text can become markup.
+// escaped first, except that *italic* and **bold** show as such, a `code` span as code, and a
+// [link](address) as a link in a new tab when the address starts with https://, http:// or one /
+// (a page of this homework page, such as /claims/). Any other link shows as its words. Nothing
+// else in the text can become markup.
 const WEB = /^(https?:\/\/|\/(?!\/))/;
 const linkText = (t) => t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,
   (m, words, href) => (WEB.test(href) ? `<a href="${href}" target="_blank" rel="noopener">${words}</a>` : words));
+const emphasis = (t) => t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+  .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>");
 const codeText = (s) => String(s ?? "").split(/(`[^`]+`)/)
-  .map((part, i) => (i % 2 ? `<code>${esc(part.slice(1, -1))}</code>` : linkText(esc(part)))).join("");
+  .map((part, i) => (i % 2 ? `<code>${esc(part.slice(1, -1))}</code>` : linkText(emphasis(esc(part))))).join("");
 
 let A = null;               // the assignment
 let S = null;               // the latest /api/state
@@ -224,7 +227,7 @@ function update() {
   const part = now && A.parts.find((p) => p.number === now.part);
   const jump = now ? `<a href="#step-${now.label}" id="jump">${esc(now.label)}, ${esc(now.title)}</a>` : "";
   paint(byId("next"), !now ? "Every step is done."
-    : part?.extra_credit && n === required.length ? `Every required step is done. Extra credit: ${jump}`
+    : part?.extra_credit && n === required.length ? `Every required step is done. The next step, ${jump}, is extra credit.`
     : `Now: ${jump}`);
   byId("due").textContent = part?.due
     ? `Part ${part.number}${part.extra_credit ? " (extra credit)" : ""} is due ${due(part)}` : "";
@@ -265,15 +268,15 @@ function counts(s, st, rec) {
     ? c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),
         x.filled ? trim(x.answer, 400) : (x.todo || `Not written yet. Type it in WRITEUP.md, under ${s.label}.`), x.filled))
     : [row(c.done, c.task || c.text, c.files.join(", "), false)]);
-  if (!rows.length && st.manual) rows.push(row(st.complete, "You have done what the step asks. Claude ticks it.", "", false));
+  if (!rows.length && st.manual) rows.push(row(st.complete, "Claude ticks this step once you have done what it asks.", "", false));
   return rows.length ? `<span class="label">Tasks</span>${rows.join("")}` : "";
 }
 
 function stateLine(ss) {
   const lastYou = Math.max(0, ...ss.events.filter((e) => e.kind === "student").map((e) => e.t));
-  if (ss.state === "asking") return "Claude is asking for your OK in the terminal.";
+  if (ss.state === "asking") return "Claude is asking your permission in the terminal.";
   if (ss.status && ss.status.t > lastYou) return ss.status.text + ".";
-  if (ss.state === "your turn") return "Waiting for you, in the terminal. Claude does nothing until you tell it to.";
+  if (ss.state === "your turn") return "Claude is waiting for you in the terminal. It does nothing until you tell it to.";
   if (ss.state === "working") return `Claude is working: ${ss.now}.`;
   if (ss.state === "thinking") return "Claude is thinking.";
   return ss.now || "";
@@ -327,12 +330,12 @@ function recordList(s, rec) {
   const now = rec.now;
   if (now.plain) items.push(line("ring", `Now: <strong class="ink">${codeText(now.plain)}</strong>`));
   else if (now.question) items.push(line("ring", `Now: <strong class="ink">${codeText(now.question)}</strong> ${esc(now.how)}`));
-  else if (now.todo) items.push(line("ring", `Still to reach: <span class="ink">${codeText(now.todo)}</span>.`));
-  else items.push(line("tick", "Step done."));
+  else if (now.todo) items.push(line("ring", `Still to do: <span class="ink">${codeText(now.todo)}</span>`));
+  else items.push(line("tick", "This step is done."));
   const c = rec.counts, n = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`;
   const toggle = c.messages || c.commands
-    ? `<button class="linkbtn" data-detail="${s.id}" type="button">${detail ? "Show only the milestones" : `Show every message and command (${n(c.messages, "message")}, ${n(c.commands, "command")})`}</button>` : "";
-  return (detail && rec.earlier ? `<p>${rec.earlier} earlier entries are in the conversation.</p>` : "")
+    ? `<button class="linkbtn" data-detail="${s.id}" type="button">${detail ? "Show only the checkpoints and results" : `Show every message and command (${n(c.messages, "message")}, ${n(c.commands, "command")})`}</button>` : "";
+  return (detail && rec.earlier ? `<p>The conversation has ${rec.earlier} earlier lines.</p>` : "")
     + `<ul class="lines">${items.join("")}</ul>${toggle}`;
 }
 
@@ -378,7 +381,8 @@ function recordCol(s, st, ss) {
   const cmd = ss.command ? command(ss.started ? "Back to this conversation" : "Start this step's Claude", ss.command, ss.model_flags)
     + yourself(s) : "";
   if (!ss.started) {
-    const state = st.locked ? `Empty. This step's Claude opens when you finish ${when}.` : "Empty. Start this step's Claude in a terminal.";
+    const state = st.locked ? `This record is empty. This step's Claude opens when you finish ${when}.`
+      : "This record is empty. Start this step's Claude in a terminal.";
     return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(state)} What you ask Claude, and what comes back, will be recorded here.</span></div>${ss.results ? `<p class="small">${resultsLink(ss)}</p>` : ""}${cmd}`;
   }
   return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(stateLine(ss))}</span></div>
@@ -404,7 +408,7 @@ function conversation(ss) {
     if (e.kind === "claude") return `<div class="msg claude"><span class="label">Claude</span>${md(e.text)}</div>`;
     if (e.kind === "tool") return `<p class="tool">Claude ${esc(e.label.replace(/^(\w)/, (c) => c.toLowerCase()))}${e.detail ? `: <code>${esc(trim(e.detail, 160))}</code>` : ""}</p>`;
     if (e.kind === "note") return `<span class="note">${esc(e.text)}</span>`;
-    if (e.kind === "permission") return `<span class="note">Claude asked for your OK in the terminal: ${esc(e.label)}</span>`;
+    if (e.kind === "permission") return `<span class="note">Claude asked your permission in the terminal: ${esc(e.label)}</span>`;
     return "";
   }).join("") || '<p class="small">Nothing yet.</p>';
 }

@@ -485,7 +485,7 @@ def text_helpers(js):
 def test_a_code_span_or_a_link_in_a_task_or_question_shows_as_such_and_nothing_else_is_markup():
     js = (ROOT / "workbench/static/app.js").read_text()
     helpers = text_helpers(js)
-    assert "linkText(esc(part))" in helpers and "esc(part.slice(1, -1))" in helpers   # escaped first
+    assert "linkText(emphasis(esc(part)))" in helpers and "esc(part.slice(1, -1))" in helpers   # escaped first
     for site in ('<span class="q">${codeText(text)}</span>', "codeText(now.question)", "codeText(now.todo)",
                  'line("tick", codeText(x.text) + ".")', "row(c.done, `${c.n}. ${c.task || c.text}`"):
         assert site in js, site
@@ -495,7 +495,8 @@ def test_a_code_span_or_a_link_in_a_task_or_question_shows_as_such_and_nothing_e
     cases = {
         "Give the line numbers in `my_loop.py`.": "Give the line numbers in <code>my_loop.py</code>.",
         "Is <b>this</b> bold? `<i>x</i>`": "Is &lt;b&gt;this&lt;/b&gt; bold? <code>&lt;i&gt;x&lt;/i&gt;</code>",
-        "Write *supported* or `doesn't say`.": "Write *supported* or <code>doesn't say</code>.",
+        "Write *supported* or `doesn't say`.": "Write <em>supported</em> or <code>doesn't say</code>.",
+        "A **bold** word, a `*code*` span and 2 * 3 * 4.": "A <strong>bold</strong> word, a <code>*code*</code> span and 2 * 3 * 4.",
         "Select 112 claims in the [claim finder](/claims/) and save them.":
             'Select 112 claims in the <a href="/claims/" target="_blank" rel="noopener">claim finder</a> and save them.',
         "Read the [retrieval code](https://github.com/shilad/comp440-hw3/blob/main/finder/search.py#L1-L165) in `finder/search.py`.":
@@ -535,7 +536,7 @@ def test_a_part_marked_extra_credit_is_labelled_not_counted_and_still_committed(
     assert "const required = S.steps.filter((x) => !extra.includes(x.part));" in js
     assert "extra credit." in js
     # Once the required steps are done, the next step is named as extra credit, and so is its due date.
-    assert "`Every required step is done. Extra credit: ${jump}`" in js and '"Every step is done."' in js
+    assert "`Every required step is done. The next step, ${jump}, is extra credit.`" in js and '"Every step is done."' in js
     assert '${part.extra_credit ? " (extra credit)" : ""} is due ${due(part)}' in js
     assert "What you ask Claude, and what comes back, will be recorded here." in js and "What you predict" not in js
     finish_part0(h.student)
@@ -596,6 +597,18 @@ STEP = {"label": "0b", "summary": "In this step you ask it.", "claim": False, "b
         "**The six rules:**\n\n1. Ask the model.\n\n**Interpreting output:** It prints a line.\n\n```\n**Hint:** in code\n```\n\n"
         "**Write-up:** Type it.\n\n**Completion:** Done.\n\n**Troubleshooting:**\n\n- One.\n\n"
         "**Hint:** Read it twice.\nAnd slowly.\n\n**Something new:** Folds too."}
+
+
+def test_the_real_0c_question_shows_its_verdict_words_in_italics():
+    import re
+    slots = steps.read_slots((ROOT / "WRITEUP.md").read_text())
+    question = next(k.split(" / ")[-1] for k in slots if " / 0c." in k)
+    assert "*supported*" in question
+    out = run_page_js([f"codeText({json.dumps(question)})"])
+    if out is None:
+        return
+    assert "<em>supported</em>, <em>refuted</em> or <em>doesn't say</em>" in out[0] and "*" not in out[0]
+    assert not re.search(r"<(?!/?em>)", out[0])               # no other markup
 
 
 def test_every_step_opens_the_same_way_text_then_tasks_then_every_part_folded():

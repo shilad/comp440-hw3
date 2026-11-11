@@ -201,7 +201,7 @@ def main():
         if tool == "Bash" and any(r in inp.get("command", "") for r in conf["refused"]):
             reason = ("Don't commit, push or reset: the page commits each part itself when its steps "
                       "are complete. Carry on.")
-            records.append({**base, "kind": "refused", "text": "Refused a git command: the page makes the commits."})
+            records.append({**base, "kind": "refused", "text": "The page refused a git command, because the page makes the commits."})
         for secret in conf["never_read"]:
             if touches(secret, inp, tool):
                 # Claude Code shows this to the step's Claude as the refused call's result.
@@ -209,10 +209,10 @@ def main():
                           "them to edit it themselves in their editor.") if secret == ".env" else \
                          (f"Never open {secret}: it holds a finished version of what the student writes "
                           "themselves in this homework. Do not look for its contents anywhere else either.")
-                records.append({**base, "kind": "refused", "text": f"Refused a call that touched {secret}."})
+                records.append({**base, "kind": "refused", "text": f"The page refused a command that touched {secret}."})
         if reason is None and tool == "Bash" and loose_search(inp.get("command", ""), conf):
             reason = SEARCH_REASON
-            records.append({**base, "kind": "refused", "text": "Refused a search that did not name its files."})
+            records.append({**base, "kind": "refused", "text": "The page refused a search that did not name its files."})
         if reason is None and tool in EDITS:
             text = writeup_text(conf, inp)
             if text is not None:

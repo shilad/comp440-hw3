@@ -214,7 +214,7 @@ class App:
         if u.missing:
             self.notice("updated", None)
         if u.missing and "update-failed" not in self.notices and self.own_repo():
-            out.append({"kind": "update", "text": "There is an update to the homework. It brings:",
+            out.append({"kind": "update", "text": "There is an update to the homework, with these changes:",
                         "items": u.missing[:8] + ([f"and {len(u.missing) - 8} more"] if len(u.missing) > 8 else []),
                         "button": "Update"})
         if self.code != self.code_stamp() and "restart" not in self.notices:
@@ -248,7 +248,7 @@ class App:
             except Exception as err:  # noqa: BLE001
                 traceback.print_exc()
                 self.notice("save", f"Something went wrong while saving your work ({err}). Your files are "
-                            f"untouched. If this stays, {HELP}.")
+                            f"untouched. If this keeps happening, {HELP}.")
             time.sleep(3)
 
     def tick(self) -> None:
@@ -309,7 +309,7 @@ class App:
             if r.returncode:
                 self.retry_at = time.time() + 60    # don't write the transcript again every few seconds
                 self.notice("save", f"The page couldn't commit “{message}”: "
-                            f"{(r.stderr or r.stdout).strip()[-200:]}. Your files are untouched. If this stays, {HELP}.")
+                            f"{(r.stderr or r.stdout).strip()[-200:]}. Your files are untouched. If this keeps happening, {HELP}.")
                 return False
             self.notice("save", None)
             self.after_commit()
@@ -689,7 +689,8 @@ def main() -> None:
             webbrowser.open(url)
         return
     if shutil.which("claude") is None:
-        print("Note: the claude command isn't installed here. Each step's session needs Claude Code, signed in.")
+        print("Note: the claude command isn't installed here. Each step's Claude session needs Claude Code, "
+              "installed and signed in.")
     try:
         app = App(repo)
     except (OSError, ValueError, TypeError, KeyError) as err:
