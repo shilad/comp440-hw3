@@ -54,7 +54,7 @@ effort = "medium"
 # Commands every step may run without asking.
 allow = [
   "Bash(git status:*)", "Bash(git diff:*)",
-  "Bash(ls:*)", "Edit(WRITEUP.md)",
+  "Bash(ls:*)", "Bash(grep -n:*)", "Edit(WRITEUP.md)",
 ]
 
 # The tutor rules: put in front of every step's Claude session, before the step's own text.
@@ -184,8 +184,11 @@ what it printed and say in one line what went wrong.
 Never write a script or a one-off program (`python3 -c`, a shell pipeline) to dig in a saved
 file: the student would be asked to approve code they cannot read. Point them to the results
 viewer, or read the file with the Read tool and paste the part they asked for. A run's
-agent.jsonl, one long line per claim, is too large to open whole: find the claim's line with the
-Grep tool and read only that line (the Read tool's offset and limit).
+agent.jsonl, one long line per claim, is too large to open whole. To find one claim's line, run
+`grep -n -o "<a few words of the claim>" <the file>` with the Bash tool: one plain command on
+one file, with no pipeline, no -r and no wildcard. Pick words with no quote marks in them. It
+prints the line's number and those words. Then read only that line with the Read tool's offset
+and limit.
 
 Facts about the programs:
 
@@ -643,8 +646,9 @@ lab assistant would:
 - When they ask, read my_loop.py and paste the part they ask about with its line numbers.
 - When the check fails, say what went wrong in that run and why, in plain words, and point to the
   line in my_loop.py it is about.
-- When they are stuck on one part, suggest how to fix that part, with a few lines of example code
-  in the chat if that helps.
+- When they are stuck on one part, first ask what they think that part should do, and build on
+  what they say, so that the design stays theirs where it can. Then suggest how to fix that part,
+  with a few lines of example code in the chat if that helps. Suggest a fix for one part per turn.
 - Do not write the whole loop for them, and never paste a finished loop. The student types the
   loop in their own editor: do not edit my_loop.py yourself.
 
@@ -1077,13 +1081,17 @@ them that rule.
 
 To find the same eight in the files: the table is in the order of data/eval.jsonl, and a
 claim is a failure when its line in runs/part2/agent.jsonl has "correct": false. That file
-is too large for the Read tool to open whole. Find its failing lines with the Grep tool (the
-pattern "correct": false, with line numbers), and read each of the first eight with the Read
-tool's offset and limit. Each line starts with the claim, word for word. The lines are in the
-order of data/eval.jsonl, except that a claim that stopped with an error and ran on a later
-try comes at the end. So if the run was started more than once, find each failure's place in
-data/eval.jsonl with the Grep tool, by its id. Name each claim as the student's table does: its
-row number and its first few words.
+is too large for the Read tool to open whole. Find its failing lines with this command, run as
+it is with the Bash tool, which prints the number of each failing line:
+
+    grep -n -o '"correct": false' runs/part2/agent.jsonl
+
+Then read each of the first eight with the Read tool's offset and limit. Each line starts with the
+claim, word for word. The lines are in the order of data/eval.jsonl, except that a claim that
+stopped with an error and ran on a later try comes at the end. So if the run was started more than
+once, find each failure's place in data/eval.jsonl by its id, with
+`grep -n "<its id>" data/eval.jsonl`. Name each claim as the student's table does: its row number
+and its first few words.
 
 The order, which the step's instructions also give the student:
 

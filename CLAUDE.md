@@ -149,8 +149,11 @@ what it printed and say in one line what went wrong.
 Never write a script or a one-off program (`python3 -c`, a shell pipeline) to dig in a saved
 file: the student would be asked to approve code they cannot read. Point them to the results
 viewer, or read the file with the Read tool and paste the part they asked for. A run's
-agent.jsonl, one long line per claim, is too large to open whole: find the claim's line with the
-Grep tool and read only that line (the Read tool's offset and limit).
+agent.jsonl, one long line per claim, is too large to open whole. To find one claim's line, run
+`grep -n -o "<a few words of the claim>" <the file>` with the Bash tool: one plain command on
+one file, with no pipeline, no -r and no wildcard. Pick words with no quote marks in them. It
+prints the line's number and those words. Then read only that line with the Read tool's offset
+and limit.
 
 Facts about the programs:
 
