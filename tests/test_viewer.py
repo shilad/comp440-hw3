@@ -686,6 +686,21 @@ def test_the_dataset_articles_and_which_the_agent_read(repo):
     assert "The dataset lists" not in words and "Your verdict is supported. This is one of your own claims." in words
 
 
+def test_an_article_title_with_an_html_code_shows_plainly():
+    """HoVer writes some titles with HTML codes. The viewer shows "A&R", links the real page, and
+    matches the title with the one the agent read."""
+    item = {"articles": ["Mike Smith (A&amp;R man)", "Young &amp; Beautiful"]}
+    row = {"trace": [{"tool": "read", "input": {"title": "Young & Beautiful"},
+                      "result": "Page: Young & Beautiful\nYoung & Beautiful is a song."}]}
+    assert R.articles_read(item, row) == [("Mike Smith (A&R man)", None), ("Young & Beautiful", 1)]
+    page = app.articles_html(item, [("", row)])
+    assert "&amp;amp;" not in page and ">Mike Smith (A&amp;R man)<" in page   # escaped once: shows A&R
+    assert "Mike_Smith_(A%26R_man)" in page and "%26amp" not in page          # the real page's address
+    words = text_of(page)
+    assert "Mike Smith (A&R man)" in words and "&amp;" not in words
+    assert "Young & Beautiful (opens in a new tab): the agent read it in entry 1." in words
+
+
 def test_home_lists_runs_in_the_homework_order(repo):
     for rel in ("runs/part3/after-eval", "runs/part3/after", "runs/part3/before", "runs/part1/after",
                 "runs/part1/before", "runs/zzz"):

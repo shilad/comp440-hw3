@@ -855,10 +855,10 @@ def claim_head(item: dict, known: bool, reads: list | None = None) -> str:
 def articles_html(item: dict, reads: list) -> str:
     out = ['<p class="small arts-head">The dataset lists these articles for this claim:</p><ul class="arts">']
     marks = [(name, row, dict(R.articles_read(item, row))) for name, row in reads if row is not None]
-    for title in item["articles"]:
+    for title in (R.article_title(t) for t in item["articles"]):
         bits = []
         for name, row, seen in marks:
-            n = seen.get(str(title))
+            n = seen.get(title)
             who = f"the agent in {name}" if name else "the agent"
             if n:
                 anchor_id = f"#call-{(name.lower() + '-') if name else ''}agent-{n}"

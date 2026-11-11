@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import contextlib
 import fnmatch
+import html
 import io
 import json
 import os
@@ -795,6 +796,12 @@ def quote_places(row: dict) -> list[dict]:
 
 # ------------------------------------------------------------------ the dataset's articles
 
+def article_title(title) -> str:
+    """An article's title as Wikipedia writes it. HoVer writes some titles with HTML codes
+    ("Young &amp; Beautiful"); the page escapes the title itself, so the code is turned back first."""
+    return html.unescape(str(title))
+
+
 def title_key(title) -> str:
     return " ".join(str(title).replace("_", " ").split()).casefold()
 
@@ -816,7 +823,7 @@ def articles_read(item: dict, row: dict | None) -> list[tuple[str, int | None]]:
         for t in (call["input"].get("title"), page["title"]):
             if t:
                 seen.setdefault(title_key(t), n + 1)
-    return [(str(a), seen.get(title_key(a))) for a in arts]
+    return [(article_title(a), seen.get(title_key(article_title(a)))) for a in arts]
 
 
 # ------------------------------------------------------------------ the homework's order
