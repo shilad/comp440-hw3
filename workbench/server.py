@@ -170,11 +170,13 @@ class App:
             "title": a.title,
             "lede": lede,
             "goals": stepmod.goals(overview),
+            "top_note": a.top_note,
             "sample_claim": a.sample_claim,
             "parts": parts,
             "steps": [{"id": s.id, "label": a.label(s), "part": s.part, "title": s.title, "summary": s.summary,
                        "setup": s.setup, "claim": s.claim, "minutes": s.minutes, "files": s.files,
                        "run_yourself": stepmod.run_yourself(s), "session_tasks": a.session_tasks(s),
+                       "answers_task": a.answers_task,
                        "body": stepmod.body(s, a, self.repo)} for s in a.steps],
             "repo": str(self.repo),
             "version": self.version,
@@ -614,6 +616,9 @@ def handler(app: App):
                     what = " and ".join(([", ".join(c.files) + " exists"] if c.files else [])
                                         + (["the student's answers are in " + app.a.writeup] if c.slots else []))
                     return self.send_json({"error": f"“{c.text}” ticks itself when {what}. Nothing was changed."}, 409)
+                if not c.tick:
+                    return self.send_json({"error": f"“{c.text}” is one the student does where you cannot see it, so the "
+                                           "page shows it with no tick. Nothing was changed."}, 409)
                 app.hub.record(sid, "checkpoint", n=n, text=c.text)
                 return self.send_json({"ok": True, "said": f"The page now shows “{c.text}” as reached."})
             if action == "expected":

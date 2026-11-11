@@ -100,8 +100,10 @@ pre code { background: none; padding: 0; }
 .check.ok .q { color: var(--muted); }
 .check .ans { font-size: 13.5px; }
 .check .ans.mine { color: var(--ink); }
+/* Above a step's questions: where the answers are typed, in the step's own text size. */
+.answers-note { margin: 4px 0 0 28px; font-size: 13.5px; }
 /* The learning goals under the opening sentence: the opening's own text style, kept compact. */
-.top .goals:empty { display: none; }
+.top .goals:empty, .top .how:empty { display: none; }
 .top .goals p { margin: 0 0 2px; }
 .top .goals ul { margin: 0; padding-left: 20px; }
 .top .goals li { margin: 1px 0; }

@@ -326,7 +326,8 @@ class StepSession:
         marks = {r.get("n"): r["t"] for r in pages if r["kind"] in ("checkpoint", "milestone")}
         cps, done_at, covered = [], [], set()
         for i, c in enumerate(checkpoints(s), 1):
-            item = {"n": i, "text": c.text, "task": c.task or c.text, "auto": bool(c.files or c.slots), "files": [], "slots": []}
+            item = {"n": i, "text": c.text, "task": c.task or c.text, "auto": bool(c.files or c.slots), "files": [], "slots": [],
+                    "tick": c.tick or bool(c.files or c.slots)}
             t = None
             if c.files or c.slots:
                 found = [str(f.relative_to(repo)) for pat in c.files for f in present(repo, pat)]
@@ -340,22 +341,23 @@ class StepSession:
                 when = max([(repo / f).stat().st_mtime for f in found]
                            + ([wp.stat().st_mtime] if keys and wp.exists() else []), default=None)
                 t = self.hub.seen(f"{s.id}/{i}", ok, when)
-            elif i in marks:
+            elif c.tick and i in marks:          # one with tick = false is never ticked
                 t = marks[i]
             cps.append(item)
             done_at.append(t)
         reached = list(done_at)                  # when each was reached, as far as anything shows
         # A checkpoint with a file or answers of its own is ticked only by them, so a student can
         # see what is missing. One without (a prediction, say) is ticked by Claude, or by any later
-        # checkpoint being reached. The step being complete ticks nothing by itself.
+        # checkpoint being reached. One with `tick = false` is never ticked. The step being complete
+        # ticks nothing by itself.
         for i in range(len(cps) - 2, -1, -1):
-            if done_at[i] is None and not cps[i]["auto"]:
+            if done_at[i] is None and not cps[i]["auto"] and cps[i]["tick"]:
                 done_at[i] = next((t for t in done_at[i + 1:] if t is not None), None)
         for i, item in enumerate(cps):
             item["done"] = done_at[i] is not None
         extra = [k for k in step_keys(s, slots) if k not in covered]   # answers no checkpoint names
         if extra:
-            cps.append({"n": None, "text": "Your answers in " + a.writeup, "auto": True, "files": [],
+            cps.append({"n": None, "text": "Your answers in " + a.writeup, "auto": True, "files": [], "tick": True,
                         "done": all(filled(slots.get(k)) for k in extra),
                         "slots": [self.slot(k, slots) for k in extra]})
 
@@ -404,7 +406,7 @@ class StepSession:
             target.setdefault("reached", []).append(text)
         entries.sort(key=lambda x: x["t"])
         open_q = next((x for c in cps for x in c["slots"] if not x["filled"]), None)
-        todo = next((c["text"] for c in cps if not c["done"]), None)
+        todo = next((c["text"] for c in cps if c["tick"] and not c["done"]), None)
         if open_q and open_q["plain"]:     # the name at the top, not a question under the step
             now = {"plain": f"type your {open_q['question'].lower()} after {open_q['question']}: at the top "
                             f"of {a.writeup}, in your editor."}
@@ -636,8 +638,8 @@ class Hub:
                 answers.append({"question": k.split(" / ")[-1], "answer": answer, "written_by": by})
             out = {
                 "step": label, "title": s.step.title, "session_id": s.session_id,
-                "complete": all(c["done"] for c in rec["checkpoints"]),
-                "checkpoints": [{"text": c["text"], "reached": c["done"]} for c in rec["checkpoints"]],
+                "complete": all(c["done"] for c in rec["checkpoints"] if c["tick"]),
+                "checkpoints": [{"text": c["text"], "reached": c["done"]} for c in rec["checkpoints"] if c["tick"]],
                 "answers": answers,
                 "record": [{**{k: v for k, v in x.items() if k != "t"}, "time": when(x["t"])} for x in rec["entries"]],
                 "told_the_page": [{"time": when(r["t"]), **{k: v for k, v in r.items() if k not in ("t", "step")}}
@@ -681,10 +683,15 @@ class Hub:
         others = "\n".join(f"- {a.label(o)}: Part {o.part}, {o.title}" for o in a.steps if o.id != s.id)
         counts = []
         for i, c in enumerate(checkpoints(s), 1):
-            how = ("ticks itself when " + " and ".join(
-                ([f"{', '.join(c.files)} exists"] if c.files else [])
-                + (["the student's answers are in " + a.writeup] if c.slots else []))) if (c.files or c.slots) \
-                else f"you tick it once the student has reached it: python3 .workbench/page.py {label} done {i}"
+            if c.files or c.slots:
+                how = "ticks itself when " + " and ".join(
+                    ([f"{', '.join(c.files)} exists"] if c.files else [])
+                    + (["the student's answers are in " + a.writeup] if c.slots else []))
+            elif not c.tick:
+                how = ("the student does this where you cannot see it, and the page shows it with no tick: "
+                       "never tick it, and never ask whether they have done it")
+            else:
+                how = f"you tick it once you have seen it happen in this session: python3 .workbench/page.py {label} done {i}"
             counts.append(f"{i}. {c.text} ({how})")
         counts_text = "\n".join(counts) or "(none listed)"
         manual = not (s.slots or s.files)
@@ -739,10 +746,12 @@ How the page works, so you don't duplicate it:
 
 Keep the page up to date with the `page` skill, using `{label}` as the step: post a one-line status
 when what you are doing changes, and tick each
-checkpoint above that says you tick it, once the student has reached it{", then mark the step done, since it has nothing to fill in" if manual else ""}.
+checkpoint above that says you tick it, once you have seen it happen{", then mark the step done once the student says they have finished it, since it has nothing to fill in" if manual else ""}.
 
-The session opens with the message "Start step {label}." Reply to it by saying in one or two
-sentences what this step is, from the summary above, then {"say what its first step is" if s.setup else "ask what they would like to do first"}, and wait for the
-student. If the student comes back to this session later, say in one or two sentences what they
-have reached so far.
+The session opens with the message "Start step {label}." Reply to it in two or three sentences:
+what this step is, from the summary above, then the first task on the page that is not done yet
+and what to type to get it done, for example: "When you are ready, ask me to run the agent on the
+claim." Do not ask what they would like to do first. Then wait for the student. If the student
+comes back to this session later, say in one or two sentences what they have reached so far, and
+what the next task is and where they do it.
 """.strip()

@@ -48,7 +48,9 @@ class Step:
     # What counts: the step's checkpoints, in order, worded as outcomes, not moves. Each is a
     # string, or a table with `text` and the `files` or `slots` that tick it by themselves; one with
     # neither is ticked by Claude, through the page skill, or by any later checkpoint being ticked.
-    # A table's `task` says the same thing as a task; the page lists it under "Tasks".
+    # A table's `task` says the same thing as a task; the page lists it under "Tasks". One with
+    # `tick = false` is a task only the student can see done (reading a trace in the results
+    # viewer): the page lists it with no tick, nothing ticks it, and no step waits on it.
     checkpoints: list = field(default_factory=list)
 
 
@@ -58,6 +60,7 @@ class Checkpoint:
     files: list[str] = field(default_factory=list)
     slots: list[str] = field(default_factory=list)
     task: str = ""               # the same thing as a task, a full sentence, as the page lists it
+    tick: bool = True            # False: the page shows the task with no tick, and nothing ticks it
 
 
 def run_yourself(s: Step) -> dict | None:
@@ -92,6 +95,8 @@ class Assignment:
     sample_claim: str = ""
     start_task: str = ""   # the first task of every step: when to start the step's Claude session
     stop_task: str = ""    # the last task of every step: when to stop it
+    answers_task: str = ""  # shown above a step's write-up questions: where the student types answers
+    top_note: str = ""     # one sentence near the top of the page: what happens where
     source: Path | None = None
 
     def session_tasks(self, s: Step) -> dict[str, str]:
@@ -149,6 +154,8 @@ def load(path: Path) -> Assignment:
         sample_claim=data.get("sample_claim", ""),
         start_task=data.get("start_task", ""),
         stop_task=data.get("stop_task", ""),
+        answers_task=data.get("answers_task", ""),
+        top_note=data.get("top_note", ""),
         source=path,
     )
 

@@ -26,7 +26,10 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
   file it names exists, read fresh every time, however the file got there (a run in the
   student's own terminal counts). Steps open in order. A checkpoint with a file or answers of its
   own is ticked only by them. One without (a prediction, say) is ticked by Claude through the
-  `page` skill, or by a later checkpoint being reached. The step being complete ticks nothing.
+  `page` skill, or by a later checkpoint being reached. One with `tick = false` (reading a trace
+  in the results viewer, say: only the student can see it done) shows with no tick, the server
+  refuses a tick on it, and nothing waits on it: completion comes from slots and files alone, and
+  a step with neither is marked done as a whole. The step being complete ticks nothing.
 - **Commits each part.** When every step of Part N is complete, the page writes `TRANSCRIPT.md`
   and `record/`, then commits `Part N done`: everything in the repository that isn't git-ignored
   (`git add -A`), so `instructions.md`, the student's claims, every result under `runs/` and any
@@ -149,7 +152,11 @@ claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus
 - Every step's Tasks list begins with when to start the step's Claude session and ends with when
   to stop it (`start_task` and `stop_task` in the steps file, which a step may reword or leave
   out). The page ticks the first once the session has started. It cannot see `/exit`, so the
-  last has no tick.
+  last has no tick. Above a step's first write-up question the list shows `answers_task`, one
+  sentence on where the answers are typed, and an unanswered question then says only "Not written
+  yet."
+- `top_note`, one sentence on what happens where (talking with Claude, typing in `WRITEUP.md`),
+  shows near the top of the page, under the learning goals.
 - The page says nothing under the command about a model that is not available. Step 0a's
   Troubleshooting and the README's "If something goes wrong" do: delete
   `--model claude-opus-5-5 --effort medium` from the command and run the rest of it.
@@ -158,7 +165,8 @@ claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus
 
 `steps.toml` at the top of the repository. Top-level keys the page reads: `title`, `writeup`,
 `tutor`, `model`, `effort`, `commit_parts` (default true), `push` (default false), `upstream`,
-`allow`, `never_read`, `overview`, `sample_claim` (any text, quotes included). A step's `minutes`
+`allow`, `never_read`, `overview`, `sample_claim` (any text, quotes included), `start_task`,
+`stop_task`, `answers_task`, `top_note`. A checkpoint table may carry `tick = false`. A step's `minutes`
 shows in its header as "about 25 minutes". A `files` entry is only ever checked for existence, so
 `files = [".env"]` is safe; the page never opens, shows or links to a `never_read` file. Then `[[part]]` tables (`number`, `title`,
 `due`, and `extra_credit = true` for a part that isn't required) and `[[step]]` tables. A step's

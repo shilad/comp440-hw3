@@ -169,6 +169,8 @@ function build() {
   // The learning goals, from README's bullets after its first paragraph; nothing if it has none.
   paint(byId("goals"), A.goals && A.goals.length
     ? `<p>You will:</p><ul>${A.goals.map((g) => `<li>${inline(g)}</li>`).join("")}</ul>` : "");
+  // One sentence, under the goals, on what happens where (top_note in the steps file).
+  paint(byId("how"), A.top_note ? inline(A.top_note) : "");
   byId("parts").innerHTML = A.parts.map((p) => `
     <section class="part" id="part-${p.number}">
       <button class="part-head" data-part="${p.number}" aria-expanded="false" aria-controls="steps-${p.number}" type="button">
@@ -269,18 +271,30 @@ function update() {
 // and their answer; the rest show their task, a full sentence saying what to do. A setup step
 // shows every task, numbered, each with its tick (and the student's answer under one they answer).
 // The list begins with when to start the step's Claude session, ticked once it has started, and
-// ends with when to stop it. The page cannot see /exit, so that last task has no tick.
+// ends with when to stop it. The page cannot see /exit, so that last task has no tick, and nor
+// does a task only the student can see done (`tick: false`, as reading a trace). Above the first
+// question, one sentence (`answers_task`) says where the answers are typed.
 function counts(s, st, rec, started) {
   const row = (ok, text, sub, mine) => `<div class="check ${ok ? "ok" : ""}"><span class="tick">${ok ? "✓" : "○"}</span>
       <div><span class="q">${codeText(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
   const noTick = (text) => `<div class="check"><span class="tick"></span><div><span class="q">${codeText(text)}</span></div></div>`;
-  const ask = s.session_tasks || {}, numbered = rec.checkpoints.filter((c) => c.n).length;
-  const rows = s.setup ? rec.checkpoints.filter((c) => c.n).map((c) => row(c.done, `${c.n}. ${c.task || c.text}`,
-      c.slots.length && c.slots.every((x) => x.filled) ? c.slots.map((x) => trim(x.answer, 200)).join(", ") : "", true))
-    : rec.checkpoints.flatMap((c) => c.slots.length
-    ? c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),
-        x.filled ? trim(x.answer, 400) : (x.todo || `Not written yet. Type it in WRITEUP.md, under ${s.label}.`), x.filled))
-    : [row(c.done, c.task || c.text, c.files.join(", "), false)]);
+  const ask = s.session_tasks || {}, numbered = rec.checkpoints.filter((c) => c.n).length, answers = s.answers_task || "";
+  const rows = [];
+  let said = false;                      // the sentence about where answers go, once
+  for (const c of rec.checkpoints) {
+    if (s.setup) {
+      if (!c.n) continue;
+      rows.push(c.tick === false ? noTick(`${c.n}. ${c.task || c.text}`) : row(c.done, `${c.n}. ${c.task || c.text}`,
+        c.slots.length && c.slots.every((x) => x.filled) ? c.slots.map((x) => trim(x.answer, 200)).join(", ") : "", true));
+    } else if (c.slots.length) {
+      if (answers && !said) { rows.push(`<p class="answers-note">${codeText(answers)}</p>`); said = true; }
+      rows.push(...c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),
+        x.filled ? trim(x.answer, 400)
+          : answers ? "Not written yet." : (x.todo || `Not written yet. Type it in WRITEUP.md, under ${s.label}.`), x.filled)));
+    } else {
+      rows.push(c.tick === false ? noTick(c.task || c.text) : row(c.done, c.task || c.text, c.files.join(", "), false));
+    }
+  }
   if (!rows.length && st.manual) rows.push(row(st.complete, "Claude ticks this step once you have done what it asks.", "", false));
   if (ask.start) rows.unshift(row(started, ask.start, "", false));
   if (ask.stop) rows.push(noTick(s.setup ? `${numbered + 1}. ${ask.stop}` : ask.stop));

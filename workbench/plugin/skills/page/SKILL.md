@@ -39,8 +39,10 @@ python3 .workbench/page.py <step> done 1
 
 The number is the checkpoint's number in your instructions. Most checkpoints tick themselves, when
 their file exists or the student's answers are in WRITEUP.md. Tick only the ones your instructions
-say you tick, and only once the student has reached them: read the trace with you, written
-their instructions. The page refuses the others and says why.
+say you tick, and only once you have seen them happen in this session: a change you saw in
+`git diff`, a table you read. Some tasks only the student can see done, such as reading a trace in
+the results viewer: the page shows those with no tick. The page refuses a tick on any of these
+others and says why.
 
 A step with nothing to fill in WRITEUP.md is ticked as a whole with `done` and no number, once the
 student has done what it asks.

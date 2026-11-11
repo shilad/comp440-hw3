@@ -442,6 +442,64 @@ def test_a_checkpoint_with_a_file_or_answers_is_ticked_only_by_them(tmp_path):
         ["You've seen the model answer", "Your answers"]     # each line says its checkpoint
 
 
+# 0b's first checkpoint as a task only the student can see done (instructor, Nov 11: "Should I be
+# talking with Claude? Should I be typing in the writeup? Clarify.").
+NO_TICK_STEPS = STEPS.replace('  "You read the output with Claude",\n',
+                              '  { text = "You read the output", task = "In the results viewer, read the output.", tick = false },\n')
+
+
+def test_a_task_only_the_student_can_see_done_is_never_ticked_and_nothing_waits_on_it(tmp_path):
+    assert NO_TICK_STEPS != STEPS
+    h = homework(tmp_path, {"steps.toml": NO_TICK_STEPS})
+    app = server.App(h.student)
+    finish_part0(h.student)                                  # 0b's run and answers are in place
+    rec = app.hub.sessions["0b"].record()
+    # Not ticked by the later checkpoints either, and not named as still to do.
+    assert [(c["tick"], c["done"]) for c in rec["checkpoints"]] == [(False, False), (True, True), (True, True)]
+    assert rec["now"] == {"done": True}
+    assert {x["id"]: x for x in steps.status(app.a, h.student, set())}["0b"]["complete"]
+    srv, base = serving(app)
+    try:
+        code, _, body = fetch(base + "/api/step/0b/mark", json.dumps({"checkpoint": 1, "by": "claude"}).encode(),
+                              {"Content-Type": "application/json"})
+        assert code == 409 and "with no tick" in json.loads(body)["error"]
+    finally:
+        srv.shutdown()
+        srv.server_close()
+    assert not [r for r in app.hub.page_records("0b") if r["kind"] == "checkpoint"]
+    app.hub.record("0b", "status", text="Waiting for your answers in WRITEUP.md")
+    app.hub.save_records(h.student / "record")
+    saved = json.loads((h.student / "record/0b.json").read_text())
+    assert saved["complete"] and "You read the output" not in [c["text"] for c in saved["checkpoints"]]
+    app.hub.sessions["0b"].prepare()
+    prompt = " ".join((app.hub.dir / "0b.md").read_text().split())
+    assert ("1. You read the output (the student does this where you cannot see it, and the page shows it with "
+            "no tick: never tick it, and never ask whether they have done it)") in prompt
+
+
+def test_a_step_whose_only_task_has_no_tick_is_still_done_when_claude_marks_it(tmp_path):
+    only = STEPS.replace('title = "Read the loop"\nslots = ["1a.*"]',
+                         'title = "Read the loop"\ncheckpoints = [{ text = "You read it", task = "In the results viewer, read it.", tick = false }]')
+    assert only != STEPS
+    h = homework(tmp_path, {"steps.toml": only})
+    app = server.App(h.student)
+    finish_part0(h.student)
+    st = {x["id"]: x for x in steps.status(app.a, h.student, app.hub.marked())}["1a"]
+    assert st["manual"] and not st["complete"] and not st["locked"]
+    app.hub.sessions["1a"].prepare()
+    assert "then mark the step done once the student says they have finished it" in \
+        " ".join((app.hub.dir / "1a.md").read_text().split())
+    srv, base = serving(app)
+    try:
+        code, _, _ = fetch(base + "/api/step/1a/mark", json.dumps({"done": True, "by": "claude"}).encode(),
+                           {"Content-Type": "application/json"})
+        assert code == 200
+    finally:
+        srv.shutdown()
+        srv.server_close()
+    assert {x["id"]: x for x in steps.status(app.a, h.student, app.hub.marked())}["1a"]["complete"]
+
+
 def test_the_name_has_its_own_plain_now_line(tmp_path):
     h = homework(tmp_path, {"steps.toml": STEPS.replace('slots = ["Name"]', 'slots = ["Name"]\ncheckpoints = [{ text = "Your name", slots = ["Name"] }]')})
     app = server.App(h.student)
@@ -560,7 +618,12 @@ def test_the_session_opens_on_the_summary_and_asks_for_no_prediction(tmp_path):
     app.hub.sessions["0b"].prepare()
     prompt = (app.hub.dir / "0b.md").read_text()
     assert "as the page says it under the step's title: In this step you ask it." in prompt
-    assert "ask what they would like to do first" in prompt
+    # The first reply names the first task not done and what to type for it, never "What would you
+    # like to do first?" (instructor, Nov 11: "Should I be talking with Claude? ... Clarify.").
+    flat_prompt = " ".join(prompt.split())
+    assert "then the first task on the page that is not done yet and what to type to get it done" in flat_prompt
+    assert "Do not ask what they would like to do first." in flat_prompt
+    assert "ask what they would like to do first, and wait" not in flat_prompt
     assert "what they expect, or" not in prompt and "note what the student expects before a run" not in prompt
     assert "you may name the next one that is not done" in prompt
     skill = (ROOT / "workbench/plugin/skills/page/SKILL.md").read_text()
@@ -696,6 +759,54 @@ def test_a_set_up_steps_tasks_show_numbered_with_their_ticks():
         ("✓", "1. Copy .env.example to .env."), ("✓", "2. Type your name after Name: at the top of WRITEUP.md."),
         ("○", "3. Start this step's Claude session."), ("○", "4. Ask Claude to run the set-up check.")]
     assert out[0].startswith('<span class="label">Tasks</span>') and ">Sam<" in out[0]
+
+
+def test_a_task_with_no_tick_and_the_sentence_above_the_questions_show_in_tasks():
+    import re
+    answers = "Type your answers to these questions in WRITEUP.md, in your editor. Claude does not write them."
+    s = {"label": "0d", "setup": False, "answers_task": answers,
+         "session_tasks": {"start": "First, start this step's Claude session.", "stop": "Last, type /exit."}}
+    rec = {"checkpoints": [
+        {"n": 1, "task": "Ask Claude to run the agent on the claim.", "text": "", "done": True, "tick": True,
+         "slots": [], "files": ["runs/part0/agent-1.json"]},
+        {"n": 2, "task": "In the results viewer, read the trace.", "text": "", "done": False, "tick": False,
+         "slots": [], "files": []},
+        {"n": 3, "task": "", "text": "Your answers", "done": False, "tick": True, "files": [], "slots": [
+            {"question": "How did it get there?", "answer": "", "filled": False,
+             "todo": "Not written yet. Type it in WRITEUP.md, under 0d."},
+            {"question": "Which lookup?", "answer": "Entry 2.", "filled": True}]}]}
+    setup = {"label": "0a", "setup": True, "answers_task": answers, "session_tasks": {}}
+    setup_rec = {"checkpoints": [{"n": 1, "task": "Read it.", "text": "", "done": False, "tick": False,
+                                  "slots": [], "files": []}]}
+    out = run_layout_js([f"counts({json.dumps(s)}, {{manual: false, complete: false}}, {json.dumps(rec)}, true)",
+                         f"counts({json.dumps({**s, 'answers_task': ''})}, {{manual: false, complete: false}}, {json.dumps(rec)}, true)",
+                         f"counts({json.dumps(setup)}, {{manual: false, complete: false}}, {json.dumps(setup_rec)}, false)"])
+    if out is None:
+        return
+    rows = re.findall(r'<div class="check ?(ok)?"><span class="tick">([^<]*)</span>\s*<div><span class="q">([^<]*)</span>', out[0])
+    assert [(tick, text) for _, tick, text in rows] == [
+        ("✓", "First, start this step's Claude session."), ("✓", "Ask Claude to run the agent on the claim."),
+        ("", "In the results viewer, read the trace."),          # no tick, like the /exit task
+        ("○", "How did it get there?"), ("✓", "Which lookup?"), ("", "Last, type /exit.")]
+    note = f'<p class="answers-note">{answers}</p>'
+    assert out[0].count(note) == 1                              # once, above the first question
+    assert out[0].index("read the trace.") < out[0].index(note) < out[0].index("How did it get there?")
+    assert ">Not written yet.<" in out[0] and "under 0d" not in out[0]
+    assert "answers-note" not in out[1] and "Not written yet. Type it in WRITEUP.md, under 0d." in out[1]
+    assert '<span class="tick"></span><div><span class="q">1. Read it.</span>' in out[2]
+
+
+def test_one_sentence_near_the_top_says_what_happens_where(tmp_path):
+    a = steps.load(ROOT / "steps.toml")
+    readme = " ".join((ROOT / "README.md").read_text().split())
+    how = readme.split("## How this homework works", 1)[1].split(" ## ", 1)[0]
+    assert a.top_note and f"- {a.top_note}" in how              # the same sentence, as one bullet
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert 'paint(byId("how"), A.top_note ? inline(A.top_note) : "");' in js
+    assert '<p class="lede how" id="how"></p>' in (ROOT / "workbench/static/index.html").read_text()
+    h = homework(tmp_path)
+    plain = server.App(h.student).assignment()
+    assert plain["top_note"] == "" and all(s["answers_task"] == "" for s in plain["steps"])
 
 
 def test_in_the_real_steps_every_labeled_part_folds_in_order_and_nothing_is_lost():
@@ -1617,7 +1728,7 @@ def test_every_step_lists_when_to_start_and_when_to_stop_its_claude_session():
     for s in a.steps:
         ask = a.session_tasks(s)
         assert "/exit" in ask["stop"] and ask["stop"].endswith("."), s.id
-        own = [c.task for c in steps.checkpoints(s) if "Start this step's Claude session" in c.task]
+        own = [c.task for c in steps.checkpoints(s) if "start this step's claude session" in c.task.lower()]
         if own:   # the step's own task says when to start (0a: after .env and the name)
             assert ask["start"] == "", s.id
         else:
