@@ -146,8 +146,8 @@ RUN_NOTES = {
 # The homework's learning goals (contract, Nov 11): the same five, word for word, in README.md,
 # WRITEUP.md and the tutor text.
 GOALS = [
-    "Understand what makes a program an *agent*: a language model that picks the next thing to look "
-    "up, reads what comes back, and decides when to stop.",
+    "Understand what makes a program an *agent*. You will study a language model that picks the next "
+    "Wikipedia search query, reads the page that comes back, and decides when to stop.",
     "Gain hands-on experience with the loop around the model by writing it yourself: its tools, its "
     "instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears "
     "in what it read.",

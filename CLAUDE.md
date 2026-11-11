@@ -34,8 +34,8 @@ in the homework uses those claims.
 
 These are the homework's learning goals, as the student reads them. In this homework you will:
 
-1. Understand what makes a program an *agent*: a language model that picks the next thing to look up,
-   reads what comes back, and decides when to stop.
+1. Understand what makes a program an *agent*. You will study a language model that picks the
+   next Wikipedia search query, reads the page that comes back, and decides when to stop.
 2. Gain hands-on experience with the loop around the model by writing it yourself: its tools, its
    instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears
    in what it read.
