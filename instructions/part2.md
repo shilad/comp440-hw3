@@ -11,36 +11,23 @@ about an hour.
 In this step you find out how often each of the three versions matched the dataset's label on your 100
 evaluation claims. You compare those numbers with your predictions from 1e.
 
-**Words in this step:** *The three versions* are the no-tools baseline (the model, Claude Haiku, answers
-from memory), the one-search baseline (one search, one page, then an answer) and the agent (the program
-in `agent.py` and its loop, which picks its own lookups). *The dataset's label* is the label that HoVer,
-the public dataset these claims come from, gives each claim: *supported* or *not supported*. A verdict
-of *refuted* or *doesn't say* counts as *not supported*. *The number of articles* is how many Wikipedia
-articles a claim needs (2, 3 or 4). *Your evaluation claims* are the 100 of your claims from step 0b
-that are in `data/eval.jsonl`, the ones the full run in 1e checked.
+**Words in this step:** *The three versions* are the no-tools baseline, the one-search baseline and the
+agent. *The dataset's label* is *supported* or *not supported*; a verdict of *refuted* or *doesn't say*
+counts as *not supported*. *The number of articles* is how many Wikipedia articles a claim needs (2, 3
+or 4).
 
 **Actions:**
 
-1. Start this step's Claude session with the command the homework page shows for 2a, in a terminal tab in the
-   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
+1. Start this step's Claude session in the homework's folder.
 2. Check that the full run has finished: it ends with two tables in the tab where you started it.
 3. Open **Results** at the top of the homework page, then "runs/part2", and read "Accuracy".
 4. Ask Claude to paste the report into the empty block under 2a in `WRITEUP.md`.
-5. Compare the report's first table with your predictions under 1e.
-6. Answer the three questions.
+5. Answer the three questions.
 
-**Interpreting output:** A finished run ends with two tables in the tab where you started it, and saves them
-as `runs/part2/report.txt`. If it stopped early, or its tables end with a line saying some runs stopped
-with an error, run the same command again in a terminal tab in the homework's folder; it keeps every
-claim it already finished:
-
-```
-uv run python evaluate.py data/eval.jsonl --out runs/part2
-```
-
-The first table gives, for each version, how many claims matched the dataset's label out of how many:
-by number of articles, for all 100, and by the dataset's label. The "Accuracy" table in the results
-viewer shows the same counts with percentages. In your answers, counts and percentages are both fine.
+**Interpreting output:** The report's first table gives, for each version, how many claims matched the
+dataset's label out of how many: by number of articles, for all 100, and by the dataset's label. The
+"Accuracy" table in the results viewer shows the same counts with percentages. Counts and percentages
+are both fine in your answers.
 
 **Write-up:** In `WRITEUP.md`, under 2a, fill in the block and answer:
 
@@ -49,34 +36,33 @@ viewer shows the same counts with percentages. In your answers, counts and perce
 - Does the gap between the agent and the one-search baseline grow with the number of articles? If it does not, what might explain that?
 - The no-tools baseline read nothing. How did it do, and what does that tell you about these claims?
 
+**Troubleshooting:**
+
+- The run stopped early, or its tables end with a line saying some runs stopped with an error. Run
+  `uv run python evaluate.py data/eval.jsonl --out runs/part2` again. It keeps every claim it already
+  finished.
+
 ## 2b. Check the evidence yourself
 
 In this step you find out whether the agent's quoted evidence really supports its verdicts.
 
-**Words in this step:** A *verdict* is one of *supported*, *refuted* or *doesn't say*. The *evidence* is
-the sentences the agent quoted from Wikipedia. *The dataset's label* is the label that HoVer, the public
-dataset these claims come from, gives each claim, *supported* or *not supported*. An *entry* is one
-numbered line of a trace, a lookup or an answer.
+**Words in this step:** The *evidence* is the sentences the agent quoted from Wikipedia.
 
 **Actions:**
 
-1. Start this step's Claude session with the command the homework page shows for 2b, in a terminal tab in the
-   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
+1. Start this step's Claude session in the homework's folder.
 2. Open **Results** at the top of the homework page, then "runs/part2".
 3. Click "Clear the filters" under the claims filters.
 4. Set "Verdict" in "The agent" box to "supported or refuted"; leave "Order" at "Order of the claims file".
-5. Take rows 1 to 5.
-6. Click row 1. Under "Quoted evidence", click "entry N" to read each quote highlighted.
-7. Decide whether the quoted evidence supports the agent's verdict.
-8. Click "open the live page" whenever you're unsure, to see today's page at that quote.
-9. Fill in that claim's row of the table, then click "Next →" for row 2, and so on to row 5.
-10. Answer the two questions.
+5. Click row 1. Under "Quoted evidence", click each "entry N" to read that quote highlighted in the trace.
+6. Decide whether the quoted evidence supports the agent's verdict. If you are unsure, click "open the
+   live page" to see today's page at that quote.
+7. Fill in its row of the table under 2b. Click "Next →" and do the same for each row up to row 5.
+8. Answer the two questions.
 
-**Interpreting output:** The "Row" column counts the rows shown, in the order of the claims file, so rows 1
-to 5 are fixed by the rule. I ask for the first five so that nobody, you or Claude, chooses which claims
-get checked. A claim's page says, under "The agent", whether its verdict "matches the dataset's label":
-that is the table's fourth column. To read more of a page as the agent read it, ask Claude to run one of these (`--no-log`
-keeps them out of your record from 1b):
+**Interpreting output:** Under "The agent", a claim's page says whether its verdict "matches the
+dataset's label": that is the table's fourth column. To read more of a page as the agent read it, ask
+Claude to run one of these. `--no-log` keeps them out of `runs/part1/lookups.jsonl`, your 1b record.
 
 ```
 uv run python lookup.py --no-log read "<page title>"
@@ -89,16 +75,18 @@ uv run python lookup.py --no-log read "<page title>" "<section>"
 - Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
-**Hint:** You type all the columns. Claude can show you each claim's first words and the agent's
-verdict in the chat. Claude will not say whether the quoted evidence supports a verdict, because that
-judgment is what this step is about. Some of the dataset's claims are worded oddly, because people
-made them by rewriting other claims. Take a claim as it is written, and if you cannot tell what it
-asserts, say so in its row. When 2b is ticked, the required work is done: the page commits and pushes
-it as `Part 2 done`, and you still submit it yourself, as the Submitting section of the README says.
+**Hint:** The loop has already checked that each quote appears in something the agent read. A quote can
+be real and still not support the verdict. For a verdict of *refuted*, ask whether the quotes show that
+the claim is false.
 
-The loop already checks that every quoted sentence appears in something the agent read. A quote can be
-real and still not support the verdict. For a verdict of *refuted*, the question is whether the quotes
-show that the claim is false.
+Some claims are worded oddly, because people made them by rewriting other claims. Take each as written,
+and if you cannot tell what it asserts, say so in its row.
+
+You type every column. Claude can show you each claim's first words and verdict, but will not say
+whether the quoted evidence supports it.
+
+When 2b is ticked, the page commits and pushes your work as `Part 2 done`. Submit it yourself, as the
+README's Submitting section says.
 
 ## What I look for
 
@@ -110,44 +98,36 @@ Part 2 is 50% of the homework. At a minimum I am looking for the following:
 
 ## Extra credit: find where Wikipedia has changed
 
-This is extra credit, and it has no step on the homework page. Do it after Part 2, in any Claude
-session you like (the homework page can take you back to 2b's), or with none.
+This is extra credit, with no step on the homework page. Do it after Part 2, in any Claude session or
+with none.
 
-In this extra credit you find out what it means to judge a system that reads today's Wikipedia against
-labels made from the Wikipedia of 2017.
+HoVer labeled its claims from Wikipedia as it was in 2017; the agent reads today's Wikipedia. So some
+answers that are wrong by the dataset's label may be right about today's Wikipedia.
 
-HoVer labeled its claims from Wikipedia as it was in 2017; the agent reads it as it is today. So some
-of the agent's "wrong" answers may be right about today's Wikipedia.
-
-**Words in this step:** *The dataset's label* is the label that HoVer, the public dataset these claims
-come from, gives each claim: *supported* or *not supported*. A verdict of *refuted* or *doesn't say*
-counts as *not supported*. The *evidence* is the sentences the agent quoted from Wikipedia. *The closest
-case* is the claim that came nearest, and what kept it from being clear.
+**Words in this step:** *The closest case* is the wrong answer that came nearest to qualifying.
 
 **Actions:**
 
 1. Open **Results** at the top of the homework page, then "runs/part2".
-2. Click "Clear the filters" under the claims filters.
-3. Set "Result" in "The agent" box to "does not match the dataset's label (any reason)".
-4. Click these claims one at a time; "Next →" goes to the next one.
-5. For each, decide whether its quoted evidence supports its verdict and today's page disagrees with the label.
-6. For a claim you think qualifies, look at its page as it was at the end of 2017 (see the Hint).
-7. Find at least two such claims.
-8. Stop if you have read ten of the agent's wrong answers and found fewer than two.
-9. In that case, use the closest case you found for each remaining row, and say it is not a clear case.
-10. Type a heading `## Extra credit` at the end of `WRITEUP.md`, and under it the table and question below.
+2. Click "Clear the filters", then set "Result" in "The agent" box to "does not match the dataset's
+   label (any reason)".
+3. Click the first claim, and "Next →" for each one after it.
+4. For each, decide whether its quoted evidence supports its verdict and today's page disagrees with the
+   dataset's label.
+5. For a claim that qualifies, find its page as it was at the end of 2017 (see the Hint).
+6. Stop when you have two such claims, or when you have read ten of the agent's wrong answers. Fill any
+   remaining row with the closest case you found, and say in it what kept it from being clear.
 
-**Interpreting output:** A claim's page shows "The dataset's label" at the top. The lists after "The dataset lists
-these articles for this claim:" and "It read these pages, and each link opens the page as it is on
-Wikipedia today:" link to today's pages. The results viewer cannot show older versions; Wikipedia's "View history" can. To read today's page as the
-agent reads it, ask Claude to run this, or run it yourself in a terminal in the homework's folder:
+**Interpreting output:** A claim's page shows "The dataset's label" at the top. Its links to Wikipedia
+open the pages as they are today. To read today's page as the agent reads it, run this (or ask Claude
+to):
 
 ```
 uv run python lookup.py --no-log read "<page title>"
 ```
 
-**Write-up:** Under `## Extra credit` at the end of `WRITEUP.md`, copy this, then fill in the table
-and type your answer after the `>`:
+**Write-up:** Type a heading `## Extra credit` at the end of `WRITEUP.md`. Under it, copy this, then
+fill in the table and type your answer after the `>`:
 
 ```
 Two claims where the agent's quoted evidence supports its verdict and today's Wikipedia disagrees with the dataset's label. If you read ten of the agent's wrong answers and found fewer than two, fill each remaining row with the closest case you found, and say in that row that it is not a clear case.
@@ -162,10 +142,9 @@ What does this tell you about using a fixed dataset to judge a system that reads
 >
 ```
 
-**Hint:** For a claim you think qualifies, open the Wikipedia page that holds the fact. Choose "View
-history", open "Filter revisions", set "To date" to 31 December 2017 and press "Show revisions". The
-first row is the page as it was at the end of 2017. This is for the table's last column; if you can't
-tell what changed, say so there.
+**Hint:** To see a page as it was at the end of 2017, open it on Wikipedia, choose "View history", open
+"Filter revisions", set "To date" to 31 December 2017 and press "Show revisions". The first row is the
+page at the end of 2017.
 
-The homework page does not tick extra credit, but it commits it with the rest of your work, as the Extra
-credit section of the README says.
+The homework page does not tick extra credit, but commits it with the rest of your work, as the README's
+Extra credit section says.
