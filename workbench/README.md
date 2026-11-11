@@ -37,9 +37,11 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
   added or changed, or one of its steps' conversations grows, the page commits `Part N updated`
   once the files have been still for 30 seconds and those conversations for 2 minutes, so a
   commit never cuts a conversation off and a student who is still typing gets one commit, not
-  many. An answer in a part that isn't committed yet waits for that part's own commit. Once the
-  last part is committed, any other change (extra credit at the end of `WRITEUP.md`, a change to
-  the code) is committed the same way, as `Part 3 updated`; `uv.lock` alone is not a change.
+  many. An answer in a required part that isn't committed yet waits for that part's own commit.
+  Once every required part is committed, any other change (extra credit at the end of
+  `WRITEUP.md`, work on an extra-credit part not yet done, a change to the code) is committed the
+  same way, as an update of the latest committed part (`Part 2 updated`, or `Part 3 updated` once
+  Part 3 is done); `uv.lock` alone is not a change.
 - **Pushes.** With `push = true` in `steps.toml`, every commit the page makes is pushed to
   `origin` (`git push origin HEAD`). A push never asks for a login and never blocks anything. If
   it fails, the commit stays on the laptop, the page says in one sentence that the work is
