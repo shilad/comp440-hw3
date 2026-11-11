@@ -117,8 +117,9 @@ record lists no files under `runs/`; the "Results" link in the header stays.
 
 ## The claim finder
 
-Addresses under `/claims` belong to the claim finder in `finder/`, mounted the same way and
-reached from "Find claims" in the header: `finder.web.handle(method, path, query, body, repo)`
+Addresses under `/claims` belong to the claim finder in `finder/`, mounted the same way. Since
+Nov 11 no step uses it and the header has no link to it; the routes stay until the instructor
+decides whether to delete `finder/`. `finder.web.handle(method, path, query, body, repo)`
 returns `(status, content type, body)`, with `body` the bytes of a POST. `/claims` redirects to
 `/claims/`. `finder/web.py` lists its addresses; it imports `finder.search` only when a search or
 a save arrives, so the page starts without it. Without `finder/`, `/claims` says in one sentence
@@ -162,7 +163,7 @@ shows in its header as "about 25 minutes". A `files` entry is only ever checked 
 `files = [".env"]` is safe; the page never opens, shows or links to a `never_read` file. Then `[[part]]` tables (`number`, `title`,
 `due`, and `extra_credit = true` for a part that isn't required) and `[[step]]` tables. A step's
 id is its name on the page (`"0b"`); its section in `WRITEUP.md` starts with that name
-(`## 0c. Ask the model to assess a claim without tools`), and `slots = ["0c.*"]` takes every
+(`## 0b. Ask the model to assess a claim without tools`), and `slots = ["0b.*"]` takes every
 question, table and pasted block in that section. A key the page doesn't know is ignored, with a
 note in the terminal.
 

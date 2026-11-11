@@ -463,7 +463,9 @@ def test_the_cap_at_112_holds_with_removed_claims(tmp_path):
                          "need. The 2 claims you removed earlier stay removed.")
 
 
-def test_the_homework_page_links_to_the_screen():
+def test_the_homework_page_no_longer_links_to_the_screen():
+    """Step 0b, which used the screen, is gone (the instructor, Nov 11: "drop 0b"). The screen's
+    routes stay under /claims, but the homework page's header has no link to them."""
     page = (ROOT / "workbench/static/index.html").read_text()
-    assert '<a href="/claims/" target="_blank" rel="noopener">Find claims</a>' in page
-    assert page.index("Results</a>") < page.index("Find claims</a>")
+    assert "/claims" not in page and "Find claims" not in page
+    assert '<a href="/results/" target="_blank" rel="noopener">Results</a>' in page
