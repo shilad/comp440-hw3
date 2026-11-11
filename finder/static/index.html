@@ -50,13 +50,13 @@
     </form>
     <details class="fold how">
       <summary>How the search works</summary>
-      <p>The claim finder is a small retrieval system. Its code is in <code>finder/search.py</code>.</p>
+      <p>The claim finder is a small retrieval system. Its code is in <code>finder/search.py</code>, and step 0b
+        asks you to read it.</p>
       <ul>
-        <li>A search by keyword ranks the claims that contain at least one of your words, with BM25.</li>
-        <li>A search by meaning is an embedding search. It averages the word vectors of your words, does the same
-          for each claim, and ranks the claims by how close the two averages are. A claim can match without
-          sharing a word with your search.</li>
-        <li>Both combines the two rankings with reciprocal rank fusion.</li>
+        <li>A search by keyword finds the claims that contain your words.</li>
+        <li>A search by meaning is an embedding search. It finds the claims whose words are close in meaning to
+          yours, so a claim can match without sharing a word with your search.</li>
+        <li>Both combines the two rankings into one.</li>
         <li>Each claim is searched by its text, the titles of the Wikipedia articles it needs, and those articles'
           one-line descriptions.</li>
       </ul>

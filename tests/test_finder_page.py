@@ -161,9 +161,13 @@ def test_the_screen_uses_the_names_the_student_sees():
     assert page.count('class="lede"') == 1
     how = re.search(r'<details class="fold how">\s*<summary>How the search works</summary>(.*?)</details>', page, re.S)
     assert how and "<details class=\"fold how\" open" not in page
-    for words in ("retrieval", "finder/search.py", "BM25", "embedding search", "word vectors",
-                  "reciprocal rank fusion", "one-line descriptions"):
+    for words in ("retrieval", "finder/search.py", "step 0b\n        asks you to read it", "embedding search",
+                  "one-line descriptions"):
         assert words in how.group(1), words
+    # How the code ranks is what step 0b asks the student to find by reading finder/search.py, so the
+    # screen does not say it.
+    for words in ("BM25", "reciprocal rank fusion", "fusion", "averag", "cosine"):
+        assert words not in page + js, words
     # The button that selects every claim shown sits beside the count of claims with all the words.
     assert re.search(r'<p class="matches" id="matches"></p>\s*<button class="pick" id="all" type="button">'
                      r"Select all shown</button>", page)
