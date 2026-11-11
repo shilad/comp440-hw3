@@ -1,10 +1,10 @@
 # COMP 440 HW3 Part 0: Set up and find your claims
 
-Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
-
 In this part you get your copy of the homework running, and create a dataset of claims about a few
 topics you are interested in. Then you check one claim by feeding it to an LLM, using a Wikipedia search,
 and using the agent. It should take about 1 hour and 40 minutes.
+
+Back to the [assignment page](../README.md).
 
 ## 0a. Get your copy running
 

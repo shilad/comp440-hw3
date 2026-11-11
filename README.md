@@ -16,6 +16,8 @@ measure the effectiveness of different methods. You will:
 For extra credit, in Part 3, you find out why the agent fails on your claims, make one change, and see
 where Wikipedia, which is written by its volunteer editors, is thin, out of date or wrong.
 
+Everything is due 8:00am Tuesday, November 24.
+
 ## The task
 
 The agent is given a claim, one sentence that is either true or false, and nothing else. Here is the
@@ -116,8 +118,6 @@ You used all of these in earlier homeworks:
 | [Part 1: How the agent works](instructions/part1.md) | Write the agent's loop, check one claim yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 35% |
 | [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy by how many articles a claim needs, and check the agent's evidence yourself | 50% |
 | [Part 3 (extra credit): Why the agent fails, and one change](instructions/part3.md) | Sort the agent's failures on your claims, make one change, and write up what you found | Extra credit |
-
-Everything is due 8:00am Tuesday, November 24.
 
 I expect this homework to take about 5 hours and 45 minutes in all, in three sittings: about 1 hour and
 40 minutes for Part 0, about 3 hours for Part 1, and about an hour for Part 2. On top of that, the full run in
