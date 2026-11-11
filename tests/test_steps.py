@@ -164,8 +164,10 @@ PART0_COMMANDS = {
 CLAIM_1B = ("Vic & Anthony's Steakhouse is located at the American casino that was combined with the "
             "California Club. The casino is owned by Landry's, Inc.")
 
+# grep -n: the tutor finds one claim's line in a run's agent.jsonl with it (the Grep tool is not
+# in every Claude Code version).
 GLOBAL_ALLOW = ["Bash(git status:*)", "Bash(git diff:*)",
-                "Bash(ls:*)", "Edit(WRITEUP.md)"]
+                "Bash(ls:*)", "Bash(grep -n:*)", "Edit(WRITEUP.md)"]
 
 # Words students must not see on the homework page (the step list's agreed vocabulary).
 RULED_OUT = ["guardrail", "guardrails", "hop", "hops", "pipeline", "scaffold", "harness",
@@ -606,6 +608,18 @@ def test_the_strict_rules_about_claims_live_where_the_student_does_the_agents_jo
         assert "does the same work" in flat(a.step(step_id).brief), step_id
     assert "Never break a claim into parts" not in flat(a.tutor)
     assert "Do not do the student's reading of a claim for them" in flat(a.tutor)
+
+
+def test_no_rule_names_the_grep_tool(a):
+    """Claude Code 2.1.322 has no Grep tool ("No such tool available: Grep"), so a rule that names it
+    sends the tutor to a pipeline. The rules name `grep -n` through the Bash tool instead, one plain
+    command on one file, which the global allow list runs without asking."""
+    for where, text in [("tutor", a.tutor)] + [(s.id, s.brief) for s in a.steps]:
+        assert "Grep tool" not in text, where
+    for s in a.steps:
+        for c in commands(s.brief):
+            if c.startswith("grep"):
+                assert c.startswith("grep -n ") and not re.search(r"\s-\w*[rR]|\||\*", c), (s.id, c)
 
 
 def test_the_loop_has_more_than_two_ways_to_end():
