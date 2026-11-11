@@ -397,3 +397,45 @@ def test_every_label_is_one_the_page_knows(step):
     page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
     unknown = [label for label in parts(page) if label != "(opening)" and label not in FOLDED + OPEN_LABELS]
     assert not unknown, f"{step} has labels the homework does not use: {unknown}"
+
+
+# ---- the due date, once ------------------------------------------------------------------------
+
+# The instructor (Nov 11): "The whole things is due Nov 24th. You don't need to keep repeating that.
+# Put it up top and not again." README states it once, after the goals and the extra-credit sentence
+# (the page reads README's first paragraph and the bullets after it, so it cannot come before them).
+DUE = "Everything is due 8:00am Tuesday, November 24."
+PART_OPENINGS = {
+    0: "In this part you get your copy of the homework running, and create a dataset of claims about a few "
+       "topics you are interested in.",
+    1: "In this part you build and study the agent.",
+    2: "In this part you read the full run you started in 1e:",
+    3: "In this part you sort out why the agent fails on your evaluation claims,",
+}
+
+
+def test_the_due_date_is_stated_once_at_the_top_of_readme():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    flat = one_line(readme)
+    assert flat.count(DUE) == 1
+    assert flat.index(EXTRA_CREDIT_GOAL) < flat.index(DUE) < flat.index("## The task")
+    lines = [line for line in readme.splitlines() if re.search(r"November 24|Nov\.? 24|\bdue\b", line, re.I)]
+    assert lines == [DUE], lines
+
+
+@pytest.mark.parametrize("name", ["WRITEUP.md"] + [page for _, page, _ in PARTS.values()])
+def test_no_other_file_states_the_due_date(name):
+    text = (ROOT / name).read_text(encoding="utf-8")
+    assert not re.search(r"November 24|Nov\.? 24|\bdue\b|8:00am", text, re.I), name
+
+
+@pytest.mark.parametrize("n", sorted(PARTS))
+def test_each_page_opens_with_its_part_and_links_back(n):
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from workbench.steps import intro
+    text = (ROOT / PARTS[n][1]).read_text(encoding="utf-8")
+    assert intro(text).startswith(PART_OPENINGS[n]), intro(text)[:80]
+    assert "Back to the [assignment page](../README.md)." in text
+    before_first_step = text.split("\n## ", 1)[0]
+    assert "Back to the [assignment page](../README.md)." in before_first_step

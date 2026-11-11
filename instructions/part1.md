@@ -1,10 +1,10 @@
 # COMP 440 HW3 Part 1: How the agent works
 
-Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
-
 In this part you build and study the agent. You write its loop, check one claim yourself, watch it work
 on your 12 development claims, write its instructions, and then start the full run on your 100
 evaluation claims. It should take about 3 hours.
+
+Back to the [assignment page](../README.md).
 
 ## 1a. Write the loop
 

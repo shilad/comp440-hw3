@@ -1,10 +1,10 @@
 # COMP 440 HW3 Part 2: The agent against the baselines
 
-Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
-
 In this part you read the full run you started in 1e: how often each version matched the dataset's
 label, and whether the agent's evidence supports its verdicts when you check it yourself. It should take
 about an hour.
+
+Back to the [assignment page](../README.md).
 
 ## 2a. Compare accuracy
 

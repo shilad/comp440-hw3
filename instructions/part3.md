@@ -1,12 +1,12 @@
 # COMP 440 HW3 Part 3 (extra credit): Why the agent fails, and one change
 
-Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
-
 In this part you sort out why the agent fails on your evaluation claims, make one change aimed at the
 most common failure, and write up what you found. It should take a little over an hour.
 
 Part 3 is extra credit: the homework is complete when Parts 0 to 2 are done. If you do Part 3, finish it
 before you submit.
+
+Back to the [assignment page](../README.md).
 
 ## 3a. Sort the failures
 
