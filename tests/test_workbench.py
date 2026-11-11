@@ -1609,3 +1609,25 @@ def test_claude_md_is_in_step_with_the_steps_file():
     assert (ROOT / "CLAUDE.md").read_text() == claude_md.text(a), \
         "CLAUDE.md is out of date: run `uv run python -m workbench.claude_md`"
     assert a.tutor.strip() in (ROOT / "CLAUDE.md").read_text()
+
+
+def test_every_step_lists_when_to_start_and_when_to_stop_its_claude_session():
+    """The instructor, Nov 11: the tasks say when to start and stop each step's Claude session."""
+    a = steps.load(ROOT / "steps.toml")
+    for s in a.steps:
+        ask = a.session_tasks(s)
+        assert "/exit" in ask["stop"] and ask["stop"].endswith("."), s.id
+        own = [c.task for c in steps.checkpoints(s) if "Start this step's Claude session" in c.task]
+        if own:   # the step's own task says when to start (0a: after .env and the name)
+            assert ask["start"] == "", s.id
+        else:
+            assert ask["start"].startswith("First, start this step's Claude session") and ask["start"].endswith("."), s.id
+
+
+def test_the_page_receives_the_two_session_tasks_and_ticks_only_the_first(tmp_path):
+    h = homework(tmp_path, {"steps.toml": 'start_task = "Start Claude."\nstop_task = "Type /exit."\n' + STEPS})
+    sent = [s["session_tasks"] for s in server.App(h.student).assignment()["steps"]]
+    assert sent and all(x == {"start": "Start Claude.", "stop": "Type /exit."} for x in sent)
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert "if (ask.start) rows.unshift(row(started, ask.start" in js      # ticked once the session has started
+    assert "if (ask.stop) rows.push(noTick(" in js                         # the page cannot see /exit

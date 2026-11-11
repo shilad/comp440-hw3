@@ -145,6 +145,10 @@ claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus
 - `--plugin-dir` loads the `page` skill: Claude posts a status line, the student's prediction,
   and the checkpoints it ticks, by running `.workbench/page.py`, which finds the server's port in
   `.workbench/server.json`.
+- Every step's Tasks list begins with when to start the step's Claude session and ends with when
+  to stop it (`start_task` and `stop_task` in the steps file, which a step may reword or leave
+  out). The page ticks the first once the session has started. It cannot see `/exit`, so the
+  last has no tick.
 - The page says nothing under the command about a model that is not available. Step 0a's
   Troubleshooting and the README's "If something goes wrong" do: delete
   `--model claude-opus-5-5 --effort medium` from the command and run the rest of it.

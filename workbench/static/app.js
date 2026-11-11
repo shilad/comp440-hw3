@@ -259,7 +259,7 @@ function update() {
     $(".step-head", li).setAttribute("aria-expanded", String(open));
     byId(`body-${s.label}`).hidden = !open;
     if (open && SESS[s.id]) {
-      paint(byId(`dw-${s.label}`), counts(s, st, SESS[s.id].record));
+      paint(byId(`dw-${s.label}`), counts(s, st, SESS[s.id].record, SESS[s.id].started));
       paint(byId(`pg-${s.label}`), recordCol(s, st, SESS[s.id]));
     }
   }
@@ -268,9 +268,13 @@ function update() {
 // Tasks: the step's checkpoints. One that the student's answers complete shows each question
 // and their answer; the rest show their task, a full sentence saying what to do. A setup step
 // shows every task, numbered, each with its tick (and the student's answer under one they answer).
-function counts(s, st, rec) {
+// The list begins with when to start the step's Claude session, ticked once it has started, and
+// ends with when to stop it. The page cannot see /exit, so that last task has no tick.
+function counts(s, st, rec, started) {
   const row = (ok, text, sub, mine) => `<div class="check ${ok ? "ok" : ""}"><span class="tick">${ok ? "✓" : "○"}</span>
       <div><span class="q">${codeText(text)}</span>${sub ? `<div class="ans ${mine ? "mine" : ""}">${esc(sub)}</div>` : ""}</div></div>`;
+  const noTick = (text) => `<div class="check"><span class="tick"></span><div><span class="q">${codeText(text)}</span></div></div>`;
+  const ask = s.session_tasks || {}, numbered = rec.checkpoints.filter((c) => c.n).length;
   const rows = s.setup ? rec.checkpoints.filter((c) => c.n).map((c) => row(c.done, `${c.n}. ${c.task || c.text}`,
       c.slots.length && c.slots.every((x) => x.filled) ? c.slots.map((x) => trim(x.answer, 200)).join(", ") : "", true))
     : rec.checkpoints.flatMap((c) => c.slots.length
@@ -278,6 +282,8 @@ function counts(s, st, rec) {
         x.filled ? trim(x.answer, 400) : (x.todo || `Not written yet. Type it in WRITEUP.md, under ${s.label}.`), x.filled))
     : [row(c.done, c.task || c.text, c.files.join(", "), false)]);
   if (!rows.length && st.manual) rows.push(row(st.complete, "Claude ticks this step once you have done what it asks.", "", false));
+  if (ask.start) rows.unshift(row(started, ask.start, "", false));
+  if (ask.stop) rows.push(noTick(s.setup ? `${numbered + 1}. ${ask.stop}` : ask.stop));
   return rows.length ? `<span class="label">Tasks</span>${rows.join("")}` : "";
 }
 

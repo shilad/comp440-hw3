@@ -42,6 +42,8 @@ class Step:
     # A command the student runs in a terminal tab of their own (a long run), shown in a second
     # box under the Claude command: a table with `command` and `note`.
     run_yourself: dict | None = None
+    start_task: str | None = None   # this step's own first task (start Claude); "" leaves it out
+    stop_task: str | None = None    # this step's own last task (stop Claude); "" leaves it out
     hide_results: bool = False   # no link to this step's results (a step that says not to look yet)
     # What counts: the step's checkpoints, in order, worded as outcomes, not moves. Each is a
     # string, or a table with `text` and the `files` or `slots` that tick it by themselves; one with
@@ -88,7 +90,14 @@ class Assignment:
     never_read: list[str] = field(default_factory=list)
     overview: str | None = None
     sample_claim: str = ""
+    start_task: str = ""   # the first task of every step: when to start the step's Claude session
+    stop_task: str = ""    # the last task of every step: when to stop it
     source: Path | None = None
+
+    def session_tasks(self, s: Step) -> dict[str, str]:
+        """The two tasks about the step's Claude session, in the step's own wording if it has one."""
+        return {"start": self.start_task if s.start_task is None else s.start_task,
+                "stop": self.stop_task if s.stop_task is None else s.stop_task}
 
     def step(self, step_id: str) -> Step:
         """A step by its id ("0.2") or its label ("0b")."""
@@ -138,6 +147,8 @@ def load(path: Path) -> Assignment:
         never_read=data.get("never_read", []),
         overview=data.get("overview") or None,
         sample_claim=data.get("sample_claim", ""),
+        start_task=data.get("start_task", ""),
+        stop_task=data.get("stop_task", ""),
         source=path,
     )
 

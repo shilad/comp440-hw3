@@ -22,6 +22,7 @@
 #   - allow: the commands the step's session may run without asking the student. The global
 #     `allow` list below applies to every step; reading files never needs asking.
 #   - setup = true: a set-up step, whose text and checkpoints show as plain steps.
+#   - start_task, stop_task: this step's own wording of the first and last task (see below).
 #   - claim = true: the page shows `sample_claim` beside the step's summary.
 #
 # A step is complete when every slot it names is filled and every file it names exists. Steps
@@ -35,6 +36,12 @@ title = "COMP 440 HW3: Checking Claims Against Wikipedia"
 sample_claim = 'The composer of "Persian Surgery Dervishes" was born on June 24, 1935.'
 overview = "README.md"
 writeup = "WRITEUP.md"
+# The first and the last task the page lists in every step: when to start the step's Claude
+# session and when to stop it. A step may give its own `start_task` or `stop_task`, and an empty
+# one is left out (0a's own third task says when to start). The page ticks the first once the
+# session has started. It cannot see /exit, so the last task has no tick.
+start_task = "First, start this step's Claude session: copy the command on this page and paste it into a terminal in your homework folder."
+stop_task = "Last, when every task above is ticked, type /exit in that terminal to stop this step's Claude session."
 commit_parts = true
 push = true
 # The class repository. The page fetches its main branch now and then, and offers students an
@@ -322,6 +329,7 @@ page = "instructions/part0.md"
 section = "0a. Get your copy running"
 minutes = 20
 setup = true
+start_task = ""   # this step's third task says when to start its Claude session
 slots = ["Name"]
 files = [".env", "runs/part0/setup-check.txt"]
 allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"]
