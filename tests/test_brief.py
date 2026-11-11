@@ -193,7 +193,7 @@ def test_no_placeholder_is_left(name):
 
 # ---- step 1a: the student writes the loop -----------------------------------------------------
 
-# The six rules, word for word as the check prints them and the tutor's brief gives them.
+# The six rules, word for word as the page gives them (the check prints their titles).
 LOOP_RULES = [
     "1. **Ask the model.** Each turn, send the model the system text, the tools and the whole conversation so "
     "far. Add the tokens the reply used to `tokens`, and add the reply to the conversation as the assistant's "
@@ -208,10 +208,11 @@ LOOP_RULES = [
     "a problem, send back `REJECTED` followed by the problem, and after `MAX_REJECTED` rejected answers stop "
     "with no verdict.",
     "5. **Enforce the limit.** Once `steps` has reached `max_steps`, do not run another lookup. The first time, "
-    "send back `OUT_OF_STEPS`. If the model asks for a lookup again on a later turn, stop with no verdict.",
-    "6. **Stop when the model stops.** If a reply has no tool call, remind the model once with `REMINDER`; if "
-    "the next reply has none either, stop with no verdict. If a reply's `stop_reason` is `\"refusal\"`, stop "
-    "with no verdict.",
+    "send back `OUT_OF_STEPS`, and remember that you sent it. If the model asks for a lookup again on a later "
+    "turn, stop with no verdict.",
+    "6. **Stop when the model stops.** If a reply has no tool call, remind the model with `REMINDER`; if the "
+    "next reply has none either, stop with no verdict. The model is reminded each time it stops calling tools, "
+    "but never twice in a row. If a reply's `stop_reason` is `\"refusal\"`, stop with no verdict.",
 ]
 
 
