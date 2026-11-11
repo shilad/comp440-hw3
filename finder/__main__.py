@@ -41,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser(description="Find HoVer claims about one or more topics.")
     parser.add_argument("topics", nargs="+", help="each topic in a few words, in quotes")
     parser.add_argument("--save", action="store_true",
-                        help="save the best 112 over data/dev.jsonl (12) and data/eval.jsonl (100)")
+                        help="save the best 112, replacing data/dev.jsonl (12 claims) and data/eval.jsonl (100 claims)")
     parser.add_argument("--how", choices=["keyword", "meaning", "both"], default="both",
                         help="which way of searching to save from")
     args = parser.parse_args()
