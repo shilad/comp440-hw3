@@ -48,7 +48,7 @@ ALL_STEPS = [step for _, _, steps in PARTS.values() for step in steps]
 LABELS = [
     ("**Words in this step:**", False),
     ("**Actions:**", True),
-    ("**Output:**", False),
+    ("**Interpreting output:**", False),
     ("**Write-up:**", True),
     ("**Completion:**", True),
     ("**Troubleshooting:**", False),
@@ -59,7 +59,7 @@ LABELS = [
 # phrase, with a full sentence after it. No page uses the old ones.
 OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**", "**What to do:**",
                     "**What you'll see:**", "**What to write:**", "**You're done when:**",
-                    "**If something goes wrong:**"]
+                    "**If something goes wrong:**", "**Output:**"]
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
@@ -335,3 +335,63 @@ def test_0b_links_the_retrieval_code_and_the_lines_hold_the_search():
     start = {name: next(i + 1 for i, line in enumerate(code) if line.startswith(f"def {name}("))
              for name in ("search", "pick")}
     assert start["search"] <= 165 < start["pick"], start
+
+
+# ---- what stays open on the homework page ------------------------------------------------------
+
+# The page folds these parts away; a student sees the rest without a click: the step's opening (its
+# summary, and in Part 0 and 1b the claim it checks), Actions, Write-up, and in 1a The six rules. So
+# the open parts hold only what the student needs to do the step: an explanation goes in a fold.
+FOLDED = ["Words in this step", "Interpreting output", "Completion", "Troubleshooting", "Hint"]
+OPEN_LABELS = ["Actions", "Write-up", "The six rules"]
+
+
+def parts(section):
+    """A step's section cut the way the page cuts it: the opening, then each part that starts with a
+    paragraph opening on a bold label, as {label: [paragraph, ...]}."""
+    out, name, para, paras = {}, "(opening)", [], []
+    fence = False
+    for line in section.splitlines() + [""]:
+        if line.startswith("```"):
+            fence = not fence
+        if not line.strip() and not fence:
+            if para:
+                paras.append("\n".join(para))
+                para = []
+            continue
+        m = re.match(r"^\*\*([^*]+):\*\*", line) if not para and not fence else None
+        if m:
+            out[name] = paras
+            name, paras = m.group(1), []
+        para.append(line)
+    out[name] = paras
+    return out
+
+
+@pytest.mark.parametrize("step", ALL_STEPS)
+def test_the_open_parts_hold_no_loose_explanation(step):
+    page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
+    cut = parts(page)
+    loose = []
+    listed = re.compile(r"^([-*]|\d+\.)\s|^```|^\|")
+    for label in OPEN_LABELS:
+        paras = cut.get(label, [])
+        for i, para in enumerate(paras[1:], 1):
+            # A list, a block or a table; or the line that leads into the list right after it.
+            leads_in = para.endswith(":") and i + 1 < len(paras) and listed.match(paras[i + 1].lstrip())
+            if not (listed.match(para.lstrip()) or leads_in):
+                loose.append(f"{label}: {one_line(para)[:70]}")
+    opening = cut["(opening)"]
+    for i, para in enumerate(opening[1:], 1):
+        is_quote = para.startswith(">")
+        leads_to_quote = i + 1 < len(opening) and opening[i + 1].startswith(">") and para.endswith(":")
+        if not (is_quote or leads_to_quote):
+            loose.append(f"opening: {one_line(para)[:70]}")
+    assert not loose, f"{step}: move these under a folding label: {loose}"
+
+
+@pytest.mark.parametrize("step", ALL_STEPS)
+def test_every_label_is_one_the_page_knows(step):
+    page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
+    unknown = [label for label in parts(page) if label != "(opening)" and label not in FOLDED + OPEN_LABELS]
+    assert not unknown, f"{step} has labels the page neither folds nor knows: {unknown}"

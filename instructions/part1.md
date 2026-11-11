@@ -4,12 +4,20 @@ Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you build and study the agent. You write its loop, check one claim yourself, watch it work
 on your 12 development claims, write its instructions, and then start the full run on your 100
-evaluation claims. It should take about 2 hours.
+evaluation claims. It should take about 3 hours.
 
 ## 1a. Write the loop
 
 In this step you write the agent loop yourself. The loop asks the model for lookups, runs the lookups it
 chooses, sends back what they return, and stops.
+
+**Words in this step:** *The agent* is the program in `agent.py` and its loop, in which the model
+(Claude Haiku, the small Claude model that the agent and both baselines call) picks the next lookup,
+reads what comes back, and decides when to answer. A *lookup* is one call to `search`, `read` or
+`wikidata`. A *tool* is one of the four things the agent can call: `search`, `read`, `wikidata` and
+`answer`. A *tool_use block* is the part of the model's reply that asks for a tool. A *tool_result* is
+what your loop sends back to the model for one tool call. *The reference loop* is the loop in
+`reference_loop.py`, which your copy uses until yours passes.
 
 This is the one step where you write code. Everything around the loop is written for you; the loop is
 yours. Four files are part of this step:
@@ -26,14 +34,6 @@ yours. Four files are part of this step:
   Wikipedia. Run it as often as you like: it needs no key and no network, takes a few seconds, and costs
   nothing.
 
-**Words in this step:** *The agent* is the program in `agent.py` and its loop, in which the model
-(Claude Haiku, the small Claude model that the agent and both baselines call) picks the next lookup,
-reads what comes back, and decides when to answer. A *lookup* is one call to `search`, `read` or
-`wikidata`. A *tool* is one of the four things the agent can call: `search`, `read`, `wikidata` and
-`answer`. A *tool_use block* is the part of the model's reply that asks for a tool. A *tool_result* is
-what your loop sends back to the model for one tool call. *The reference loop* is the loop in
-`reference_loop.py`, which your copy uses until yours passes.
-
 **Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 1a, in a terminal tab in the
@@ -42,9 +42,11 @@ what your loop sends back to the model for one tool call. *The reference loop* i
 3. Open `my_loop.py` in your editor.
 4. Write the loop below the line that says where it goes, one rule at a time, and save. Remember, Claude
    can help you.
-5. After each rule, ask Claude to run the check, or run it yourself in a terminal in the homework's folder.
+5. After each rule, ask Claude to run the check, or run `uv run python check_loop.py` yourself in a
+   terminal in the homework's folder.
 6. Fix the first `NOT YET` line, save, and run the check again.
-7. When every rule passes, open `reference_loop.py` and compare it with your loop.
+7. When every rule passes, open `reference_loop.py` and compare it with your loop. Don't open it
+   before then, because reading it first shows you a finished loop before you have written your own.
 8. Answer the three questions in `WRITEUP.md`.
 
 **The six rules:**
@@ -105,7 +107,7 @@ what your loop sends back to the model for one tool call. *The reference loop* i
 - `REJECTED`, `OUT_OF_STEPS`, `REMINDER` and the other sentences are in `agent.py`. `OUT_OF_STEPS` and
   `REJECTED_TOO_OFTEN` have a `{n}` to fill in with `.format(n=...)`.
 
-**Output:** Claude runs this command, or you run it yourself:
+**Interpreting output:** Claude runs this command, or you run it yourself:
 
 ```
 uv run python check_loop.py
@@ -172,10 +174,7 @@ has used all its steps.
 
 In this step you check one claim yourself, using only the agent's four tools.
 
-You'll read the agent's traces much more closely once you've made the same choices yourself. Use
-**only** the agent's tools, not your browser: the point is to see only what the agent sees. You have the
-agent's own limit: if you have made 12 lookups without answering the claim, stop and answer *doesn't
-say*, as the agent would have to.
+The claim you check in this step:
 
 > Vic & Anthony's Steakhouse is located at the American casino that was combined with the
 > California Club. The casino is owned by Landry's, Inc.
@@ -188,15 +187,17 @@ verdict is based on.
 
 1. Start this step's Claude session with the command the homework page shows for 1b, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Decide on one lookup: which tool, and what to ask it.
+2. Decide on one lookup: which tool, and what to ask it. Use **only** the agent's tools, not your
+   browser, because the point is to see only what the agent sees.
 3. Tell Claude that lookup, and read what comes back.
 4. Note why you chose that lookup, for the table.
-5. Repeat actions 2 to 4 until you have a verdict, or have made 12 lookups.
+5. Repeat actions 2 to 4 until you have a verdict. You have the agent's own limit: if you have made 12
+   lookups without answering the claim, stop and answer *doesn't say*, as the agent would have to.
 6. Ask Claude to paste your lookups into the table under 1b in `WRITEUP.md`.
 7. Type your reason for each lookup in the "Why you chose it" column.
 8. Answer the question under the table.
 
-**Output:** For each lookup, Claude runs one of these and pastes exactly what the agent would
+**Interpreting output:** For each lookup, Claude runs one of these and pastes exactly what the agent would
 see:
 
 ```
@@ -229,7 +230,9 @@ of the table has every cell filled, and the answer has text after the `>`.
   `uv run python lookup.py read "<page title>"`, or the shell misreads it. Check Claude's command.
 
 **Hint:** Claude will not suggest a lookup or say what a result means, because choosing the lookups is
-the agent's job you are doing here. It will explain what a tool does or how to read its output.
+the agent's job you are doing here. It will explain what a tool does or how to read its output. I ask
+you to do this before you watch the agent, because you'll read its traces much more closely once you've
+made the same choices yourself.
 
 ## 1c. Watch the agent work
 
@@ -256,7 +259,7 @@ supported*. A *trace* is the agent's lookups for one claim, in order, with what 
    claim?
 8. Fill in one row of the table for each, and answer the question under it.
 
-**Output:** Claude runs this command. It takes about a minute and costs about 2 cents:
+**Interpreting output:** Claude runs this command. It takes about a minute and costs about 2 cents:
 
 ```
 uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/before
@@ -299,30 +302,28 @@ lookups for one claim, in order, with what each returned.
 
 1. Start this step's Claude session with the command the homework page shows for 1d, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Write your own instructions in `instructions.md`, in your editor, covering at least the four points
-   below, and save.
+2. Write your own instructions in `instructions.md`, in your editor, and save. Add to the three
+   sentences already there, or rewrite them, but keep what they say about finishing with `answer` and
+   the three verdict words. At a minimum your instructions must say:
+   - how to break a claim into the pieces that have to be checked;
+   - when to use `wikidata` instead of reading a page;
+   - when the agent has enough evidence to stop;
+   - when to answer *doesn't say*.
 3. Ask Claude to run the agent on your 12 development claims again.
 4. Open **Results** at the top of the homework page and click "Compare two runs".
 5. Click "Step 1d: runs/part1/before with runs/part1/after" and read "Accuracy".
 6. Under "Claims that changed", click "Open A and B" to read a claim's two traces side by side.
 7. Answer the question in `WRITEUP.md`.
 
-At a minimum your instructions must say:
-
-- how to break a claim into the pieces that have to be checked;
-- when to use `wikidata` instead of reading a page;
-- when the agent has enough evidence to stop;
-- when to answer *doesn't say*.
-
-Add to the three sentences already in `instructions.md`, or rewrite them, but keep what they say about
-finishing with `answer` and the three verdict words.
-
-**Output:** For the run with your instructions, Claude runs this command. It takes about a
+**Interpreting output:** For the run with your instructions, Claude runs this command. It takes about a
 minute and costs about 2 cents, or more if your instructions make the agent do more:
 
 ```
 uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after
 ```
+
+It ends with the same two tables as the run in 1c, and "Compare two runs" in the results viewer sets
+the two runs side by side.
 
 **Write-up:** Answer this question in `WRITEUP.md`, under 1d:
 
@@ -364,23 +365,19 @@ are in `data/eval.jsonl`.
 1. Start this step's Claude session with the command the homework page shows for 1e, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open another terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
-3. Start the full run yourself in that tab, with the command under "Output".
+3. Start the full run yourself in that tab, with this command:
+   `uv run python evaluate.py data/eval.jsonl --out runs/part2`.
 4. Leave that tab open and your laptop awake until the run ends with two tables.
 5. While it runs, fill in the predictions table under 1e in `WRITEUP.md`, and answer the question under
    it.
 6. Don't look at the run's results before your predictions are saved. The run shows its results only
    when it ends, as two tables; the progress lines before that only count claims.
 
-**Output:** You run this command yourself:
-
-```
-uv run python evaluate.py data/eval.jsonl --out runs/part2
-```
-
-It takes about 10 minutes and costs about 28 cents on your key, which is charged to my account for the
+**Interpreting output:** The full run takes about 10 minutes and costs about 28 cents on your key, which is charged to my account for the
 course, not to you. It runs the no-tools baseline on all 100 of your evaluation claims, then the
 one-search baseline, then the agent with your `instructions.md` from 1d. It prints a
-progress line every ten claims, ends with two tables, and is saved in `runs/part2`.
+progress line every ten claims, ends with two tables, and is saved in `runs/part2`. You read the two
+tables in 2a.
 
 **Write-up:** In `WRITEUP.md`, under 1e, fill in the table and answer:
 
