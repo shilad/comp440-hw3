@@ -487,7 +487,7 @@ def test_a_code_span_or_a_link_in_a_task_or_question_shows_as_such_and_nothing_e
     helpers = text_helpers(js)
     assert "linkText(esc(part))" in helpers and "esc(part.slice(1, -1))" in helpers   # escaped first
     for site in ('<span class="q">${codeText(text)}</span>', "codeText(now.question)", "codeText(now.todo)",
-                 'line("tick", codeText(x.text) + ".")', "${codeText(c.task || c.text)}</li>"):
+                 'line("tick", codeText(x.text) + ".")', "row(c.done, `${c.n}. ${c.task || c.text}`"):
         assert site in js, site
     node = node_or_none()
     if not node:                                            # a laptop without node: the checks above stand
@@ -521,7 +521,7 @@ def test_a_steps_summary_shows_open_and_closed_and_only_setup_is_plain(tmp_path)
     js = (ROOT / "workbench/static/app.js").read_text()
     css = (ROOT / "workbench/static/style.css").read_text()
     assert ".step.open .step-sum" not in css                # shown when the step is open too
-    assert "const plain = s.setup;" in js and "s.goal" not in js
+    assert "const plain" not in js and "s.goal" not in js     # one layout for every step, no goal
 
 
 def test_a_part_marked_extra_credit_is_labelled_not_counted_and_still_committed(tmp_path):
@@ -559,17 +559,28 @@ def test_the_session_opens_on_the_summary_and_asks_for_no_prediction(tmp_path):
     assert "Waiting for your prediction" not in skill and "said their prediction" not in skill
 
 
-def render_docs(texts):
-    """Each text as the page renders a step's instructions (doc()), run in node; None without node."""
+def page_function(js, name):
+    """The source of a top-level function in app.js."""
+    start = js.index(f"function {name}(")
+    return js[start:js.index("\n}\n", start) + 3]
+
+
+def run_layout_js(calls, setup=""):
+    """Each expression's value, from the page's own text helpers, sections(), leftCol(), counts()
+    and trim, run in node; None without node. `setup` runs first (to set A, say)."""
     node = node_or_none()
     if not node:
         return None
-    lines = (ROOT / "workbench/static/app.js").read_text().splitlines()
+    js = (ROOT / "workbench/static/app.js").read_text()
+    lines = js.splitlines()
     first = next(i for i, x in enumerate(lines) if x.startswith("const esc ="))
     last = next(i for i, x in enumerate(lines) if x.startswith("// Replace an element's HTML"))
-    run = "\n".join(lines[first:last]) + "\n" + "\n".join(
-        f"console.log(JSON.stringify(doc({json.dumps(t)}, 'x')));" for t in texts)
-    return [json.loads(x) for x in subprocess.run([node, "-e", run], capture_output=True, text=True).stdout.splitlines()]
+    trim_line = next(x for x in lines if x.startswith("const trim ="))
+    run = "\n".join(lines[first:last] + [trim_line, page_function(js, "leftCol"), page_function(js, "counts"), setup]) \
+        + "\n" + "\n".join(f"console.log(JSON.stringify({c}));" for c in calls)
+    done = subprocess.run([node, "-e", run], capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr[-2000:]
+    return [json.loads(x) for x in done.stdout.splitlines()]
 
 
 def folds(html_text):
@@ -579,72 +590,93 @@ def folds(html_text):
                       r'<div class="fold-body">(.*?)</div></details>', html_text, re.S)
 
 
-FOLDED = ["Words in this step", "Interpreting output", "Completion", "Troubleshooting", "Hint"]
+STEP = {"label": "0b", "summary": "In this step you ask it.", "claim": False, "body":
+        "In this step you ask it.\n\nThe claim you check:\n\n> A short claim.\n\n"
+        "**Words in this step:** A *word*.\n\n**Actions:**\n\n1. Do this.\n2. Then that.\n\n"
+        "**The six rules:**\n\n1. Ask the model.\n\n**Interpreting output:** It prints a line.\n\n```\n**Hint:** in code\n```\n\n"
+        "**Write-up:** Type it.\n\n**Completion:** Done.\n\n**Troubleshooting:**\n\n- One.\n\n"
+        "**Hint:** Read it twice.\nAnd slowly.\n\n**Something new:** Folds too."}
 
 
-def test_the_page_folds_the_five_labels_in_its_list_and_no_other():
+def test_every_step_opens_the_same_way_text_then_tasks_then_every_part_folded():
     js = (ROOT / "workbench/static/app.js").read_text()
-    assert "const FOLDED = " + json.dumps(FOLDED) + ";" in js
-    assert "${doc(text, s.label)}" in js and js.count("doc(text, s.label)") == 2   # both places
-    assert "${md(e.text)}" in js                            # Claude's messages are not folded
     css = (ROOT / "workbench/static/style.css").read_text()
-    assert 'details.fold[open] > summary::before { content: "− "; }' in css
-    texts = [
-        "Opening.\n\n**Words in this step:** A *word*.\n\n**Actions:**\n\n1. Do this.\n\n"
-        "**Interpreting output:** It prints a line.\n\n```\nok\n```\n\n**Write-up:** Type it.\n\n"
-        "**Completion:** Done.\n\n**Troubleshooting:**\n\n- One.\n- Two.\n\n**Hint:** Read it twice.\nAnd slowly.",
-        "**The six rules:**\n\n1. Ask the model.\n\n**Output:** An old label.\n\n**Something else:** Stays.",
-        "**Hint:** First.\n\nMore of the hint.\n\n### A heading\n\nAfter it.",
-        "```\n**Hint:** inside a code block\n```\n\n**Write-up:** Something.",
-    ]
-    out = render_docs(texts)
-    if out is None:                                         # a laptop without node: the checks above stand
-        return
-    first = folds(out[0])
-    assert [x[0] for x in first] == FOLDED
-    body = dict(first)
-    assert "<em>word</em>" in body["Words in this step"] and "Actions" not in body["Words in this step"]
-    assert "<pre><code>ok</code></pre>" in body["Interpreting output"]
-    assert "<li>One.</li>" in body["Troubleshooting"] and "Read it twice. And slowly." in body["Hint"]
-    for open_label in ("Actions", "Write-up"):              # seen without a click
-        assert f"<p><strong>{open_label}:</strong>" in out[0]
-        assert all(f"<strong>{open_label}:" not in b for b in body.values())
-    assert "<p>Opening.</p>" in out[0] and "<li>Do this.</li>" in out[0]
-    assert folds(out[1]) == [] and "<details" not in out[1]  # The six rules, an old or unknown label
-    third = folds(out[2])
-    assert len(third) == 1 and "More of the hint." in third[0][1] and "After it." not in third[0][1]
-    assert folds(out[3]) == [] and "**Hint:** inside a code block" in out[3]
+    for gone in ("If you're stuck", "Setup steps", '"label">Instructions<', "plainsteps", "details.stuck"):
+        assert gone not in js and gone not in css, gone
+    left = page_function(js, "leftCol")
+    assert left.index("opening") < left.index('class="counts"') < left.index('class="doc folds"')
+    assert "if (s.setup)" not in page_function(js, "recordCol")   # one record column for every step
+    for setup in (False, True):                             # a set-up step and an ordinary one alike
+        out = run_layout_js([f"leftCol({json.dumps({**STEP, 'setup': setup})})"])
+        if out is None:
+            return
+        html_text = out[0]
+        opening, rest = html_text.split('<div class="counts" id="dw-0b"></div>')
+        assert "The claim you check:" in opening and "<blockquote>A short claim.</blockquote>" in opening
+        assert "In this step you ask it." not in html_text     # the summary is under the title only
+        assert "<details" not in opening and rest.startswith('<div class="doc folds">')
+        got = folds(rest)
+        assert [x[0] for x in got] == ["Words in this step", "Actions", "The six rules", "Interpreting output",
+                                       "Write-up", "Completion", "Troubleshooting", "Hint", "Something new"]
+        body = dict(got)
+        assert "<li>Do this.</li>" in body["Actions"] and "<li>Ask the model.</li>" in body["The six rules"]
+        assert "**Hint:** in code" in body["Interpreting output"]   # a label in a code block is only text
+        assert "Read it twice. And slowly." in body["Hint"] and "Folds too." in body["Something new"]
 
 
-def test_in_the_real_pages_only_the_five_labels_fold_and_1as_rules_stay_open():
-    import re
-    a = steps.load(ROOT / "steps.toml")
-    bodies = [steps.body(s, a, ROOT) for s in a.steps]
-    out = render_docs(bodies)
+def test_the_claim_box_shows_only_when_the_opening_does_not_quote_the_claim():
+    with_quote = {**STEP, "claim": True}
+    without = {**STEP, "claim": True, "body": "In this step you ask it.\n\n**Actions:**\n\n1. Do this."}
+    out = run_layout_js([f"leftCol({json.dumps(with_quote)})", f"leftCol({json.dumps(without)})"],
+                        setup='A = {sample_claim: "A short claim."};')
     if out is None:
         return
-    found = {}
-    for s, text, rendered in zip(a.steps, bodies, out):
-        fence, want, lines = False, [], text.split("\n")
-        for i, line in enumerate(lines):
-            fence ^= line.lstrip().startswith("```")
-            m = re.match(r"\*\*([^*]+):\*\*", line)
-            if m and m.group(1) in FOLDED and not fence and (i == 0 or not lines[i - 1].strip()):
-                want.append(m.group(1))
-        got = folds(rendered)
-        assert [x[0] for x in got] == want, s.id
-        for name, body in got:
-            assert not re.search(r"<p><strong>[^<]+:</strong>", body), (s.id, name)   # no next label inside
-            assert "<h4>" not in body, (s.id, name)
-            found[name] = found.get(name, 0) + 1
-        for open_label in ("Actions", "Write-up", "The six rules"):
-            if f"**{open_label}:**" in text:
-                assert f"<p><strong>{open_label}:</strong>" in rendered, (s.id, open_label)
-                assert all(f"<strong>{open_label}:" not in b for _, b in got), (s.id, open_label)
-    rules = dict(zip([s.id for s in a.steps], out))["1a"]
-    assert "<strong>The six rules:</strong>" in rules and "The six rules" not in [x[0] for x in folds(rules)]
-    assert found.get("Troubleshooting") and found.get("Hint") and found.get("Completion")
-    print("folded parts:", found)
+    assert 'class="claimbox"' not in out[0] and out[0].count("A short claim.") == 1
+    assert '<div class="claimbox">A short claim.</div>' in out[1]
+
+
+def test_a_set_up_steps_tasks_show_numbered_with_their_ticks():
+    rec = {"checkpoints": [
+        {"n": 1, "task": "Copy .env.example to .env.", "text": "", "done": True, "slots": [], "files": []},
+        {"n": 2, "task": "Type your name after Name: at the top of WRITEUP.md.", "text": "", "done": True,
+         "slots": [{"question": "Name", "answer": "Sam", "filled": True}], "files": []},
+        {"n": 3, "task": "Start this step's Claude session.", "text": "", "done": False, "slots": [], "files": []},
+        {"n": 4, "task": "Ask Claude to run the set-up check.", "text": "", "done": False, "slots": [], "files": []}]}
+    out = run_layout_js([f"counts({json.dumps({'label': '0a', 'setup': True})}, {{manual: false, complete: false}}, {json.dumps(rec)})"])
+    if out is None:
+        return
+    import re
+    rows = re.findall(r'<div class="check ( ?ok)?"><span class="tick">(.)</span>\s*<div><span class="q">([^<]*)</span>', out[0])
+    assert [(tick, text) for _, tick, text in rows] == [
+        ("✓", "1. Copy .env.example to .env."), ("✓", "2. Type your name after Name: at the top of WRITEUP.md."),
+        ("○", "3. Start this step's Claude session."), ("○", "4. Ask Claude to run the set-up check.")]
+    assert out[0].startswith('<span class="label">Tasks</span>') and ">Sam<" in out[0]
+
+
+def test_in_the_real_steps_every_labeled_part_folds_in_order_and_nothing_is_lost():
+    import re
+    a = steps.load(ROOT / "steps.toml")
+    calls = []
+    for st in a.steps:
+        body = steps.body(st, a, ROOT)
+        calls += [f"sections(withoutSummary({json.dumps(body)}, {json.dumps(st.summary)}))",
+                  f"withoutSummary({json.dumps(body)}, {json.dumps(st.summary)})",
+                  f"leftCol({json.dumps({'label': a.label(st), 'summary': st.summary, 'body': body, 'claim': st.claim, 'setup': st.setup})})"]
+    out = run_layout_js(calls, setup=f"A = {{sample_claim: {json.dumps(a.sample_claim)}}};")
+    if out is None:
+        return
+    flat = lambda t: " ".join(str(t).split())                 # noqa: E731
+    for k, st in enumerate(a.steps):
+        secs, shown, html_text = out[3 * k:3 * k + 3]
+        body = steps.body(st, a, ROOT)
+        want = re.findall(r"(?m)^\*\*([^*]+):\*\*", body)      # no label in these pages sits in a code block
+        assert [x["label"] for x in secs if x["label"]] == want, st.id
+        assert [x[0] for x in folds(html_text)] == want, st.id      # every labeled part folds, in order
+        rebuilt = "\n\n".join((f"**{x['label']}:** " if x["label"] else "") + x["text"] for x in secs)
+        assert flat(rebuilt) == flat(shown), st.id                 # nothing of the instructions is lost
+        assert flat(st.summary) not in flat(re.sub(r"<[^>]+>", " ", html_text)) or not st.summary, st.id
+        if st.setup:
+            assert len([c for c in st.checkpoints]) == 4, st.id    # 0a's four tasks, shown by counts()
 
 
 def run_page_js(calls):
@@ -662,7 +694,7 @@ def run_page_js(calls):
 
 def test_a_steps_summary_is_not_shown_a_second_time_in_its_instructions():
     js = (ROOT / "workbench/static/app.js").read_text()
-    assert "const text = withoutSummary(s.body, s.summary);" in js and js.count("doc(text, s.label)") == 2
+    assert "const secs = sections(withoutSummary(s.body, s.summary));" in js
     body = "In this step you ask the\nmodel a question.\n\n**Actions:**\n\n1. Ask it."
     out = run_page_js([f"withoutSummary({json.dumps(body)}, {json.dumps('In this step you ask the model a question.')})",
                        f"withoutSummary({json.dumps(body)}, {json.dumps('In this step you ask the model one question.')})",

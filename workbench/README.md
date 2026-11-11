@@ -163,9 +163,11 @@ note in the terminal.
 
 A step's `summary` (a sentence or two on what the step is) shows under its title, open or closed,
 and opens its Claude session's prompt. A step has no `goal` any more; one in an older steps file
-is ignored, with a note. Only a step with
-`setup = true` shows its instruction section in full; every other step shows its tasks, with the
-section folded under "If you're stuck". A task's or a question's text may hold `code` spans and
+is ignored, with a note. Every step opens the same way: any text of its instruction section that
+comes before the first bold label (the repeated summary left out), then Tasks (its checkpoints and
+write-up questions, numbered for a step with `setup = true`), then every labeled part of the
+section (Words in this step, Actions, Write-up, Hint, and any other label) folded, each opened with
+a click. A task's or a question's text may hold `code` spans and
 `[links](address)`: an address that starts with `https://`, `http://` or one `/` (a page of the
 homework page itself, such as `/claims/`) becomes a link that opens in a new tab, and any other
 shows as its words. A part with `extra_credit = true` shows as "Part 3 (extra credit)"; the count
