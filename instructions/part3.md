@@ -30,10 +30,11 @@ not match the dataset's label.
    - *Wikipedia is missing or wrong*: The agent did what it should, and Wikipedia lacks the fact or has it wrong.
    - *the dataset's label is wrong*: The agent's verdict is right, and the dataset's label is not.
    - If none of these fits, give a label of your own.
-6. Fill in its row of the table under 3a. Click "Next →" and do the same for each row up to row 8.
+6. Fill in its row of the table in `WRITEUP.md`, in your editor, under 3a. In the results viewer, click
+   "Next →" and do the same for each row up to row 8.
 7. Ask Claude to label the same claims. It gives its labels without seeing yours.
-8. Ask Claude to add its labels to the "Claude's label" column, or type them in yourself.
-9. Answer the two questions.
+8. Ask Claude to add its labels to the "Claude's label" column, or type them in yourself, in your editor.
+9. Type your answers to the two questions in `WRITEUP.md`, in your editor, under 3a.
 
 **Interpreting output:** Claude labels from the traces alone, and may give *the dataset's label is
 wrong* when the evidence the agent quoted goes against the label. It will not tell you which label to
@@ -66,7 +67,7 @@ failure on your evaluation claims.
    runs/part2 with runs/part3/after".
 7. Read "Accuracy". Then, under "Claims that changed", set "Change" to "does not match in A, matches in
    B", and then to "matches in A, does not match in B".
-8. Answer the three questions.
+8. Type your answers to the three questions in `WRITEUP.md`, in your editor, under 3b.
 
 **Interpreting output:** The run takes about 6 minutes and costs about 21 cents on your key. In the
 comparison, A is your full run, `runs/part2`, and B is this run, `runs/part3/after`. The model does not
@@ -99,7 +100,7 @@ In this step you say what you learned, in your own words.
 
 1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Ask Claude to show you any of your numbers or results.
-3. Answer the three questions.
+3. Type your answers to the three questions in `WRITEUP.md`, in your editor, under 3c.
 
 **Write-up:** Answer these questions in `WRITEUP.md`, under 3c:
 

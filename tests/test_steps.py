@@ -89,45 +89,59 @@ SUMMARIES = {
     "3c": "In this step you say what you learned, in your own words.",
 }
 
-# Each step's tasks, in order, word for word from the outline: every checkpoint that has a task
-# (the set-up step's name line has one too; the other answer checkpoints show their questions).
+# Each step's tasks, in order: the outline's words (Nov 11), with where each happens in the same
+# few words every time (instructor, Nov 11: "Should I be talking with Claude? Should I be typing in
+# the writeup? Clarify."): "Ask Claude to", "In the results viewer,", "In your editor,", "In a
+# terminal tab of your own,". Every checkpoint that has a task (the set-up step's name line has one
+# too; the other answer checkpoints show their questions).
 TASKS = {
     "0a": ["In a terminal tab of your own, in the homework's folder, copy .env.example to .env and fill "
            "in .env in your editor (your API key and your Macalester email) and save it.",
-           "Type your name after Name: at the top of WRITEUP.md, and save the file.",
-           "Start this step's Claude session with the command on this page.",
+           "In your editor, type your name after Name: at the top of WRITEUP.md, and save the file.",
+           "In that terminal tab, start this step's Claude session with the command on this page.",
            "Ask Claude to run the set-up check, until it says everything is ready."],
     "0b": ["Ask Claude to run the no-tools baseline on the claim. Its answer is saved in runs/part0/."],
     "0c": ["Ask Claude to run the one-search baseline on the claim. Its answer is saved in runs/part0/."],
     "0d": ["Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.",
-           "Read the trace, one entry at a time."],
-    "1a": ["Read agent.py: the four tools, the evidence check and finish().",
-           "Write your loop in my_loop.py until it passes every rule of the check, or choose to keep the "
-           "reference loop. (Remember, Claude can help you!)"],
-    "1b": ["By hand, make your first lookup. It is saved in runs/part1/lookups.jsonl.",
+           "In the results viewer, read the trace, one entry at a time."],
+    "1a": ["In your editor or with Claude, read agent.py: the four tools, the evidence check and finish().",
+           "In your editor, write your loop in my_loop.py until it passes every rule of the check, or choose "
+           "to keep the reference loop. (Remember, Claude can help you!)"],
+    "1b": ["Ask Claude to make your first lookup, with the tool and the words you choose. It is saved in "
+           "runs/part1/lookups.jsonl.",
            "Decide on a verdict on the claim. If you've used all 12 lookups without answering it, your "
            "verdict is *doesn't say*."],
     "1c": ["Ask Claude to run the agent on your 12 development claims.",
-           "Read three traces closely in the results viewer. Pick one claim each that needs 2, 3 and 4 "
+           "In the results viewer, read three traces closely. Pick one claim each that needs 2, 3 and 4 "
            "Wikipedia articles, where your development claims have one."],
-    "1d": ["Write your own instructions in instructions.md. They must say how to break a claim into "
-           "pieces, when to use wikidata, when to stop, and when to answer \"doesn't say\".",
+    "1d": ["In your editor, write your own instructions in instructions.md. They must say how to break a "
+           "claim into pieces, when to use wikidata, when to stop, and when to answer \"doesn't say\".",
            "Ask Claude to run the agent on your 12 development claims again.",
-           "Compare the two runs in the results viewer."],
-    "1e": ["Start the full run yourself, in your own terminal tab."],
-    "2a": ["Check that the full run has finished.", "Open the run in the results viewer."],
-    "2b": ["Check the quoted evidence for the first five claims where the agent answered \"supported\" "
-           "or \"refuted\"."],
-    "3a": ["Label each of the eight failures in your table, with the entry of the trace that shows it, "
-           "and say whether the dataset's label is right.",
+           "In the results viewer, compare the two runs."],
+    "1e": ["In a terminal tab of your own, start the full run."],
+    "2a": ["In the terminal tab where you started it, check that the full run has finished.",
+           "In the results viewer, open the run."],
+    "2b": ["In the results viewer, check the quoted evidence for the first five claims where the agent "
+           "answered \"supported\" or \"refuted\"."],
+    "3a": ["In your editor, label each of the eight failures in your table, with the entry of the trace "
+           "that shows it, and say whether the dataset's label is right.",
            "Ask Claude to label the same claims. It gives its labels without seeing yours.",
-           "Put Claude's labels in the last column of your table."],
-    "3b": ["Make one change.",
-           "Start the agent's run on your evaluation claims yourself, in your own terminal tab, and let "
-           "it finish.",
-           "Compare the two runs in the results viewer."],
+           "Put Claude's labels in the last column of your table: ask Claude to, or type them in your editor."],
+    "3b": ["Make one change, in your editor or by asking Claude.",
+           "In a terminal tab of your own, start the agent's run on your evaluation claims, and let it finish.",
+           "In the results viewer, compare the two runs."],
     "3c": [],
 }
+
+# Tasks only the student can see done (`tick = false`): the page shows them with no tick, the way it
+# shows the /exit task, and no brief ticks them or asks the student to report them. Step: task numbers.
+NO_TICK = {"0d": [2], "1a": [1], "1b": [2], "1c": [2], "1d": [3], "2a": [2], "2b": [1], "3b": [3]}
+
+# Where a task happens, in the words the tasks use. The verdict in 1b is decided in the student's
+# head, so it names no place; its answer is typed under the questions, which the page introduces.
+PLACES = ("Ask Claude to", "ask Claude", "asking Claude", "with Claude", "In the results viewer,",
+          "In your editor", "in your editor", "terminal tab")
+NO_PLACE = {("1b", 2)}
 
 RUN_NOTES = {
     "1e": "About 10 minutes and about 28 cents on your key. Leave that tab open and your laptop awake "
@@ -318,6 +332,65 @@ def test_the_tasks_are_the_outlines(a):
     assert tasks == TASKS
 
 
+def test_tasks_only_the_student_can_see_done_have_no_tick(a):
+    """Reading a trace, comparing two runs, deciding on a verdict: nobody but the student sees these
+    happen, so the page shows them with no tick, the brief never ticks them, and the step never
+    waits on them (they have no files or answers of their own)."""
+    got = {s.id: [i for i, c in enumerate(stepmod.checkpoints(s), 1) if not c.tick] for s in a.steps}
+    assert {k: v for k, v in got.items() if v} == NO_TICK
+    for s in a.steps:
+        for i in NO_TICK.get(s.id, []):
+            c = stepmod.checkpoints(s)[i - 1]
+            assert not (c.files or c.slots), (s.id, i)
+            assert f"tick checkpoint {i}" not in flat(s.brief).lower(), (s.id, i)
+        assert "when they say they have" not in flat(s.brief) or s.id == "3a", s.id
+
+
+def test_every_task_says_where_it_happens(a):
+    bad = []
+    for s in a.steps:
+        for i, c in enumerate([c for c in stepmod.checkpoints(s) if c.task], 1):
+            if (s.id, i) not in NO_PLACE and not any(p in c.task for p in PLACES):
+                bad.append(f"{s.id} task {i}: {c.task}")
+    assert not bad, "\n".join(bad)
+
+
+def test_the_page_says_where_answers_go_once_per_step_and_once_at_the_top(a):
+    assert a.answers_task == ("Type your answers to these questions in WRITEUP.md, in your editor. "
+                              "Claude does not write your answers.")
+    assert a.top_note == ("You talk with Claude to run programs and to ask for explanations. You type your "
+                          "answers in `WRITEUP.md`, in your editor.")
+    assert "when every task above is ticked" not in a.stop_task, "a task with no tick never gets one"
+
+
+def test_no_rule_asks_an_open_question_or_a_write_up_question_in_the_chat(a):
+    """The instructor, Nov 11, after old 0e's session ended "What do you make of the trace?": "Should
+    I be talking with Claude? Should I be typing in the writeup? Clarify." No rule asks the student
+    what they make of a result, asks the step's own question in the chat, or opens a session by
+    asking what they would like to do first. A rule may name such a question only to forbid it."""
+    found = []
+    for where, text in [("tutor", a.tutor)] + [(s.id, s.brief) for s in a.steps]:
+        t = flat(text)
+        for phrase in ("One question per turn", "ask an open question (", "or the step's own question",
+                       "then one question, what they would like to do first",
+                       "answers are theirs, and ask what they think",
+                       "ask what their verdict would be", "ask whether their labels are typed",
+                       "ask what in the output makes them think"):
+            if phrase in t:
+                found.append(f"{where}: {phrase}")
+        for sentence in re.split(r"(?<=[.!?])\s+(?=[A-Z])", t):
+            if ("What do you make" in sentence or "would like to do first" in sentence) \
+                    and not re.search(r"\b(never|Do not)\b", sentence):
+                found.append(f"{where}: {sentence[:120]}")
+    assert not found, found
+    tutor = flat(a.tutor)
+    for rule in ("then the first task on the page that is not done yet, and what to type to get it done",
+                 "end with one or two sentences on what they do next and where",
+                 "Ask a question only when you need its answer to go on",
+                 "Never ask a write-up question in this chat"):
+        assert rule in tutor, rule
+
+
 def test_run_notes_are_the_outlines():
     steps = {s["id"]: s for s in raw()["step"]}
     assert {i: s["run_yourself"]["note"] for i, s in steps.items() if "run_yourself" in s} == RUN_NOTES
@@ -348,7 +421,9 @@ def test_briefs_tick_only_checkpoints_claude_can_tick(a, step_id):
         assert 1 <= n <= len(cps), f"{step_id}: the brief ticks checkpoint {n}; there are {len(cps)}"
         c = cps[n - 1]
         assert not (c.files or c.slots), f"{step_id}: checkpoint {n} ('{c.text}') ticks itself"
-    manual = [i for i, c in enumerate(cps, 1) if not (c.files or c.slots)]
+    for n in named:
+        assert cps[n - 1].tick, f"{step_id}: the brief ticks checkpoint {n}, which the page shows with no tick"
+    manual = [i for i, c in enumerate(cps, 1) if not (c.files or c.slots) and c.tick]
     missing = [n for n in manual if n not in named]
     assert not missing, f"{step_id}: the brief never says when to tick checkpoint(s) {missing}"
 

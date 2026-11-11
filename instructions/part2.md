@@ -22,7 +22,7 @@ or 4).
 2. Check that the full run has finished: it ends with two tables in the tab where you started it.
 3. Open **Results** at the top of the homework page, then "runs/part2", and read "Accuracy".
 4. Ask Claude to paste the report into the empty block under 2a in `WRITEUP.md`.
-5. Answer the three questions.
+5. Type your answers to the three questions in `WRITEUP.md`, in your editor, under 2a.
 
 **Interpreting output:** The report's first table gives, for each version, how many claims matched the
 dataset's label out of how many: by number of articles, for all 100, and by the dataset's label. The
@@ -57,8 +57,9 @@ In this step you find out whether the agent's quoted evidence really supports it
 5. Click row 1. Under "Quoted evidence", click each "entry N" to read that quote highlighted in the trace.
 6. Decide whether the quoted evidence supports the agent's verdict. If you are unsure, click "open the
    live page" to see today's page at that quote.
-7. Fill in its row of the table under 2b. Click "Next →" and do the same for each row up to row 5.
-8. Answer the two questions.
+7. Fill in its row of the table in `WRITEUP.md`, in your editor, under 2b. In the results viewer, click
+   "Next →" and do the same for each row up to row 5.
+8. Type your answers to the two questions in `WRITEUP.md`, in your editor, under 2b.
 
 **Interpreting output:** Under "The agent", a claim's page says whether its verdict "matches the
 dataset's label": that is the table's fourth column. To read more of a page as the agent read it, ask

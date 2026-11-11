@@ -24,13 +24,13 @@ no network, takes a few seconds, and costs nothing.
 
 1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Read `agent.py` with Claude: the four tools, the evidence check and `finish()`.
-3. In `my_loop.py`, write the loop below the line that says where it goes, one rule at a time.
-   Remember, Claude can help you!
-4. After each rule, run the check (ask Claude, or run `uv run python check_loop.py`), and fix the first
-   `NOT YET` line.
-5. When every rule passes, open `reference_loop.py` and compare it with your loop. Don't open it
-   before then: it shows you a finished loop before you have written your own.
-6. Answer the three questions in `WRITEUP.md`.
+3. In your editor, in `my_loop.py`, write the loop below the line that says where it goes, one rule at a
+   time. Remember, Claude can help you!
+4. After each rule, run the check (ask Claude, or run `uv run python check_loop.py` in a terminal tab of
+   your own), and fix the first `NOT YET` line.
+5. When every rule passes, open `reference_loop.py` in your editor and compare it with your loop.
+   Don't open it before then: it shows you a finished loop before you have written your own.
+6. Type your answers to the three questions in `WRITEUP.md`, in your editor, under 1a.
 
 **The six rules:**
 
@@ -150,12 +150,12 @@ The claim you check in this step:
 1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Decide on one lookup: which tool, and what to ask it. Use only the agent's tools, not your browser,
    so that you see only what the agent sees.
-3. Tell Claude the lookup, read what comes back, and note why you chose it.
+3. Ask Claude to run your lookup, read what comes back, and note why you chose it.
 4. Repeat until you have a verdict. If you have made 12 lookups without answering the claim, stop: your
    verdict is *doesn't say*, as the agent's would be.
-5. Ask Claude to paste your lookups into the table under 1b in `WRITEUP.md`, and type your reason for
-   each in the "Why you chose it" column.
-6. Answer the question under the table.
+5. Ask Claude to paste your lookups into the table under 1b in `WRITEUP.md`. Then, in your editor, type
+   your reason for each in the "Why you chose it" column.
+6. Type your answer to the question in `WRITEUP.md`, in your editor, under 1b.
 
 **Interpreting output:** For each lookup, Claude runs one of these and pastes exactly what the agent would
 see:
@@ -209,7 +209,8 @@ numbered line of it.
    have one (see the Hint).
 5. For each, read "The agent's trace", one entry at a time, and decide whether the agent got there for a
    good reason: does its quoted evidence really answer the claim?
-6. Fill in one row of the table for each, and answer the question under it.
+6. Fill in one row of the table for each, and type your answer to the question, in `WRITEUP.md`, in
+   your editor, under 1c.
 
 **Interpreting output:** Claude runs this command. It takes about a minute and costs about 2 cents:
 
@@ -246,9 +247,9 @@ finish, and says nothing about how to look things up.
 **Actions:**
 
 1. Start this step's Claude session (type `/exit` first if another one is open).
-2. Write your instructions in `instructions.md` and save. Add to its three sentences or rewrite them,
-   but keep what they say about finishing with `answer` and the three verdict words. At a minimum your
-   instructions must say:
+2. In your editor, write your instructions in `instructions.md` and save. Add to its three sentences or
+   rewrite them, but keep what they say about finishing with `answer` and the three verdict words. At a
+   minimum your instructions must say:
    - how to break a claim into the pieces that have to be checked;
    - when to use `wikidata` instead of reading a page;
    - when the agent has enough evidence to stop;
@@ -257,7 +258,7 @@ finish, and says nothing about how to look things up.
 4. Open **Results** at the top of the homework page, click "Compare two runs", then "Step 1d:
    runs/part1/before with runs/part1/after", and read "Accuracy".
 5. Under "Claims that changed", click "Open A and B" to read a claim's two traces side by side.
-6. Answer the question in `WRITEUP.md`.
+6. Type your answer to the question in `WRITEUP.md`, in your editor, under 1d.
 
 **Interpreting output:** Claude runs this command. It takes about a minute and costs about 2 cents, or
 more if your instructions make the agent do more:
@@ -301,8 +302,8 @@ are the 100 claims in `data/eval.jsonl`.
 2. In another terminal tab in the homework's folder, start the full run:
    `uv run python evaluate.py data/eval.jsonl --out runs/part2`.
 3. Leave that tab open and your laptop awake until the run ends with two tables.
-4. While it runs, fill in the predictions table under 1e in `WRITEUP.md`, and answer the question under
-   it.
+4. While it runs, fill in the predictions table, and type your answer to the question, in `WRITEUP.md`,
+   in your editor, under 1e.
 5. Don't look at the run's results before your predictions are saved. Until it ends, it prints only
    progress lines that count claims.
 

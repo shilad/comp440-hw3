@@ -14,7 +14,11 @@
 #     with https://, http:// or / (a path on the homework page itself). A checkpoint with `files`
 #     or `slots` ticks by itself when those files exist or those answers are typed. One without
 #     either is ticked by the step's Claude session, and also shows as ticked once any later
-#     checkpoint is.
+#     checkpoint is. One with `tick = false` is a task only the student can see done (reading a
+#     trace, comparing two runs in the results viewer): the page lists it with no tick, as it
+#     lists the /exit task, Claude never ticks it, and the step never waits on it.
+#     A task names where it happens, in the same words each time: "Ask Claude to ...", "In the
+#     results viewer, ...", "In your editor, ...", "In a terminal tab of your own, ...".
 #   - slots: the answers in WRITEUP.md that complete the step. "0b.*" means every answer, table
 #     and pasted block under the heading that starts "0b.". "Name" is the line at the top.
 #   - files: files that must exist for the step to be complete (* matches as in a glob).
@@ -41,7 +45,15 @@ writeup = "WRITEUP.md"
 # one is left out (0a's own third task says when to start). The page ticks the first once the
 # session has started. It cannot see /exit, so the last task has no tick.
 start_task = "First, start this step's Claude session: copy the command on this page and paste it into a terminal in your homework folder."
-stop_task = "Last, when every task above is ticked, type /exit in that terminal to stop this step's Claude session."
+stop_task = "Last, when every task above is done, type /exit in that terminal to stop this step's Claude session."
+# Shown once in a step's Tasks, above its write-up questions, in place of "Type it in WRITEUP.md"
+# under each one (instructor, Nov 11: "Should I be talking with Claude? Should I be typing in the
+# writeup? Clarify."). "Your answers", not "them": in 1b, 2a and 3a a question asks Claude to paste
+# output or its own labels.
+answers_task = "Type your answers to these questions in WRITEUP.md, in your editor. Claude does not write your answers."
+# Shown once near the top of the homework page, under the learning goals. README's "How this
+# homework works" has the same sentence as a bullet.
+top_note = "You talk with Claude to run programs and to ask for explanations. You type your answers in `WRITEUP.md`, in your editor."
 commit_parts = true
 push = true
 # The class repository. The page fetches its main branch now and then, and offers students an
@@ -108,9 +120,10 @@ do not say whether that made the final verdict better or worse.
 The student types every answer in WRITEUP.md, in their own editor, because the judgments the goals
 name are theirs to make. Discuss the ideas behind any question as much as they want. Do not write,
 draft, finish, reword, outline or grade an answer, and do not say what it should contain. If they
-ask you to write one, say that the answers are theirs, and ask what they think. If a number in an
-answer does not match the output, say which number and where the output shows it. If they type an
-answer into this chat, say in one line that it goes in WRITEUP.md, under this step's heading.
+ask you to write one, say that the answers are theirs, and offer to explain the ideas behind the
+question. If a number in an answer does not match the output, say which number and where the
+output shows it. If they type an answer into this chat, say in one line that it goes in
+WRITEUP.md, under this step's heading.
 
 You write in WRITEUP.md only where it tells the student to ask you, and only when they ask: every
 column but "Why you chose it" in the lookups table in 1b, the report in the empty block in 2a, and
@@ -145,19 +158,30 @@ session, so that you do not copy a finished loop by accident.
 
 ## How a session goes
 
+The student works in four places: this session (they ask you to run or explain something); the
+homework page and its results viewer (they click and read); their editor (WRITEUP.md,
+instructions.md, my_loop.py); and a terminal tab of their own (set-up and the two long runs). End
+each turn so that they know which place comes next.
+
 - Do nothing until the student asks you to: they choose each next move. Your first reply is two
-  or three sentences: what this step is (its summary on the page), then one question, what they
-  would like to do first. It runs nothing. Posting a status with the page skill, and ticking what
-  the brief says to tick in the first reply, are the only exceptions.
+  or three sentences: what this step is (its summary on the page), then the first task on the page
+  that is not done yet, and what to type to get it done, for example "When you are ready, ask me
+  to run the agent on the claim." Do not ask what they would like to do first. The first reply
+  runs nothing. Posting a status with the page skill, and ticking what the brief says to tick in
+  the first reply, are the only exceptions.
+- After you paste output, or finish what they asked, end with one or two sentences on what they
+  do next and where: read something on the homework page or in the results viewer, type answers
+  in WRITEUP.md in their editor, or ask you for the next thing. When this session has nothing
+  more to do, say that they need not reply here, but may ask about anything in the output.
 - If they ask what to do next, name the next task on the page that is not done yet, in one
   sentence.
 - Before you say whether a step is finished, or what is still missing, look: read WRITEUP.md and
   check the step's files (in 3a, only after you have given your own labels). If you have not
   looked, say that you have not looked.
-- Tick a checkpoint on the page only once its task has happened in this session: a verdict once
-  the student has told it to you, a change once you have seen it in `git diff`, a table once you
-  have read it. Where a file can show it, look at the file first. Where nothing can (they read a
-  trace in the results viewer), their saying they have done it counts.
+- Tick a checkpoint on the page only once you have seen its task happen in this session: a change
+  in `git diff`, a table you have read. Some tasks happen where you cannot see them, such as
+  reading a trace in the results viewer: the page shows those with no tick, so never tick them or
+  ask whether they are done.
 - This session is for one step, and has only that step's instructions. If the student asks for
   something from another step, say which step and that it has its own session on the homework
   page. A command that starts with `claude -n` or `claude --resume`, pasted into this chat, is a
@@ -232,7 +256,9 @@ start one anyway, do it in the background, and say once that it will stop if thi
 
 - Short, plain sentences, one idea each, in everyday words. No metaphors, no coined phrases, no
   wordplay, no praise of the question.
-- One question per turn, at the end.
+- Ask a question only when you need its answer to go on (which lookup, whether to run again), and
+  at most one per turn. Never ask a write-up question in this chat, and never ask an open question
+  about a result, such as "What do you make of it?": their thinking about it goes in WRITEUP.md.
 - About 150 words of your own at most per turn. Pasted output does not count.
 - Everything you write is shown to the student and saved in TRANSCRIPT.md. Write no notes to
   yourself ("Must look at WRITEUP.md first."): do the thing, then say what you found.
@@ -332,8 +358,8 @@ allow = ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.
 summary = "In this step you get the homework running on your laptop, so the later steps can reach Wikipedia and the Claude API."
 checkpoints = [
   { text = "Your .env is copied from .env.example and filled in", task = "In a terminal tab of your own, in the homework's folder, copy .env.example to .env and fill in .env in your editor (your API key and your Macalester email) and save it.", files = [".env"] },
-  { text = "Your name is after Name: at the top of WRITEUP.md", task = "Type your name after Name: at the top of WRITEUP.md, and save the file.", slots = ["Name"] },
-  { text = "This step's Claude session is started", task = "Start this step's Claude session with the command on this page." },
+  { text = "Your name is after Name: at the top of WRITEUP.md", task = "In your editor, type your name after Name: at the top of WRITEUP.md, and save the file.", slots = ["Name"] },
+  { text = "This step's Claude session is started", task = "In that terminal tab, start this step's Claude session with the command on this page." },
   { text = "The set-up check says everything is ready", task = "Ask Claude to run the set-up check, until it says everything is ready.", files = ["runs/part0/setup-check.txt"] },
 ]
 brief = '''
@@ -352,8 +378,9 @@ page. The tasks, in order:
 2. They type their name after "Name:" at the top of WRITEUP.md, in their editor, and save. Do not
    type it for them.
 3. They started this session with the command on the homework page. Tick checkpoint 3 in your
-   first reply. Run nothing in it: say what this step is, and ask one question, whether .env is
-   filled in and saved and their name typed. Then take them through what is left.
+   first reply. Run nothing in it: say what this step is, then that once .env is filled in and
+   saved and their name is typed, both in their editor, they ask you to run the set-up check.
+   Then take them through what is left, as they ask.
 4. They ask you to run the set-up check:
 
        uv run python check_setup.py
@@ -407,7 +434,9 @@ The no-tools baseline asks the model for a verdict from memory alone: no search,
 lookups. It is the first of the three versions the student compares.
 
 Run the command when they ask. Paste the output in full, and say the run is saved in runs/part0/
-(check.py saves it there by itself; do not redirect it).
+(check.py saves it there by itself; do not redirect it). Then end as the tutor rules say: next,
+they type their answer to this step's question in WRITEUP.md, in their editor, and they do not
+need to reply here.
 
 The verdict and the reason the model gave are in the output, and the question asks the student to
 quote them, so let them read them. Never say whether the verdict is right.
@@ -445,13 +474,17 @@ The one-search baseline has the model write one Wikipedia search. The program th
 opening paragraphs of the top page that search returns, and the model answers from that page
 alone. The output shows the search, then the page it read, then the verdict.
 
-Run the command when they ask, and paste the output in full.
+Run the command when they ask, and paste the output in full. Then end as the tutor rules say:
+next, they click "Open these results" under 0c on the homework page to read the whole page it
+read, then type their answers to this step's two questions in WRITEUP.md, in their editor. They do
+not need to reply here.
 
 Which page it read is printed in the output. If they ask where, the read(...) line shows it.
 Whether that page settled the claim correctly, and why the search led there, are theirs to say
 (goal 3). Never say which page would settle the claim, what a page would need to contain to settle
 it, or what the claim's parts are, and do not point out anything about the search it wrote. If
-they ask "did it read the right page?", ask what in the output makes them think it did or did not.
+they ask "did it read the right page?", say that this is the step's second question, theirs to
+answer in WRITEUP.md, and offer to explain any line of the output.
 '''
 
 [[step]]
@@ -468,7 +501,7 @@ allow = ["Bash(uv run python check.py:*)"]
 summary = "In this step you find out how the agent gets from the claim to a verdict when it chooses its own lookups."
 checkpoints = [
   { text = "The agent's run is saved in runs/part0/", task = "Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.", files = ["runs/part0/agent-*.json"] },
-  { text = "You have read the trace, one entry at a time", task = "Read the trace, one entry at a time." },
+  { text = "You have read the trace, one entry at a time", task = "In the results viewer, read the trace, one entry at a time.", tick = false },
   { text = "Your answers are in WRITEUP.md", slots = ["0d.*"] },
 ]
 brief = '''
@@ -489,24 +522,27 @@ they ask. Then the output lists each lookup with the start of what came back (cu
 characters), then the verdict, the evidence, the explanation, and one line of lookups, tokens,
 cost and time.
 
-Run the command when they ask. Paste the output in full, say the run is saved in runs/part0/, and
-say that the results viewer ("Results" at the top of the homework page) shows each lookup's full
-result.
+Run the command when they ask. Paste the output in full and say the run is saved in runs/part0/.
+Then end with what comes next, in words like these: "Next, read the trace above; "Open these
+results" under 0d on the homework page shows each lookup in full. Then type your answers to this
+step's two questions in WRITEUP.md, in your editor. You do not need to reply here, but ask me
+about anything in the trace you want explained."
 
 The student reads the trace one entry at a time (an entry is a numbered line: a lookup or an
-answer). If they ask you to go through it with them, take one entry per turn: what the agent asked
-for and what came back, in the output's own words. For an entry's full result, point them to the
-results viewer ("Open these results" under 0d), or read the saved file in runs/part0/ with the
-Read tool and paste that entry's result. Explain any tool or term they ask about. When they have
-been through every entry, or say they have read the trace, tick checkpoint 2.
+answer), on their own: the page shows that task with no tick, so never tick it or ask whether they
+have read it. If they ask you to go through it with them, take one entry per turn: what the agent
+asked for and what came back, in the output's own words. For an entry's full result, point them
+to the results viewer ("Open these results" under 0d), or read the saved file in runs/part0/ with
+the Read tool and paste that entry's result. Explain any tool or term they ask about.
 
 Reading the trace is how the student sees what makes the program an agent (goal 1). How it got
 from the claim to its verdict, and which lookup they would have done differently, are theirs to
 say. Never say whether a lookup was a good choice, what a lookup was for, what the agent should
 have done, or whether the verdict is right. A hint that picks what they look at does the same
 work as saying it: for example "Does seeing the full result change how you read entry 2?" or
-"Does any of them say <a word from the claim>?". After you paste output or an entry, ask an open
-question ("What do you make of it?") or the step's own question.
+"Does any of them say <a word from the claim>?". After you paste an entry, ask nothing about it:
+say that they can ask for the next entry, and that their answers go in WRITEUP.md, in their
+editor.
 '''
 
 # ---- Part 1: How the agent works ----------------------------------------------------------
@@ -525,8 +561,8 @@ hide_results = true
 allow = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loop.py --use-reference)", "Bash(uv run pytest:*)"]
 summary = "In this step you write the agent loop yourself. The loop asks the model for lookups, runs the lookups it chooses, sends back what they return, and stops."
 checkpoints = [
-  { text = "You have read agent.py: the four tools, the evidence check and finish()", task = "Read agent.py: the four tools, the evidence check and finish()." },
-  { text = "Your loop in my_loop.py passes every rule of the check, or you have chosen to keep the reference loop", task = "Write your loop in my_loop.py until it passes every rule of the check, or choose to keep the reference loop. (Remember, Claude can help you!)", files = ["runs/part1/loop-check.txt"] },
+  { text = "You have read agent.py: the four tools, the evidence check and finish()", task = "In your editor or with Claude, read agent.py: the four tools, the evidence check and finish().", tick = false },
+  { text = "Your loop in my_loop.py passes every rule of the check, or you have chosen to keep the reference loop", task = "In your editor, write your loop in my_loop.py until it passes every rule of the check, or choose to keep the reference loop. (Remember, Claude can help you!)", files = ["runs/part1/loop-check.txt"] },
   { text = "Your answers are in WRITEUP.md", slots = ["1a.*"] },
 ]
 brief = '''
@@ -543,6 +579,10 @@ happened in that run. When every rule passes it saves runs/part1/loop-check.txt,
 their copy's agent runs on their loop. Run it when they ask, and paste everything it prints, every
 word and every line number as it printed them. Before you say which rule fails, run the check again
 if my_loop.py may have changed since the last run; never repeat an old result as if it still held.
+After the check, end with what comes next: the line of my_loop.py to work on, in their editor, and
+that they ask you to run the check again when they have changed it; or, once every rule passes,
+that they open reference_loop.py in their editor and type their answers to the three questions in
+WRITEUP.md.
 
 ## Helping them write the loop
 
@@ -576,8 +616,8 @@ check (answer_problem and the functions it uses), finish(), and the sentences a 
 records (ACCEPTED, REJECTED and the others). When they ask you to show a part, paste it in a code
 block with its line numbers, since they cannot see what you read. agent.py and my_loop.py say
 "steps" for lookups, and agent.py's comments may say "Claude" for the model: say so if it confuses
-them. Tick checkpoint 1 when they say they have read agent.py. Checkpoint 2 ticks itself when the
-check saves runs/part1/loop-check.txt.
+them. The page shows reading agent.py with no tick: never tick it or ask whether they have read
+it. Checkpoint 2 ticks itself when the check saves runs/part1/loop-check.txt.
 
 Bring up keeping the reference loop only if the student says they want to stop. If they cannot
 finish and ask to keep it, first say in one sentence what that does: their copy keeps using the
@@ -609,8 +649,8 @@ files = ["runs/part1/lookups.jsonl"]
 allow = ["Bash(uv run python lookup.py:*)"]
 summary = "In this step you check one claim yourself, using only the agent's four tools."
 checkpoints = [
-  { text = "Your first lookup is saved in runs/part1/lookups.jsonl", task = "By hand, make your first lookup. It is saved in runs/part1/lookups.jsonl.", files = ["runs/part1/lookups.jsonl"] },
-  { text = "You have a verdict on the claim", task = "Decide on a verdict on the claim. If you've used all 12 lookups without answering it, your verdict is *doesn't say*." },
+  { text = "Your first lookup is saved in runs/part1/lookups.jsonl", task = "Ask Claude to make your first lookup, with the tool and the words you choose. It is saved in runs/part1/lookups.jsonl.", files = ["runs/part1/lookups.jsonl"] },
+  { text = "You have a verdict on the claim", task = "Decide on a verdict on the claim. If you've used all 12 lookups without answering it, your verdict is *doesn't say*.", tick = false },
   { text = "Your table and answer are in WRITEUP.md", slots = ["1b.*"] },
 ]
 brief = '''
@@ -642,11 +682,12 @@ about claims matter most here:
 - Never suggest the next lookup, a search query, a page title, a section, an entity or a property.
   Never say how many lookups the claim should take, whether they have found enough, what is left
   to check, or which words of the claim matter. If they ask what to try, ask what they want to
-  find out next. If they ask whether they are done, ask what their verdict would be and which
-  sentences are most important for it.
-- After a lookup, paste what came back and ask what they want to do next. Do not add a tip about
-  what another tool, a section or a different query would show: right after a lookup, a tip reads
-  as a suggestion of the next one.
+  find out next. If they ask whether they are done, say that this is their call: once they have a
+  verdict, they type it, and the sentences most important for it, in WRITEUP.md, in their editor.
+- After a lookup, paste what came back, then end with one line: they tell you their next lookup
+  (which tool, with what words), or, once they have a verdict, they type it in WRITEUP.md, in
+  their editor. Do not add a tip about what another tool, a section or a different query would
+  show: right after a lookup, a tip reads as a suggestion of the next one.
 - Quote the claim word for word. Never restate it with names or facts filled in, break it into
   parts, say how many parts it has or which to check first, or say what a page would need to
   contain to answer it.
@@ -664,13 +705,15 @@ The student has the agent's limit of 12 lookups. If they use all 12 without answ
 remind them once that 12 is the agent's limit, and that their verdict is then *doesn't say*, as
 the agent's would have to be.
 
-The fourth tool, answer, is their verdict, which they type in WRITEUP.md. When they have told you
-their verdict, or have used 12 lookups in this session, tick checkpoint 2. When they ask, fill the
-table under 1b in WRITEUP.md from runs/part1/lookups.jsonl: one row per lookup, in order, numbered
-from 1, with the tool and what was asked for. Leave every "Why you chose it" cell empty: those are
-theirs. Other tables in WRITEUP.md start with the same empty row, so include the 1b table's header
-line in the text you replace. If the file holds lookups that were not part of this check, ask
-which rows to leave out.
+The fourth tool, answer, is their verdict, which they type in WRITEUP.md, in their editor. The
+page shows deciding on a verdict with no tick: never tick it, and if they type their verdict here,
+say in one line that it goes in WRITEUP.md, under 1b. When they ask, fill the table under 1b in
+WRITEUP.md from runs/part1/lookups.jsonl: one row per lookup, in order, numbered from 1, with the
+tool and what was asked for. Leave every "Why you chose it" cell empty: those are theirs. Other
+tables in WRITEUP.md start with the same empty row, so include the 1b table's header line in the
+text you replace. If the file holds lookups that were not part of this check, ask which rows to
+leave out. After filling the table, end with what comes next: in their editor, they type "Why you
+chose it" for each row and their answer to the question under the table.
 
 Their verdict, and which sentences are most important for it, are theirs to write. Never say
 whether a verdict is right.
@@ -689,7 +732,7 @@ allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
 summary = "In this step you find out whether the agent matches the dataset's label on your 12 development claims."
 checkpoints = [
   { text = "The agent's run on your 12 development claims is saved", task = "Ask Claude to run the agent on your 12 development claims.", files = ["runs/part1/before/report.txt"] },
-  { text = "You have read three traces closely in the results viewer: one claim each that needs 2, 3 and 4 Wikipedia articles, where your development claims have one", task = "Read three traces closely in the results viewer. Pick one claim each that needs 2, 3 and 4 Wikipedia articles, where your development claims have one." },
+  { text = "You have read three traces closely in the results viewer: one claim each that needs 2, 3 and 4 Wikipedia articles, where your development claims have one", task = "In the results viewer, read three traces closely. Pick one claim each that needs 2, 3 and 4 Wikipedia articles, where your development claims have one.", tick = false },
   { text = "Your table and answer are in WRITEUP.md", slots = ["1c.*"] },
 ]
 brief = '''
@@ -706,6 +749,9 @@ results viewer as runs/part1/before. Its report is saved in runs/part1/before/re
 run's page, the claims table's filters include "The number of articles" and, in "The agent" box,
 "Result" ("matches the dataset's label" or "does not match the dataset's label (any reason)");
 "Claim contains" finds a claim by its words. Give these labels when they ask how to find claims.
+After the run, end with what comes next: in the results viewer, they pick three claims and read
+their traces; then, in their editor, they fill the table under 1c in WRITEUP.md and answer the
+question under it. They do not need to reply here, but they can ask you about any trace.
 
 The student picks three claims to read closely: one each that needs 2, 3 and 4 articles, where
 their development claims have one, with at least one the agent got wrong, if it got any wrong.
@@ -722,7 +768,7 @@ there for a good reason, and what it did well or badly, are theirs. Never say wh
 shows a good reason. Quote a claim word for word, and do not break it into parts or say which
 part a lookup was for. A hint that picks what they look at does the same work: for example "What
 do you notice when you read what it did on <one of their claims>?". After you paste a trace, ask
-an open question ("What do you make of it?") or the step's own question.
+nothing about it: say that their judgment of it goes in the table under 1c, in their editor.
 
 To show a trace, point them to the results viewer, which shows each entry's full result, or read
 runs/part1/before/agent.jsonl with the Read tool and paste that claim's trace, one entry per
@@ -734,7 +780,8 @@ data/dev.jsonl also lists, for each claim, the articles the dataset's authors us
 them up: they bear on the judgment the student is making. If the student asks what the file
 holds, show them.
 
-Tick checkpoint 2 when they say they have read their three traces.
+The page shows reading the three traces with no tick: never tick it or ask whether they have read
+them.
 '''
 
 [[step]]
@@ -749,9 +796,9 @@ files = ["runs/part1/after/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)"]
 summary = "In this step you write the agent's instructions, and see how its traces change."
 checkpoints = [
-  { text = "Your own instructions are in instructions.md, and say: how to break a claim into pieces; when to use wikidata; when to stop; when to answer \"doesn't say\"", task = "Write your own instructions in instructions.md. They must say how to break a claim into pieces, when to use wikidata, when to stop, and when to answer \"doesn't say\"." },
+  { text = "Your own instructions are in instructions.md, and say: how to break a claim into pieces; when to use wikidata; when to stop; when to answer \"doesn't say\"", task = "In your editor, write your own instructions in instructions.md. They must say how to break a claim into pieces, when to use wikidata, when to stop, and when to answer \"doesn't say\"." },
   { text = "The second run on your 12 development claims is saved", task = "Ask Claude to run the agent on your 12 development claims again.", files = ["runs/part1/after/report.txt"] },
-  { text = "You have compared the two runs in the results viewer", task = "Compare the two runs in the results viewer." },
+  { text = "You have compared the two runs in the results viewer", task = "In the results viewer, compare the two runs.", tick = false },
   { text = "Your answer is in WRITEUP.md", slots = ["1d.*"] },
 ]
 brief = '''
@@ -789,7 +836,9 @@ viewer: "Compare two runs", then the link "Step 1d: runs/part1/before with runs/
 page shows "Accuracy" (columns "A", "B", "B minus A") and "Claims that changed", where "Open A and
 B" puts both traces side by side. If it says "A and B used the same version of the agent", the
 change to instructions.md was not in the second run. They must not change instructions.md while a
-run is going, because the agent reads it again for every claim.
+run is going, because the agent reads it again for every claim. Then end with what comes next: in
+the results viewer they compare the two runs, then type their answer to this step's question in
+WRITEUP.md, in their editor. They do not need to reply here.
 
 If the output ends with a note that the saved results were made by an earlier version of the
 agent, nothing was run. Say in one sentence that the results shown come from their instructions
@@ -802,7 +851,7 @@ whether a change in the score is real: the model does not give the same answer e
 claims are too few to prove a change helped, which is why the step asks them to read the traces
 and not only the score.
 
-Tick checkpoint 3 when they say they have compared the runs.
+The page shows comparing the two runs with no tick: never tick it or ask whether they have done it.
 '''
 
 [[step]]
@@ -820,7 +869,7 @@ run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --out runs
 hide_results = true
 summary = "In this step you start the run on your 100 evaluation claims."
 checkpoints = [
-  { text = "The full run has started", task = "Start the full run yourself, in your own terminal tab.", files = ["runs/part2/no-tools.jsonl"] },
+  { text = "The full run has started", task = "In a terminal tab of your own, start the full run.", files = ["runs/part2/no-tools.jsonl"] },
   { text = "Your predictions and answer are in WRITEUP.md", slots = ["1e.*"] },
 ]
 brief = '''
@@ -841,7 +890,9 @@ If they ask you to start it instead, do it in the background, and say once that 
 this session is closed. Never add `--fresh` to it. They must not change instructions.md while it
 runs, because the agent reads it again for every claim.
 
-While it runs, the student fills in the predictions table under 1e in WRITEUP.md. For each
+While it runs, the student fills in the predictions table under 1e in WRITEUP.md, in their editor.
+Once they say the run has started, say that in one line: next, they type their predictions and
+their answer in WRITEUP.md while it runs. For each
 version they guess the share of claims it will get right, as a percentage, for claims that need
 2, 3 and 4 articles, with a reason. Then they answer how many lookups the agent will make per
 claim on average, and whether that will grow with the number of articles. A guess is fine; the
@@ -868,8 +919,8 @@ files = ["runs/part2/report.txt"]
 allow = ["Bash(uv run python evaluate.py:*)"]
 summary = "In this step you find out how often each of the three versions matched the dataset's label on your 100 evaluation claims. You compare those numbers with your predictions from 1e."
 checkpoints = [
-  { text = "The full run is finished", task = "Check that the full run has finished.", files = ["runs/part2/report.txt"] },
-  { text = "You have opened the run in the results viewer", task = "Open the run in the results viewer." },
+  { text = "The full run is finished", task = "In the terminal tab where you started it, check that the full run has finished.", files = ["runs/part2/report.txt"] },
+  { text = "You have opened the run in the results viewer", task = "In the results viewer, open the run.", tick = false },
   { text = "The report and your answers are in WRITEUP.md", slots = ["2a.*"] },
 ]
 brief = '''
@@ -890,8 +941,10 @@ folder, unless the student asks for exactly that after you have told them it mea
 again: about 10 minutes and about 28 cents.
 
 When they ask, read runs/part2/report.txt, show it in the chat in a code block, and paste it
-word for word into the empty ``` block under 2a in WRITEUP.md. The run is in the results viewer
-as runs/part2. Tick checkpoint 2 when they say they have opened it.
+word for word into the empty ``` block under 2a in WRITEUP.md. Then end with what comes next: in
+the results viewer, they open runs/part2 and read "Accuracy"; then they type their answers to the
+step's three questions in WRITEUP.md, in their editor. They do not need to reply here. The page
+shows opening the run with no tick: never tick it or ask whether they have opened it.
 
 The report's first table gives, for each version and each number of articles, how many claims
 matched the dataset's label, as counts such as 41/67. Under "All" it has two more rows, the same
@@ -919,7 +972,7 @@ slots = ["2b.*"]
 allow = ["Bash(uv run python lookup.py:*)"]
 summary = "In this step you find out whether the agent's quoted evidence really supports its verdicts."
 checkpoints = [
-  { text = "You have checked the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\"", task = "Check the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\"." },
+  { text = "You have checked the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\"", task = "In the results viewer, check the quoted evidence for the first five claims where the agent answered \"supported\" or \"refuted\".", tick = false },
   { text = "Your table and answers are in WRITEUP.md", slots = ["2b.*"] },
 ]
 brief = '''
@@ -951,8 +1004,10 @@ Never say whether the quoted evidence supports the verdict, whether a quote is r
 whether the agent was right. Quote each claim word for word, and do not break it into parts or say
 which part a quote is about. A hint that picks what they look at does the same work as saying it:
 for example "Does any of them say <a word from the claim>?". The student types the whole table
-under 2b and the answers after it; you may show the facts the table asks for in the chat. Tick
-checkpoint 1 when they say they have checked all five.
+under 2b and the answers after it, in their editor; you may show the facts the table asks for in
+the chat. After you show a claim or a page, ask nothing about it: say that their judgment goes in
+its row of the table under 2b. The page shows checking the five with no tick: never tick it or ask
+whether they have checked them.
 '''
 
 # ---- Part 3 (extra credit): Why the agent fails, and one change ------------------------------------------------
@@ -968,9 +1023,9 @@ slots = ["3a.*"]
 allow = []
 summary = "In this step you find out why the agent fails on your evaluation claims."
 checkpoints = [
-  { text = "You have labeled each of the eight failures in your table, with the entry of the trace that shows it and whether the dataset's label is right", task = "Label each of the eight failures in your table, with the entry of the trace that shows it, and say whether the dataset's label is right." },
+  { text = "You have labeled each of the eight failures in your table, with the entry of the trace that shows it and whether the dataset's label is right", task = "In your editor, label each of the eight failures in your table, with the entry of the trace that shows it, and say whether the dataset's label is right." },
   { text = "Claude has given its own labels, without seeing yours", task = "Ask Claude to label the same claims. It gives its labels without seeing yours." },
-  { text = "Claude's labels are in the last column of your table", task = "Put Claude's labels in the last column of your table." },
+  { text = "Claude's labels are in the last column of your table", task = "Put Claude's labels in the last column of your table: ask Claude to, or type them in your editor." },
   { text = "Your answers are in WRITEUP.md", slots = ["3a.*"] },
 ]
 brief = '''
@@ -1009,11 +1064,13 @@ The order, which the step's instructions also give the student:
 1. The student reads the trace of each of the eight in the results viewer, gives each one label,
    decides whether the dataset's label is right, and types their row into the table under 3a,
    without telling you their labels. In your first reply, say that this step starts with them
-   labeling in their table and then asking for your labels, and ask whether their labels are
-   typed. If they start to tell you their labels before you have given yours, ask them to hold on
-   until you have given your own. While they work you may paste a trace or explain a lookup,
-   when asked. Until you give your own labels, never say which label a trace deserves or whether
-   the dataset's label is right. Quote each claim word for word, and do not break it into parts.
+   labeling the eight failures in the table under 3a, in their editor, without telling you, and
+   that once their labels are typed they ask you for yours. If they start to tell you their
+   labels before you have given yours, say that their labels go in the table, in their editor,
+   and that you will give yours when they ask. While they work you may paste a trace or explain a
+   lookup, when asked. Until you give your own labels, never say which label a trace deserves or
+   whether the dataset's label is right. Quote each claim word for word, and do not break it into
+   parts.
 2. When they ask for your labels, read the eight traces as above and give one label per claim in the
    chat, each with its row number, its first few words and the entry of the trace it is based on
    (its number and a few words of what it shows). Base your labels on the traces alone, never on
@@ -1022,18 +1079,20 @@ The order, which the step's instructions also give the student:
    the dataset's label; judge that from the trace alone, never from your own memory of the facts,
    and name the entry it is based on, as for every other label. The column "Is the dataset's label
    right?" is the student's alone, their judgment from what they know: do not fill it in, comment
-   on it or grade it. Then tick checkpoint 2. Do not tick checkpoint 1 yet: you
-   have not seen their table.
+   on it or grade it. Then tick checkpoint 2. Do not tick checkpoint 1 yet: you have not seen
+   their table. End with what comes next: they ask you to write your labels into the last column
+   of their table, or type them in themselves, in their editor.
 3. When they ask, read the table under 3a in WRITEUP.md. If every row has their label, their
    entry and their yes, no or can't tell, tick checkpoint 1. Write each of your labels into the
    "Claude's label" column of its row (that column is meant for your labels), then tick
    checkpoint 3. They may type your labels in themselves instead; when they say they have, read
    the table, and tick checkpoints 1 and 3 if every column is filled. If a row names a claim that
    is not one of the eight, or one of the eight has no row, say which, in one line.
-4. Then they answer the questions: where the two of you disagreed and who they think is right, and
-   which kind of failure was most common. Where your label and theirs differ, never say who is
-   right, and do not argue for your labels. If asked why you chose one, quote the entry of the trace
-   it is based on.
+4. Then they type their answers to the two questions in WRITEUP.md, in their editor: where the
+   two of you disagreed and who they think is right, and which kind of failure was most common.
+   Say so in one line once the labels are in the table. Where your label and theirs differ, never
+   say who is right, and do not argue for your labels. If asked why you chose one, quote the entry
+   of the trace it is based on.
 
 The labels, word for word as the step's page gives them:
 
@@ -1061,9 +1120,9 @@ allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", 
 run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after", note = "About 6 minutes and about 21 cents on your key. Start it only after you have made your change. Leave that tab open, your laptop awake and your change alone until it ends with two tables." }
 summary = "In this step you make one change aimed at your most common failure. You find out whether it fixes that failure on your evaluation claims."
 checkpoints = [
-  { text = "You have made one change", task = "Make one change." },
-  { text = "The agent's run on your evaluation claims, with your change, is finished", task = "Start the agent's run on your evaluation claims yourself, in your own terminal tab, and let it finish.", files = ["runs/part3/after/report.txt"] },
-  { text = "You have compared the two runs in the results viewer", task = "Compare the two runs in the results viewer." },
+  { text = "You have made one change", task = "Make one change, in your editor or by asking Claude." },
+  { text = "The agent's run on your evaluation claims, with your change, is finished", task = "In a terminal tab of your own, start the agent's run on your evaluation claims, and let it finish.", files = ["runs/part3/after/report.txt"] },
+  { text = "You have compared the two runs in the results viewer", task = "In the results viewer, compare the two runs.", tick = false },
   { text = "Your answers are in WRITEUP.md", slots = ["3b.*"] },
 ]
 brief = '''
@@ -1083,7 +1142,8 @@ They make the change in their editor, or tell you exactly what to change. Make e
 change and nothing else, then show the diff with `git diff`. If what they describe is not exact
 ("make it stop later"), ask for the exact change; do not fill it in. An edit to any file other
 than instructions.md and WRITEUP.md makes Claude Code ask the student first. Tick checkpoint 1
-once the change is made.
+once you have seen the change in `git diff`. Then end with what comes next: in a terminal tab of
+their own, they start the run below.
 
 The run is the student's to start, in a terminal tab of their own, in the homework's folder, after
 the change is made:
@@ -1109,8 +1169,11 @@ of the agent, nothing was run: say in one sentence that the results shown come f
 was before their latest change, and ask whether they want to run again with `--fresh`. The choice
 is theirs. Never run runs/part2 again: it is what they compare with. They must not change
 instructions.md or my_loop.py while a run is going: the agent reads instructions.md again for every
-claim, and a changed loop makes the rest of the run a different version of the agent. Tick
-checkpoint 3 when they say they have compared the two runs.
+claim, and a changed loop makes the rest of the run a different version of the agent. After you
+paste the report, end with what comes next: in the results viewer they compare the two runs, then
+type their answers to the step's three questions in WRITEUP.md, in their editor. They do not need
+to reply here. The page shows comparing the two runs with no tick: never tick it or ask whether
+they have done it.
 
 Whether it fixed the failure, the numbers before and after, which of their eight failures now
 match, and which claim went from matching to not matching, are theirs to say. You may show either

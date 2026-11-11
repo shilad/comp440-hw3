@@ -20,7 +20,7 @@ Getting started section says. Then:
 2. Run `cp .env.example .env`.
 3. Open `.env` in your editor. Paste the API key I sent you by Slack right after `ANTHROPIC_API_KEY=`,
    type your Macalester email right after `WIKIPEDIA_CONTACT=`, and save.
-4. Type your name after `Name:` at the top of `WRITEUP.md`, and save.
+4. In your editor, type your name after `Name:` at the top of `WRITEUP.md`, and save.
 5. In that tab, start this step's Claude session with the command the homework page shows for 0a.
 6. Ask Claude to run the set-up check. Fix each `NOT READY` line in your editor and ask again, until the
    last line reads "Everything is ready."
@@ -73,7 +73,7 @@ a word.
 
 1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Ask Claude to run the no-tools baseline on the claim, and read the output it pastes.
-3. Answer the question in `WRITEUP.md`.
+3. Type your answer to the question in `WRITEUP.md`, in your editor, under 0b.
 
 **Interpreting output:** Claude runs this command:
 
@@ -109,7 +109,7 @@ assessor* is a program that gives a verdict on a claim; here, the model with one
 1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Ask Claude to run the one-search baseline on the claim, and read the output it pastes.
 3. Click "Open these results" under 0c on the homework page to read the whole page it read.
-4. Answer the two questions in `WRITEUP.md`.
+4. Type your answers to the two questions in `WRITEUP.md`, in your editor, under 0c.
 
 **Interpreting output:** Claude runs this command:
 
@@ -153,7 +153,7 @@ from Wikipedia that a verdict is based on.
 1. Start this step's Claude session (type `/exit` first if another one is open).
 2. Ask Claude to run the agent on the claim, and read the trace it pastes, one entry at a time.
 3. Click "Open these results" under 0d and read "The agent's trace", with each lookup's full result.
-4. Answer the two questions in `WRITEUP.md`.
+4. Type your answers to the two questions in `WRITEUP.md`, in your editor, under 0d.
 
 **Interpreting output:** Claude runs this command:
 

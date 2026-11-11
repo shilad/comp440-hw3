@@ -396,6 +396,18 @@ def test_actions_and_write_up_hold_no_loose_explanation(step):
     assert not loose, f"{step}: move these under Words in this step, Interpreting output, Troubleshooting or Hint: {loose}"
 
 
+@pytest.mark.parametrize("step", ALL_STEPS[1:])           # 0a's only answer is the name
+def test_actions_say_where_the_answers_are_typed(step):
+    """The instructor, Nov 11: "Should I be talking with Claude? Should I be typing in the writeup?
+    Clarify." Each step's Actions end the same way: the answers are typed in WRITEUP.md, in the
+    student's editor, under the step's heading."""
+    page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]
+    actions = one_line("\n\n".join(parts(page).get("Actions", [])))
+    label = step.split(".")[0]
+    assert f"in `WRITEUP.md`, in your editor, under {label}." in actions, actions[-200:]
+    assert not re.search(r"\d\. Answer the", actions), actions
+
+
 @pytest.mark.parametrize("step", ALL_STEPS)
 def test_every_label_is_one_the_page_knows(step):
     page = sections((ROOT / PARTS[int(step[0])][1]).read_text(encoding="utf-8"))[step]

@@ -77,6 +77,8 @@ You used all of these in earlier homeworks:
 This describes how the homework page is structured, but it is intended that you can follow along with it directly.
 If you are curious, here are additional details.
 
+- You talk with Claude to run programs and to ask for explanations. You type your answers in `WRITEUP.md`, in
+  your editor.
 - The homework page lists every step, 0a to 3c, and ticks each one when it is done. Part 3 is extra
   credit. For each step it shows a short summary and its tasks. Below the tasks, the step's instructions,
   from the pages in `instructions/`, open with a click, part by part: Words in this step, Actions,
