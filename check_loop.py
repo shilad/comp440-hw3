@@ -149,7 +149,7 @@ SCENARIOS = {
     "reject": ([reply("asked for a read", read("Forrest Gump")),
                 reply(QUOTES_NOTHING, MADE_UP),
                 reply(SAYS_NOT, NOT_SAID)], PLENTY),
-    # More answers than any MAX_REJECTED you might set in Part 3 (step 3d).
+    # More answers than any MAX_REJECTED you might set in Part 3 (step 3b).
     "reject_often": ([reply(QUOTES_NOTHING, MADE_UP)] * 12, PLENTY),
     "clean": ([reply("asked for a read", read("Robert Zemeckis")),
                reply("gave an answer with its evidence as one string and no explanation",
@@ -792,7 +792,7 @@ def results_problem(run, k, request, exact=False):
 
 def rule_4(runs):
     """Check the answer. What counts as a problem is whatever answer_problem() in agent.py says
-    now, and the number of rejections is MAX_REJECTED as it is now, since step 3d lets you
+    now, and the number of rejections is MAX_REJECTED as it is now, since step 3b lets you
     change agent.py."""
     def problem(call, page):
         return agent.answer_problem(agent.clean_answer(call.input), [PAGES[page]])

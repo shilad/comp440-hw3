@@ -36,10 +36,10 @@ class Step:
     minutes: int | None = None
     page: str | None = None      # or take the body from a Markdown page...
     section: str | None = None   # ...the part under this "## " heading
-    summary: str = ""            # a sentence, shown while the step is closed
-    goal: str = ""               # what the step is for, in full sentences, shown when it is open
+    summary: str = ""            # what the step is, in a sentence or two, shown under its title
+    goal: str = ""               # no longer shown; kept so an older steps file still loads
     setup: bool = False          # a setup step: its text and checkpoints show as plain steps
-    claim: bool = False          # show the assignment's sample claim beside the goal
+    claim: bool = False          # show the assignment's sample claim above the step's tasks
     # A command the student runs in a terminal tab of their own (a long run), shown in a second
     # box under the Claude command: a table with `command` and `note`.
     run_yourself: dict | None = None

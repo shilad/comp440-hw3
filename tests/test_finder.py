@@ -383,3 +383,11 @@ def test_command_line_save_takes_an_even_share_from_each_topic(monkeypatch, tmp_
     note = json.loads((tmp_path / "data" / "my-topic.json").read_text())
     assert note["topics"] == [{"query": "film", "claims": 38}, {"query": "basketball", "claims": 37},
                               {"query": "television", "claims": 37}]
+
+
+def test_the_search_code_is_lines_1_to_165_of_search_py():
+    """0b links the student to finder/search.py#L1-L165 as the retrieval code: search() must start
+    within those lines and pick(), which saves the selection, after them."""
+    lines = (Path(__file__).resolve().parent.parent / "finder/search.py").read_text().splitlines()
+    at = {name: next(i for i, x in enumerate(lines, 1) if x.startswith(f"def {name}(")) for name in ("search", "pick")}
+    assert at["search"] < 165 < at["pick"], at

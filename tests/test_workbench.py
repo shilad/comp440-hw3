@@ -56,7 +56,7 @@ slots = ["0b.*"]
 files = ["runs/part0/no-tools-*.json"]
 allow = ["Bash(uv run python check.py:*)"]
 checkpoints = [
-  "You said what you expect before it ran",
+  "You read the output with Claude",
   { text = "You've seen the model answer", files = ["runs/part0/no-tools-*.json"] },
   { text = "Your answers", slots = ["0b.*"] },
 ]
@@ -325,7 +325,7 @@ def test_a_chained_call_is_labelled_by_what_is_left(tmp_path):
 
 
 def test_each_tick_sits_at_the_moment_it_was_reached(tmp_path):
-    two = STEPS.replace('"You said what you expect before it ran",', '"You said what you expect before it ran", "You asked it to run",')
+    two = STEPS.replace('"You read the output with Claude",', '"You read the output with Claude", "You asked it to run",')
     h = homework(tmp_path, {"steps.toml": two})
     app = server.App(h.student)
     save_session(h.student, app.hub.session_id("0b"), [
@@ -339,7 +339,7 @@ def test_each_tick_sits_at_the_moment_it_was_reached(tmp_path):
     s = app.hub.sessions["0b"]
     s.refresh()
     marked = {x.get("text"): x["reached"] for x in s.record()["entries"] if x.get("reached")}
-    assert marked == {None: ["You said what you expect before it ran"], "Run it.": ["You asked it to run"]}
+    assert marked == {None: ["You read the output with Claude"], "Run it.": ["You asked it to run"]}
 
 
 def test_the_guard_lets_a_status_line_mention_the_key_file(tmp_path):
@@ -430,27 +430,91 @@ def test_a_step_can_carry_a_command_the_student_runs_themselves(tmp_path):
     assert "Run this yourself, in a terminal tab of your own" in js
 
 
-def test_a_code_span_in_a_question_shows_as_code_and_nothing_else_is_markup():
+def node_or_none():
+    import glob
+    import shutil
+    return shutil.which("node") or next(iter(sorted(glob.glob(str(Path.home() / ".nvm/versions/node/*/bin/node")))), None)
+
+
+def text_helpers(js):
+    """The page's text helpers (esc, linkText, codeText): the lines from `const esc =` to `let A`."""
+    lines = js.splitlines()
+    first = next(i for i, x in enumerate(lines) if x.startswith("const esc ="))
+    last = next(i for i, x in enumerate(lines) if x.startswith("let A"))
+    return "\n".join(lines[first:last])
+
+
+def test_a_code_span_or_a_link_in_a_task_or_question_shows_as_such_and_nothing_else_is_markup():
     js = (ROOT / "workbench/static/app.js").read_text()
-    source = next(line for line in js.splitlines() if line.startswith("const codeText ="))
-    assert "esc(s).replace(" in source                       # escaped first, then the code spans
+    helpers = text_helpers(js)
+    assert "linkText(esc(part))" in helpers and "esc(part.slice(1, -1))" in helpers   # escaped first
     for site in ('<span class="q">${codeText(text)}</span>', "codeText(now.question)", "codeText(now.todo)",
                  'line("tick", codeText(x.text) + ".")', "${codeText(c.task || c.text)}</li>"):
         assert site in js, site
-    import glob
-    import shutil
-    node = shutil.which("node") or next(iter(sorted(glob.glob(str(Path.home() / ".nvm/versions/node/*/bin/node")))), None)
+    node = node_or_none()
     if not node:                                            # a laptop without node: the checks above stand
         return
-    esc = next(line for line in js.splitlines() if line.startswith("const esc ="))
-    run = esc + "\n" + source + "\n" + "\n".join(
-        f"console.log(codeText({json.dumps(q)}));" for q in (
-            "Give the line numbers in `my_loop.py`.", "Is <b>this</b> bold? `<i>x</i>` and [a](http://x)",
-            "Write *supported* or `doesn't say`."))
+    cases = {
+        "Give the line numbers in `my_loop.py`.": "Give the line numbers in <code>my_loop.py</code>.",
+        "Is <b>this</b> bold? `<i>x</i>`": "Is &lt;b&gt;this&lt;/b&gt; bold? <code>&lt;i&gt;x&lt;/i&gt;</code>",
+        "Write *supported* or `doesn't say`.": "Write *supported* or <code>doesn't say</code>.",
+        "Select 112 claims in the [claim finder](/claims/) and save them.":
+            'Select 112 claims in the <a href="/claims/" target="_blank" rel="noopener">claim finder</a> and save them.',
+        "Read the [retrieval code](https://github.com/shilad/comp440-hw3/blob/main/finder/search.py#L1-L165) in `finder/search.py`.":
+            'Read the <a href="https://github.com/shilad/comp440-hw3/blob/main/finder/search.py#L1-L165" '
+            'target="_blank" rel="noopener">retrieval code</a> in <code>finder/search.py</code>.',
+        "[a](javascript:void) [b](//elsewhere.example) [c](notes.md)": "a b c",   # only words
+        'A [quoted](https://x.example/"onclick=1) link': 'A <a href="https://x.example/&quot;onclick=1" '
+                                                          'target="_blank" rel="noopener">quoted</a> link',
+        "`[not a link](/x)` stays code": "<code>[not a link](/x)</code> stays code",
+    }
+    run = helpers + "\n" + "\n".join(f"console.log(codeText({json.dumps(q)}));" for q in cases)
     out = subprocess.run([node, "-e", run], capture_output=True, text=True).stdout.splitlines()
-    assert out == ["Give the line numbers in <code>my_loop.py</code>.",
-                   "Is &lt;b&gt;this&lt;/b&gt; bold? <code>&lt;i&gt;x&lt;/i&gt;</code> and [a](http://x)",
-                   "Write *supported* or <code>doesn't say</code>."]
+    assert out == list(cases.values())
+
+
+def test_a_steps_summary_shows_open_and_closed_and_only_setup_is_plain(tmp_path):
+    h = homework(tmp_path, {"steps.toml": STEPS.replace('title = "Ask the model on its own"',
+                                                        'title = "Ask the model on its own"\nsummary = "In this step you ask it."\n'
+                                                        'goal = "An old goal, no longer shown."')})
+    a = server.App(h.student).assignment()
+    step = next(s for s in a["steps"] if s["label"] == "0b")
+    assert step["summary"] == "In this step you ask it." and "goal" not in step
+    js = (ROOT / "workbench/static/app.js").read_text()
+    css = (ROOT / "workbench/static/style.css").read_text()
+    assert ".step.open .step-sum" not in css                # shown when the step is open too
+    assert "const plain = s.setup;" in js and "s.goal" not in js
+
+
+def test_a_part_marked_extra_credit_is_labelled_not_counted_and_still_committed(tmp_path):
+    extra = STEPS.replace('number = 1\ntitle = "The loop"', 'number = 1\ntitle = "The loop"\nextra_credit = true')
+    h = homework(tmp_path, {"steps.toml": extra})
+    app = server.App(h.student)
+    parts = {p["number"]: p for p in app.assignment()["parts"]}
+    assert parts[1].get("extra_credit") is True and not parts[0].get("extra_credit")
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert '${p.extra_credit ? " (extra credit)" : ""}' in js
+    assert "const required = S.steps.filter((x) => !extra.includes(x.part));" in js
+    assert "extra credit." in js
+    finish_part0(h.student)
+    (h.student / "WRITEUP.md").write_text(FILLED.replace("each turn?\n\n>", "each turn?\n\n> The messages."))
+    app.commit_finished_parts()
+    assert subjects(h.student)[:2] == ["Part 1 done", "Part 0 done"]   # the extra-credit part commits too
+
+
+def test_the_session_opens_on_the_summary_and_asks_for_no_prediction(tmp_path):
+    h = homework(tmp_path, {"steps.toml": STEPS.replace('title = "Ask the model on its own"',
+                                                        'title = "Ask the model on its own"\nsummary = "In this step you ask it."')})
+    app = server.App(h.student)
+    (h.student / "WRITEUP.md").write_text(WRITEUP.replace("Name:", "Name: Sam"))
+    app.hub.sessions["0b"].prepare()
+    prompt = (app.hub.dir / "0b.md").read_text()
+    assert "as the page says it under the step's title: In this step you ask it." in prompt
+    assert "ask what they would like to do first" in prompt
+    assert "what they expect, or" not in prompt and "note what the student expects before a run" not in prompt
+    assert "you may name the next one that is not done" in prompt
+    skill = (ROOT / "workbench/plugin/skills/page/SKILL.md").read_text()
+    assert "Waiting for your prediction" not in skill and "said their prediction" not in skill
 
 
 # -- saving the student's work -------------------------------------------------------------------
@@ -786,7 +850,7 @@ def test_the_record_of_each_started_step_is_saved(tmp_path):
     app = server.App(h.student)
     chained_session(h.student, app.hub.session_id("0b"))
     finish_part0(h.student)
-    app.hub.record("0b", "checkpoint", n=1, text="You said what you expect before it ran")
+    app.hub.record("0b", "checkpoint", n=1, text="You read the output with Claude")
     app.hub.save_records(h.student / "record")
     rec = json.loads((h.student / "record/0b.json").read_text())
     assert rec["step"] == "0b" and rec["complete"]

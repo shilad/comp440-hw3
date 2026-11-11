@@ -153,10 +153,21 @@ claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus
 `allow`, `never_read`, `overview`, `sample_claim` (any text, quotes included). A step's `minutes`
 shows in its header as "about 25 minutes". A `files` entry is only ever checked for existence, so
 `files = [".env"]` is safe; the page never opens, shows or links to a `never_read` file. Then `[[part]]` tables (`number`, `title`,
-`due`) and `[[step]]` tables. A step's id is its name on the page (`"0b"`); its section in
-`WRITEUP.md` starts with that name (`## 0b. Ask the model with no tools`), and `slots = ["0b.*"]`
-takes every question, table and pasted block in that section. A key the page doesn't know is
-ignored, with a note in the terminal.
+`due`, and `extra_credit = true` for a part that isn't required) and `[[step]]` tables. A step's
+id is its name on the page (`"0b"`); its section in `WRITEUP.md` starts with that name
+(`## 0c. Ask the model to assess a claim without tools`), and `slots = ["0c.*"]` takes every
+question, table and pasted block in that section. A key the page doesn't know is ignored, with a
+note in the terminal.
+
+A step's `summary` (a sentence or two on what the step is) shows under its title, open or closed,
+and opens its Claude session's prompt. A step's `goal` is no longer shown. Only a step with
+`setup = true` shows its instruction section in full; every other step shows its tasks, with the
+section folded under "If you're stuck". A task's or a question's text may hold `code` spans and
+`[links](address)`: an address that starts with `https://`, `http://` or one `/` (a page of the
+homework page itself, such as `/claims/`) becomes a link that opens in a new tab, and any other
+shows as its words. A part with `extra_credit = true` shows as "Part 3 (extra credit)"; the count
+at the top counts only the required steps and says which part is extra credit. Its steps still open
+in order and its "Part 3 done" commit is made as for any part.
 
 ## Files
 

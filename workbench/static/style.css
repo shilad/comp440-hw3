@@ -2,7 +2,7 @@
    becomes a card: what the step is for and what counts (left), and the student's own record of
    working on it with Claude (right). The record shows what happened, never the next move.
    Emphasis: two text colors. --ink (white in dark mode) marks only what the student must read or
-   act on: part titles, the open step's title and goal, the claim, the open question, and their own
+   act on: part titles, the open step's title, the claim, the open question, and their own
    words. Bold marks one thing: the question the student is answering now. Everything else is
    --muted. */
 :root {
@@ -87,12 +87,10 @@ pre code { background: none; padding: 0; }
 .badge.done { color: var(--ok); background: var(--ok-bg); }
 .badge.turn { color: var(--you); background: var(--you-bg); font-weight: 500; }
 .step-sum { margin: -4px 0 0; padding: 0 44px 10px 46px; font-size: 14.5px; max-width: 76ch; }
-.step.open .step-sum { display: none; }   /* the goal says it, in full */
 
 /* An open step: what it is for and what counts (left); the student's record (right) */
 .step-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 26px; padding: 4px 20px 20px 46px; }
 .col { min-width: 0; display: grid; gap: 14px; align-content: start; }
-.goal { color: var(--ink); margin: 0; max-width: 60ch; font-size: 16px; }
 .claimbox { font-family: var(--display); font-weight: 400; font-size: 16px; color: var(--ink); background: var(--sunk); border-radius: 6px; padding: 10px 14px; }
 .counts { display: grid; gap: 8px; }
 .check { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; font-size: 14.5px; }
@@ -175,7 +173,6 @@ details.stuck[open] summary::before { content: "− "; }
 /* An open step reads top to bottom in one style: one size, sentence-case labels, plain lines. */
 .step-body { font-size: 15px; }
 .step-body .label { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 500; }
-.step-body .goal { font-size: 15px; }
 .step-body .claimbox { font-family: var(--body); font-size: 15px; background: none; border-left: 3px solid var(--line); border-radius: 0; padding: 2px 0 2px 12px; }
 .step-body .check { font-size: 15px; }
 .step-body .check .ans { font-size: 15px; }

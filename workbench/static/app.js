@@ -1,7 +1,7 @@
 // The workbench page, for the student. The assignment's parts, each with a sentence or two on what
-// it is for, and under each its steps (0a, 0b, ...). A step opens to show what it is
-// for and its tasks (left: the goal, the checkpoints, and the brief's own text folded
-// under "If you're stuck"), and their record of working on it with Claude (right: what they
+// it is for, and under each its steps (0a, 0b, ...), each with its summary under its title,
+// open or closed. A step opens to show its tasks (left: the checkpoints, and the brief's own
+// text folded under "If you're stuck"), and their record of working on it with Claude (right: what they
 // expected, what they asked, what Claude ran and what came back, ending on the open question),
 // with links to what the step produced and the command that opens its Claude Code session.
 // The record shows what happened, never the next move. A setup step shows its steps in full.
@@ -14,9 +14,15 @@
 const $ = (s, el = document) => el.querySelector(s);
 const byId = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-// A question or checkpoint as the brief writes it: plain text, except that a `code` span shows as
-// code. Escaped first, so nothing in the text can become markup.
-const codeText = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+// A task, a question or a record line as the steps file or the write-up writes it: plain text,
+// escaped first, except that a `code` span shows as code and a [link](address) as a link in a new
+// tab when the address starts with https://, http:// or one / (a page of this homework page, such
+// as /claims/). Any other link shows as its words. Nothing else in the text can become markup.
+const WEB = /^(https?:\/\/|\/(?!\/))/;
+const linkText = (t) => t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,
+  (m, words, href) => (WEB.test(href) ? `<a href="${href}" target="_blank" rel="noopener">${words}</a>` : words));
+const codeText = (s) => String(s ?? "").split(/(`[^`]+`)/)
+  .map((part, i) => (i % 2 ? `<code>${esc(part.slice(1, -1))}</code>` : linkText(esc(part)))).join("");
 
 let A = null;               // the assignment
 let S = null;               // the latest /api/state
@@ -30,7 +36,7 @@ function inline(s) {
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>")
-    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/(?!\/)[^)\s]*)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, "$1");
 }
 function md(text) {
@@ -122,7 +128,7 @@ function build() {
   byId("parts").innerHTML = A.parts.map((p) => `
     <section class="part" id="part-${p.number}">
       <button class="part-head" data-part="${p.number}" aria-expanded="false" aria-controls="steps-${p.number}" type="button">
-        <span class="part-title"><span class="no">Part ${p.number}</span>${esc(p.title)}</span>
+        <span class="part-title"><span class="no">Part ${p.number}${p.extra_credit ? " (extra credit)" : ""}</span>${esc(p.title)}</span>
         <span class="part-meta nums" id="meta-${p.number}"></span><span class="chev"></span></button>
       ${p.desc ? `<p class="part-desc">${esc(p.desc)}</p>` : ""}
       <ol class="steps" id="steps-${p.number}" hidden>${A.steps.filter((s) => s.part === p.number).map((s) => `
@@ -146,10 +152,9 @@ function minutes(s) {
 }
 
 function leftCol(s) {
-  const plain = s.setup || !s.goal;   // a setup step, or a step with no goal yet: the brief's text in full
+  const plain = s.setup;   // a setup step: the brief's text in full
   return (plain ? `<span class="label">Instructions</span><div class="doc">${md(s.body)}</div>`
-    : `<p class="goal">${esc(s.goal)}</p>
-       ${s.claim && A.sample_claim ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : ""}`)
+    : `${s.claim && A.sample_claim ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : ""}`)
     + `<div class="counts" id="dw-${s.label}"></div>`
     + (!plain && s.body ? `<details class="stuck"><summary>If you're stuck</summary><div class="stuck-body doc">${md(s.body)}</div></details>` : "");
 }
@@ -166,9 +171,13 @@ function notices() {
 
 function update() {
   if (!byId("notices").querySelector("[data-update][disabled]")) paint(byId("notices"), notices());
-  const n = S.steps.filter((x) => x.complete).length;
-  byId("bar").style.width = `${(100 * n / S.steps.length).toFixed(1)}%`;
-  byId("count").textContent = `${n} of ${S.steps.length} steps done`;
+  // The count is of the required steps; a part marked extra credit is said so, and not counted.
+  const extra = A.parts.filter((p) => p.extra_credit).map((p) => p.number);
+  const required = S.steps.filter((x) => !extra.includes(x.part));
+  const n = required.filter((x) => x.complete).length;
+  byId("bar").style.width = `${(100 * n / Math.max(1, required.length)).toFixed(1)}%`;
+  byId("count").textContent = `${n} of ${required.length} steps done`
+    + (extra.length ? `. Part ${extra.join(" and Part ")} ${extra.length > 1 ? "are" : "is"} extra credit.` : "");
   const now = S.now && stepOf(S.now);
   paint(byId("next"), now ? `Now: <a href="#step-${now.label}" id="jump">${esc(now.label)}, ${esc(now.title)}</a>` : "Every step is done.");
   const part = now && A.parts.find((p) => p.number === now.part);

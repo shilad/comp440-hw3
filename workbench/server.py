@@ -172,7 +172,7 @@ class App:
             "sample_claim": a.sample_claim,
             "parts": parts,
             "steps": [{"id": s.id, "label": a.label(s), "part": s.part, "title": s.title, "summary": s.summary,
-                       "goal": s.goal, "setup": s.setup, "claim": s.claim, "minutes": s.minutes, "files": s.files,
+                       "setup": s.setup, "claim": s.claim, "minutes": s.minutes, "files": s.files,
                        "run_yourself": stepmod.run_yourself(s),
                        "body": stepmod.body(s, a, self.repo)} for s in a.steps],
             "repo": str(self.repo),
