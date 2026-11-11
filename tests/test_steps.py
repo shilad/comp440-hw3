@@ -42,24 +42,25 @@ LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loo
 EXPECTED = {
     "0a": (0, "0a. Get your copy running", [".env", "runs/part0/setup-check.txt"],
            ["Bash(uv sync)", "Bash(uv --version)", "Bash(uv run python check_setup.py)", "Bash(uv run pytest:*)"], 20),
-    "0b": (0, "0b. Pick your topics and find your claims", ["data/my-topic.json"], FINDER, 25),
-    "0c": (0, "0c. Ask the model to assess a claim without tools", ["runs/part0/no-tools-*.json"], CHECK, 8),
-    "0d": (0, "0d. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 8),
-    "0e": (0, "0e. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 12),
-    "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 60),
-    "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 15),
-    "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 15),
-    "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 28),
-    "1e": (1, "1e. Start the full run, and predict", ["runs/part2/no-tools.jsonl"], EVALUATE, 15),
-    "2a": (2, "2a. Compare accuracy", ["runs/part2/report.txt"], EVALUATE, 18),
-    "2b": (2, "2b. Check the evidence yourself", [], LOOKUP, 20),
+    "0b": (0, "0b. Pick your topics and find your claims", ["data/my-topic.json"], FINDER, 30),
+    "0c": (0, "0c. Ask the model to assess a claim without tools", ["runs/part0/no-tools-*.json"], CHECK, 10),
+    "0d": (0, "0d. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 15),
+    "0e": (0, "0e. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 15),
+    "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 70),
+    "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 25),
+    "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 25),
+    "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 45),
+    "1e": (1, "1e. Start the full run, and predict", ["runs/part2/no-tools.jsonl"], EVALUATE, 20),
+    "2a": (2, "2a. Compare accuracy", ["runs/part2/report.txt"], EVALUATE, 25),
+    "2b": (2, "2b. Check the evidence yourself", [], LOOKUP, 35),
     "3a": (3, "3a. Sort the failures", [], [], 32),
     "3b": (3, "3b. Make one change", ["runs/part3/after/report.txt"],
            EVALUATE + CHECK + ["Edit(instructions.md)"], 18),
     "3c": (3, "3c. Write it up", [], [], 20),
 }
-# Minutes per part (contract, Nov 11). Parts 0 to 2, the required work, make about 4 hours.
-PART_MINUTES = {0: 73, 1: 133, 2: 38, 3: 70}
+# Minutes per part (the instructor's "split the difference", morning of Nov 11). Parts 0 to 2,
+# the required work, make about 5 and a half hours.
+PART_MINUTES = {0: 90, 1: 185, 2: 60, 3: 70}
 
 # Each step's summary, word for word from the instructor's outline (Nov 11).
 SUMMARIES = {
@@ -261,7 +262,7 @@ def test_fifteen_steps_in_order(a):
 def test_minutes_per_part(a):
     per = {n: sum(s.minutes for s in a.steps if s.part == n) for n in PARTS}
     assert per == PART_MINUTES
-    assert sum(per[n] for n in (0, 1, 2)) == 244, "the required work is about 4 hours"
+    assert sum(per[n] for n in (0, 1, 2)) == 335, "the required work is about 5 and a half hours"
 
 
 def test_the_old_cost_step_and_the_id_2c_are_gone():
