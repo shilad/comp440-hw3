@@ -3,8 +3,8 @@
 Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you read the full run you started in 1e: how often each version matched the dataset's
-label, what each one cost, and whether the agent's evidence holds up when you check it yourself. It
-should take about 50 minutes.
+label, and whether the agent's evidence supports its verdicts when you check it yourself. It should take
+about 40 minutes.
 
 ## 2a. Compare accuracy
 
@@ -52,41 +52,9 @@ viewer shows the same counts with percentages. In your answers, counts and perce
 **Completion:** The homework page ticks 2a: `runs/part2/report.txt` exists, the block holds the
 report, and the three answers have text after the `>`.
 
-## 2b. Compare cost
+## 2b. Check the evidence yourself
 
-In this step you find out what the agent costs compared with the one-search baseline. You also decide
-when that extra cost is worth paying.
-
-**Words in this step:** A *lookup* is one call to `search`, `read` or `wikidata`; the loop allows at
-most 12 for one claim. A *token* is the unit the API counts text in and charges by, about three quarters
-of a word. A *trace* is the agent's lookups for one claim, in order, with what each returned.
-
-**Actions:**
-
-1. Start this step's Claude session with the command the homework page shows for 2b, in a terminal tab in the
-   homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Read the report's second table, in the block under 2a in `WRITEUP.md`.
-3. Open **Results** at the top of the homework page, then "runs/part2", and read "Cost".
-4. Tick "Only claims where the agent used all 12 lookups" in the claims filters.
-5. If any are listed, click one and read "The agent's trace".
-6. Answer the three questions.
-
-**Output:** The second table gives, for each version, the average lookups, tokens, seconds and
-dollars per claim. The results viewer's "Cost" section has the same "Average per claim" table, the
-totals, and "The agent used all 12 lookups on N claims.", where "N claims" links to those claims.
-
-**Write-up:** Answer these questions in `WRITEUP.md`, under 2b:
-
-- How much more does the agent cost per claim than the one-search baseline? Give the numbers.
-- For which kinds of claims (for example by number of articles, or by what the claim asks) is that extra cost worth paying, and for which is it not?
-- Did the agent ever use all 12 lookups? If so, pick one such claim and say what it was doing.
-
-**Completion:** The homework page ticks 2b: the three answers have text after the `>`.
-
-## 2c. Check the evidence yourself
-
-In this step you find out whether the agent's quoted evidence really supports its verdicts. That tells
-you whether accuracy alone is a fair measure of the agent.
+In this step you find out whether the agent's quoted evidence really supports its verdicts.
 
 The loop already checks that every quoted sentence appears in something the agent read. A quote can be
 real and still not support the verdict. For a verdict of *refuted*, the question is whether the quotes
@@ -99,7 +67,7 @@ numbered line of a trace, a lookup or an answer.
 
 **Actions:**
 
-1. Start this step's Claude session with the command the homework page shows for 2c, in a terminal tab in the
+1. Start this step's Claude session with the command the homework page shows for 2b, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open **Results** at the top of the homework page, then "runs/part2".
 3. Click "Clear the filters" under the claims filters.
@@ -122,13 +90,13 @@ uv run python lookup.py --no-log read "<page title>"
 uv run python lookup.py --no-log read "<page title>" "<section>"
 ```
 
-**Write-up:** In `WRITEUP.md`, under 2c, fill in the table and answer:
+**Write-up:** In `WRITEUP.md`, under 2b, fill in the table and answer:
 
 - Fill in one row for each of the first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 - Of the five, how many matched the dataset's label, and for how many of those does the quoted evidence support the verdict?
 - Is accuracy alone a good measure of this agent? Why or why not?
 
-**Completion:** The homework page ticks 2c: all five rows are filled, and both answers have text
+**Completion:** The homework page ticks 2b: all five rows are filled, and both answers have text
 after the `>`. That finishes Part 2, so the page commits your work as `Part 2 done` and pushes it to
 your fork.
 
@@ -140,16 +108,16 @@ asserts, say so in its row.
 
 ## What I look for
 
-Part 2 is 35% of the homework. At a minimum I am looking for the following:
+Part 2 is 50% of the homework. At a minimum I am looking for the following:
 
-- Accuracy and cost: 50% - Your answers to 2a and 2b use numbers from your run, by number of articles.
-- Evidence check: 50% - Each of your five checks in 2c says whether the quote supports the verdict and
+- Accuracy: 50% - Your answers to 2a use numbers from your run, by number of articles.
+- Evidence check: 50% - Each of your five checks in 2b says whether the quote supports the verdict and
   why, and your answer weighs accuracy against how good the evidence is.
 
 ## Extra credit: find where Wikipedia has changed
 
 This is extra credit, and it has no step on the homework page. Do it after Part 2, in any Claude
-session you like (the homework page can take you back to 2c's), or with none.
+session you like (the homework page can take you back to 2b's), or with none.
 
 In this extra credit you find out what it means to judge a system that reads today's Wikipedia against
 labels made from the Wikipedia of 2017.

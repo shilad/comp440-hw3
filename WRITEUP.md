@@ -7,6 +7,18 @@ with no blank line inside it (to start a new paragraph, put a line with just `>`
 table, fill every cell of every numbered row. Claude may paste a program's output where a question asks
 for it, never an answer, and the homework page ticks a step when every answer in its section is filled in.
 
+## Learning goals
+
+In this homework you will:
+
+- Understand what makes a program an *agent*: a language model that picks the next thing to look up, reads what comes back, and decides when to stop.
+- Gain hands-on experience with the loop around the model by writing it yourself: its tools, its instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in what it read.
+- Build a small dataset of claims about topics you are interested in, and see how a retrieval system finds them by keyword and by meaning.
+- Compare the agent with two simpler methods on your claims, and measure how effective each one is.
+- Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.
+
+For extra credit, in Part 3, you find out why the agent fails on your claims, make one change, and see where Wikipedia, which is written by its volunteer editors, is thin, out of date or wrong.
+
 # Part 0: Set up and find your claims
 
 ## 0a. Get your copy running
@@ -15,25 +27,17 @@ There is nothing to write for this step except your name, after `Name:` at the t
 
 ## 0b. Pick your topics and find your claims
 
-What are your topics, and why do you know each of them better than most people?
+Why did you choose the topics you did?
 
 >
 
-What did you type in the claim finder for each topic, and which way of searching did you keep (by keyword, by meaning or both)? Why that one?
+Read through the [retrieval code](https://github.com/shilad/comp440-hw3/blob/main/finder/search.py#L1-L165) in `finder/search.py`. Describe its overall approach in three sentences.
 
 >
 
-Quote one claim that only the search by meaning found, or only the search by keyword found, with its rank in the search that found it. What does it show about how the two searches differ?
+## 0c. Ask the model to assess a claim without tools
 
->
-
-## 0c. Ask the model with no tools
-
-What verdict did the model give, and what reason did it give? Quote the lines of the output that show them.
-
->
-
-How much would you trust this answer, and why?
+What verdict did the model give (*supported*, *refuted* or *doesn't say*), and what reason did it give? Quote the lines of the output that show them.
 
 >
 
@@ -43,13 +47,13 @@ Which Wikipedia page did it read? Quote the line of the output that shows it.
 
 >
 
-Did that page settle the claim? If not, why do you think the search led there?
+Did that page settle the claim correctly? If not, why do you think the search led there?
 
 >
 
 ## 0e. Run the agent and read its trace
 
-In one or two sentences, how did the agent get from the claim to its verdict? Point to the entries by their numbers in the trace.
+In one or two sentences, how did the agent get from the claim to its verdict? Point to the trace entries by their numbers.
 
 >
 
@@ -69,45 +73,27 @@ What are the ways your loop can end? Give the line number of each.
 
 >
 
-Which rule took you longest to get right, and what was wrong with your first try?
-
->
-
-Now open `reference_loop.py` and compare it with your loop. Name one difference, and say whether it changes what the agent does. (If you used `--use-reference`, say how far your own loop got and what stopped you.)
+Now open `reference_loop.py` and compare it with your loop. Describe one difference in implementation and the resulting effects on agent behavior.
 
 >
 
 ## 1b. Be the agent
 
-Claim 1, to learn the tools: "Mel Duncan holds a history degree from the private, coeducational liberal arts Macalester College located in Saint Paul, Minnesota, US."
+The claim: "Vic & Anthony's Steakhouse is located at the American casino that was combined with the California Club. The casino is owned by Landry's, Inc."
 
-Claim 2: "Vic & Anthony's Steakhouse is located at the American casino that was combined with the California Club. The casino is owned by Landry's, Inc."
+List your lookups, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type "Why you chose it" yourself.
 
-List your lookups for both claims, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type every "Why you chose it" yourself.
+| # | Tool | What you asked for | Why you chose it |
+|---|---|---|---|
+| 1 | | | |
 
-| # | Claim (1 or 2) | Tool | What you asked for | Why you chose it |
-|---|---|---|---|---|
-| 1 | | | | |
-
-What is your verdict on the first claim, and which sentence does it rest on?
-
->
-
-What is your verdict on the second claim, and which sentence or sentences does it rest on? If you stopped at 12 lookups without settling it, your verdict is *doesn't say*: say where you got stuck.
-
->
-
-How many lookups did the second claim take? Which one was hardest to choose, and why?
-
->
-
-Did you have to back up and try something else? What happened?
+What is your verdict on the claim, and which sentence or sentences are most important?
 
 >
 
 ## 1c. Watch the agent work
 
-List the three traces you read closely, one claim each that needs 2, 3 and 4 articles, where your development claims have one. At least one is a claim the agent got wrong, where there is one.
+List the three traces you read closely. At least one should be a claim the agent got wrong (if it had errors).
 
 | # | Claim (first few words) | Articles | Did it match the dataset's label? | Did it get there for a good reason? Why or why not |
 |---|---|---|---|---|
@@ -122,10 +108,6 @@ Which trace did you find most interesting, and what did the agent do well or bad
 ## 1d. Write the agent's instructions
 
 What changed in the agent's traces after you wrote your instructions? Give one claim as an example.
-
->
-
-Was that the change you expected? If not, what do you think happened?
 
 >
 
@@ -164,21 +146,7 @@ The no-tools baseline read nothing. How did it do, and what does that tell you a
 
 >
 
-## 2b. Compare cost
-
-How much more does the agent cost per claim than the one-search baseline? Give the numbers.
-
->
-
-For which kinds of claims (for example by number of articles, or by what the claim asks) is that extra cost worth paying, and for which is it not?
-
->
-
-Did the agent ever use all 12 lookups? If so, pick one such claim and say what it was doing.
-
->
-
-## 2c. Check the evidence yourself
+## 2b. Check the evidence yourself
 
 Fill in one row for each of the first five claims in your Part 2 run, in the order of the claims file, where the agent's verdict is *supported* or *refuted*.
 
@@ -198,7 +166,7 @@ Is accuracy alone a good measure of this agent? Why or why not?
 
 >
 
-# Part 3: Why the agent fails, and one change
+# Part 3 (extra credit): Why the agent fails, and one change
 
 ## 3a. Sort the failures
 
@@ -239,8 +207,6 @@ Quote one claim the agent matched before the change and not after it, if there i
 
 ## 3c. Write it up
 
-### Write-up
-
 What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and Part 3.
 
 >
@@ -250,11 +216,5 @@ What did your topics show you about Wikipedia as a source? Where it was thin or 
 >
 
 Your numbers rest on 100 claims about the topics you chose. Which of your conclusions would you trust on another 100 claims, which might be chance, and what would you measure to find out?
-
->
-
-### How I used AI
-
-How did you use AI in this homework, what did you check yourself, and what is one decision you made on your own?
 
 >

@@ -2,15 +2,14 @@
 
 Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
-In this part you build and study the agent. You write its loop, check two claims yourself with its
-four tools, watch it work on your 12 development claims, write its instructions, and then start the full
-run on your 100 evaluation claims while you predict how it will do. It should take about 3 hours and 5
-minutes, plus about 10 minutes for the full run, which goes on by itself while you do other things.
+In this part you build and study the agent. You write its loop, check one claim yourself, watch it work
+on your 12 development claims, write its instructions, and then start the full run on your 100
+evaluation claims. It should take about 2 hours.
 
 ## 1a. Write the loop
 
-In this step you find out what an agent is made of, by writing its loop yourself. The loop asks the
-model, runs the lookups it chooses, sends back what they return, and stops.
+In this step you write the agent loop yourself. The loop asks the model for lookups, runs the lookups it
+chooses, sends back what they return, and stops.
 
 This is the one step where you write code. Everything around the loop is written for you; the loop is
 yours. Four files are part of this step:
@@ -40,11 +39,12 @@ what your loop sends back to the model for one tool call. *The reference loop* i
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open `agent.py` in your editor, and read it with Claude: the four tools, the evidence check and `finish()`.
 3. Open `my_loop.py` in your editor.
-4. Write the loop below the line that says where it goes, one rule at a time, and save.
+4. Write the loop below the line that says where it goes, one rule at a time, and save. Remember, Claude
+   can help you.
 5. After each rule, ask Claude to run the check, or run it yourself in a terminal in the homework's folder.
 6. Fix the first `NOT YET` line, save, and run the check again.
 7. When every rule passes, open `reference_loop.py` and compare it with your loop.
-8. Answer the four questions in `WRITEUP.md`.
+8. Answer the three questions in `WRITEUP.md`.
 
 **The six rules:**
 
@@ -131,11 +131,10 @@ their output with `Agent loop: yours (my_loop.py)`.
 
 - What does your loop send to the model on each turn? Give the line numbers in `my_loop.py`.
 - What are the ways your loop can end? Give the line number of each.
-- Which rule took you longest to get right, and what was wrong with your first try?
-- Now open `reference_loop.py` and compare it with your loop. Name one difference, and say whether it changes what the agent does. (If you used `--use-reference`, say how far your own loop got and what stopped you.)
+- Now open `reference_loop.py` and compare it with your loop. Describe one difference in implementation and the resulting effects on agent behavior.
 
 **Completion:** The homework page ticks 1a: the check has passed (it then saves
-`runs/part1/loop-check.txt`), or you have chosen the reference loop as below, and the four answers have
+`runs/part1/loop-check.txt`), or you have chosen the reference loop as below, and the three answers have
 text after the `>`.
 
 **Troubleshooting:**
@@ -152,50 +151,41 @@ text after the `>`.
 - You changed `my_loop.py` after it passed. Run the check again. If it no longer passes, your copy goes
   back to the reference loop until it does.
 
-**Hint:** Write rules 1 to 3 first, then run the check. Claude explains the API, Python and what a
-`NOT YET` line means as often as you ask, and will not write or correct your code: the loop is yours.
-Don't open `reference_loop.py` before your loop passes, and Claude cannot open it at all. The code calls
-a lookup a "step": `MAX_STEPS` is the limit of 12 lookups, and `OUT_OF_STEPS` tells the model it has used
-all its steps.
+**Hint:** Write rules 1 to 3 first, then run the check. Claude can help you write the loop: it explains
+the API, the tools and Python, reads `my_loop.py` with you, and says what is wrong and why when the
+check fails. When you are stuck, it suggests how to fix one part, with a few lines of example code. It
+will not write the whole loop for you, because the point is that you write one and know what each part
+does. Don't open `reference_loop.py` before your loop passes, and Claude cannot open it at all. The code
+calls a lookup a "step": `MAX_STEPS` is the limit of 12 lookups, and `OUT_OF_STEPS` tells the model it
+has used all its steps.
 
 ## 1b. Be the agent
 
-In this step you do the agent's job yourself, with only its four tools, before you watch the agent do it.
-You find out what that job is like.
+In this step you check one claim yourself, using only the agent's four tools.
 
-I'd like you to do this before you watch the agent do it. You'll read its traces much more closely once
-you've made the same choices yourself.
-
-Use **only** the agent's tools, not your browser: the point is to see only what the agent sees.
-Claim 1 is for learning the tools:
-
-> Mel Duncan holds a history degree from the private, coeducational liberal arts Macalester
-> College located in Saint Paul, Minnesota, US.
-
-Claim 2 is the one the questions are about. You have the agent's own limit for it: if you have made 12
-lookups without settling it, stop and answer *doesn't say*, as the agent would have to.
+You'll read the agent's traces much more closely once you've made the same choices yourself. Use
+**only** the agent's tools, not your browser: the point is to see only what the agent sees. You have the
+agent's own limit: if you have made 12 lookups without answering the claim, stop and answer *doesn't
+say*, as the agent would have to.
 
 > Vic & Anthony's Steakhouse is located at the American casino that was combined with the
 > California Club. The casino is owned by Landry's, Inc.
 
 **Words in this step:** A *lookup* is one call to `search`, `read` or `wikidata`. A *verdict* is one of
 *supported*, *refuted* or *doesn't say*. The *evidence* is the sentences quoted from Wikipedia that a
-verdict rests on.
+verdict is based on.
 
 **Actions:**
 
 1. Start this step's Claude session with the command the homework page shows for 1b, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Tell Claude you are starting on claim 1.
-3. Decide on one lookup: which tool, and what to ask it.
-4. Tell Claude that lookup, and read what comes back.
-5. Note why you chose that lookup, for the table.
-6. Repeat actions 3 to 5 until you have a verdict on claim 1.
-7. Tell Claude you are moving on to claim 2, so it knows which claim each lookup was for.
-8. Repeat actions 3 to 5 until you have a verdict on claim 2, or have made 12 lookups for it.
-9. Ask Claude to paste your lookups into the table under 1b in `WRITEUP.md`.
-10. Type your reason for each lookup in the "Why you chose it" column.
-11. Answer the four questions under the table.
+2. Decide on one lookup: which tool, and what to ask it.
+3. Tell Claude that lookup, and read what comes back.
+4. Note why you chose that lookup, for the table.
+5. Repeat actions 2 to 4 until you have a verdict, or have made 12 lookups.
+6. Ask Claude to paste your lookups into the table under 1b in `WRITEUP.md`.
+7. Type your reason for each lookup in the "Why you chose it" column.
+8. Answer the question under the table.
 
 **Output:** For each lookup, Claude runs one of these and pastes exactly what the agent would
 see:
@@ -210,20 +200,17 @@ uv run python lookup.py wikidata "<entity>" "<property>"
 `search` returns the top five page titles, each with a short snippet. `read` returns one section of a
 page, or with no section the opening paragraphs and the list of sections. `wikidata` returns one fact
 from Wikidata (wikidata.org, a separate site from Wikipedia that stores single facts), for an entity (a
-person, a place) and a property ("place of birth", "population"). Each lookup is added to `runs/part1/lookups.jsonl`, which Claude fills the table
-from. Claude fills the Claim column from when you told it you moved on to claim 2: check it. Your
-verdicts go in `WRITEUP.md`, so there is no `answer` call.
+person, a place) and a property ("place of birth", "population"). Each lookup is added to
+`runs/part1/lookups.jsonl`, which Claude fills the table from. Your verdict goes in `WRITEUP.md`, so
+there is no `answer` call.
 
 **Write-up:** In `WRITEUP.md`, under 1b, fill in the table and answer:
 
-- List your lookups for both claims, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type every "Why you chose it" yourself.
-- What is your verdict on the first claim, and which sentence does it rest on?
-- What is your verdict on the second claim, and which sentence or sentences does it rest on? If you stopped at 12 lookups without settling it, your verdict is *doesn't say*: say where you got stuck.
-- How many lookups did the second claim take? Which one was hardest to choose, and why?
-- Did you have to back up and try something else? What happened?
+- List your lookups, in order. Ask Claude to paste every column but the last from `runs/part1/lookups.jsonl`. Type "Why you chose it" yourself.
+- What is your verdict on the claim, and which sentence or sentences are most important?
 
 **Completion:** The homework page ticks 1b: `runs/part1/lookups.jsonl` exists, every numbered row
-of the table has every cell filled, and the four answers have text after the `>`.
+of the table has every cell filled, and the answer has text after the `>`.
 
 **Troubleshooting:**
 
@@ -232,13 +219,12 @@ of the table has every cell filled, and the four answers have text after the `>`
 - A title with `&` or an apostrophe must be inside double quotes, as in
   `uv run python lookup.py read "<page title>"`, or the shell misreads it. Check Claude's command.
 
-**Hint:** Claude will not suggest a lookup or say what a result means, but it will explain what a tool does or
-how to read its output.
+**Hint:** Claude will not suggest a lookup or say what a result means, because choosing the lookups is
+the agent's job you are doing here. It will explain what a tool does or how to read its output.
 
 ## 1c. Watch the agent work
 
-In this step you find out whether the agent reaches the dataset's label on your 12 development claims.
-You also judge whether it gets there for a good reason.
+In this step you find out whether the agent matches the dataset's label on your 12 development claims.
 
 **Words in this step:** *Your development claims* are the 12 of your claims from step 0b that are in
 `data/dev.jsonl`. *The number of articles* is how many Wikipedia articles a claim needs (2, 3 or 4).
@@ -252,13 +238,14 @@ supported*. A *trace* is the agent's lookups for one claim, in order, with what 
 1. Start this step's Claude session with the command the homework page shows for 1c, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Ask Claude to run the agent on your 12 development claims.
-3. Tell Claude what you expect, when it asks.
-4. Read the two tables the run prints at the end.
-5. Open **Results** at the top of the homework page, then "runs/part1/before".
-6. Choose three claims: one each that needs 2, 3 and 4 articles, where your development claims have one (see the Hint).
-7. Click each of the three and read "The agent's trace", one entry at a time.
-8. Decide for each whether it got there for a good reason: does its quoted evidence really settle the claim?
-9. Fill in one row of the table for each, and answer the question under it.
+3. Read the two tables the run prints at the end.
+4. Open **Results** at the top of the homework page, then "runs/part1/before".
+5. Choose three claims: one each that needs 2, 3 and 4 Wikipedia articles, where your development claims
+   have one (see the Hint).
+6. Click each of the three and read "The agent's trace", one entry at a time.
+7. Decide for each whether it got there for a good reason: does its quoted evidence really answer the
+   claim?
+8. Fill in one row of the table for each, and answer the question under it.
 
 **Output:** Claude runs this command. It takes about a minute and costs about 2 cents:
 
@@ -274,7 +261,7 @@ it.
 
 **Write-up:** In `WRITEUP.md`, under 1c, fill in the table and answer:
 
-- List the three traces you read closely, one claim each that needs 2, 3 and 4 articles, where your development claims have one. At least one is a claim the agent got wrong, where there is one.
+- List the three traces you read closely. At least one should be a claim the agent got wrong (if it had errors).
 - Which trace did you find most interesting, and what did the agent do well or badly in it?
 
 **Completion:** The homework page ticks 1c: `runs/part1/before/report.txt` exists (the run saves
@@ -283,17 +270,16 @@ it when it finishes), all three rows are filled, and the answer has text after t
 **Troubleshooting:** If the run stops partway, ask Claude to run the same command again. It
 keeps every claim it already finished.
 
-**Hint:** Choose so that at least one of your three is a claim the agent got wrong, where there is one.
-Your claims were selected for your topics, not for their number of articles, so a number may be missing
-from your 12. Then choose another claim instead. In "Claims", set "The number of articles" to "2" (then
-"3", then "4"), and set "Result" in "The agent" box to "matches the dataset's label" or "does not match
-the dataset's label (any reason)". "Next →" goes to the next claim in the filtered list. The dataset's
-labels were made by people, from the Wikipedia of 2017, so one may look wrong to you. If it does, say so
-in that row: it is not a mistake in your run.
+**Hint:** Your claims were selected for your topics, not for their number of articles, so a number may
+be missing from your 12. Then choose another claim instead. In "Claims", set "The number of articles" to
+"2" (then "3", then "4"), and set "Result" in "The agent" box to "matches the dataset's label" or "does
+not match the dataset's label (any reason)". "Next →" goes to the next claim in the filtered list. The
+dataset's labels were made by people, from the Wikipedia of 2017, so one may look wrong to you. If it
+does, say so in that row: it is not a mistake in your run.
 
 ## 1d. Write the agent's instructions
 
-In this step you find out how much the agent's behavior depends on its instructions.
+In this step you write the agent's instructions, and see how its traces change.
 
 **Words in this step:** *`instructions.md`* holds the agent's instructions, which the program sends to
 the model (Claude Haiku) on every turn of the loop. It starts with three sentences that name the job,
@@ -310,8 +296,7 @@ lookups for one claim, in order, with what each returned.
 4. Open **Results** at the top of the homework page and click "Compare two runs".
 5. Click "Step 1d: runs/part1/before with runs/part1/after" and read "Accuracy".
 6. Under "Claims that changed", click "Open A and B" to read a claim's two traces side by side.
-7. Open a few claims whose verdict stayed the same, in each run, to see whether their lookups changed.
-8. Answer the two questions in `WRITEUP.md`.
+7. Answer the question in `WRITEUP.md`.
 
 At a minimum your instructions must say:
 
@@ -330,13 +315,12 @@ minute and costs about 2 cents, or more if your instructions make the agent do m
 uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/after
 ```
 
-**Write-up:** Answer these questions in `WRITEUP.md`, under 1d:
+**Write-up:** Answer this question in `WRITEUP.md`, under 1d:
 
 - What changed in the agent's traces after you wrote your instructions? Give one claim as an example.
-- Was that the change you expected? If not, what do you think happened?
 
-**Completion:** The homework page ticks 1d: `runs/part1/after/report.txt` exists, and both
-answers have text after the `>`.
+**Completion:** The homework page ticks 1d: `runs/part1/after/report.txt` exists, and the answer has
+text after the `>`.
 
 **Troubleshooting:**
 
@@ -357,8 +341,7 @@ the agent is told is your decision.
 
 ## 1e. Start the full run, and predict
 
-In this step you start the run on your 100 evaluation claims. You write down your predictions before you
-see any results.
+In this step you start the run on your 100 evaluation claims.
 
 **Words in this step:** *The three versions* are the no-tools baseline (the model answers from memory),
 the one-search baseline (one search, one page, then an answer) and the agent. A version gets a claim
@@ -373,11 +356,11 @@ are in `data/eval.jsonl`.
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Open another terminal tab and go into the homework's folder (the `comp440-hw3` folder you cloned).
 3. Start the full run yourself in that tab, with the command under "Output".
-4. Leave that tab open, your laptop awake and `instructions.md` alone until the run ends.
-5. Don't read any results until your predictions are saved. The run shows its results only when it ends,
-   as two tables; the progress lines before that only count claims. If it ends first, don't look at its tab.
-6. Fill in the predictions table under 1e in `WRITEUP.md`.
-7. Answer the question under the table.
+4. Leave that tab open and your laptop awake until the run ends with two tables.
+5. While it runs, fill in the predictions table under 1e in `WRITEUP.md`, and answer the question under
+   it.
+6. Don't look at the run's results before your predictions are saved. The run shows its results only
+   when it ends, as two tables; the progress lines before that only count claims.
 
 **Output:** You run this command yourself:
 
@@ -414,13 +397,13 @@ Claude will not suggest a number for your predictions, because they are yours.
 
 ## What I look for
 
-Part 1 is 25% of the homework. At a minimum I am looking for the following:
+Part 1 is 35% of the homework. At a minimum I am looking for the following:
 
-- Your loop: 30% - `my_loop.py` passes the check, the conversation shows it is your own work, and your
-  answers to 1a point to its lines.
-- Being the agent: 20% - Your 1b record shows each lookup and why you chose it, and names the hardest
-  choice.
+- Your loop: 30% - `my_loop.py` passes the check, the conversation shows you wrote it, and your answers
+  to 1a point to its lines.
+- Being the agent: 20% - Your 1b record shows each lookup and why you chose it, and your verdict names
+  the sentences that are most important.
 - Predictions: 15% - Each prediction in 1e has a reason. They are graded on the reasoning, not on being
   right.
 - Instructions: 35% - Your `instructions.md` covers the four points in 1d, and your 1c table and 1d
-  answers compare the traces before and after with a specific example.
+  answer compare the traces before and after with a specific example.

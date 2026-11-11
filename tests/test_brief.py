@@ -19,7 +19,7 @@ PARTS = {
     0: ("Set up and find your claims", "instructions/part0.md", [
         "0a. Get your copy running",
         "0b. Pick your topics and find your claims",
-        "0c. Ask the model with no tools",
+        "0c. Ask the model to assess a claim without tools",
         "0d. Give it one search",
         "0e. Run the agent and read its trace",
     ]),
@@ -32,8 +32,7 @@ PARTS = {
     ]),
     2: ("The agent against the baselines", "instructions/part2.md", [
         "2a. Compare accuracy",
-        "2b. Compare cost",
-        "2c. Check the evidence yourself",
+        "2b. Check the evidence yourself",
     ]),
     3: ("Why the agent fails, and one change", "instructions/part3.md", [
         "3a. Sort the failures",
@@ -64,7 +63,10 @@ OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**"
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
-SLOTS = 45
+SLOTS = 34
+
+# Part 3 is extra credit: its headings say so after the part's number.
+EXTRA_CREDIT = {3}
 
 # The files whose words students read, which must hold no placeholder when the homework ships.
 OWNED = ["README.md", "WRITEUP.md", ".env.example"] + [page for _, page, _ in PARTS.values()]
@@ -135,9 +137,10 @@ def test_writeup_has_every_step_once_and_in_order():
 def test_writeup_parts_come_in_order_with_their_steps():
     current, seen = None, []
     for line in WRITEUP.read_text(encoding="utf-8").splitlines():
-        if m := re.match(r"^# Part (\d+): (.+?)\s*$", line):
+        if m := re.match(r"^# Part (\d+)( \(extra credit\))?: (.+?)\s*$", line):
             current = int(m.group(1))
-            assert m.group(2) == PARTS[current][0], line
+            assert m.group(3) == PARTS[current][0], line
+            assert bool(m.group(2)) == (current in EXTRA_CREDIT), line
             seen.append(current)
         elif m := STEP_HEADING.match(line):
             assert current is not None and m.group(1) in PARTS[current][2], line
@@ -236,3 +239,98 @@ def test_nothing_still_says_the_student_reads_the_loop():
         text = (ROOT / name).read_text(encoding="utf-8")
         for old in ("Read the loop", "read its loop", "Read the agent's loop", "which is the loop"):
             assert old not in text, f"{name} still says {old!r}"
+
+
+def test_each_page_title_names_its_part():
+    for n, (title, page, _) in PARTS.items():
+        first = (ROOT / page).read_text(encoding="utf-8").splitlines()[0]
+        mark = " (extra credit)" if n in EXTRA_CREDIT else ""
+        assert first == f"# COMP 440 HW3 Part {n}{mark}: {title}", first
+
+
+# ---- the learning goals -----------------------------------------------------------------------
+
+# Word for word in README.md (after its opening sentence) and in WRITEUP.md (its "Learning goals"
+# section). The tutor's copy in steps.toml is checked with the steps.
+LEARNING_GOALS = [
+    "Understand what makes a program an *agent*: a language model that picks the next thing to look up, "
+    "reads what comes back, and decides when to stop.",
+    "Gain hands-on experience with the loop around the model by writing it yourself: its tools, its "
+    "instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in "
+    "what it read.",
+    "Build a small dataset of claims about topics you are interested in, and see how a retrieval system "
+    "finds them by keyword and by meaning.",
+    "Compare the agent with two simpler methods on your claims, and measure how effective each one is.",
+    "Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.",
+]
+EXTRA_CREDIT_GOAL = ("For extra credit, in Part 3, you find out why the agent fails on your claims, make "
+                     "one change, and see where Wikipedia, which is written by its volunteer editors, is "
+                     "thin, out of date or wrong.")
+
+
+def bullets_after(text, lead):
+    """The "- " items of the list that follows the line ending in `lead`, each on one line, and the
+    paragraph after the list."""
+    lines = text.splitlines()
+    at = next(i for i, line in enumerate(lines) if line.rstrip().endswith(lead))
+    items, i = [], at + 1
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    while i < len(lines) and lines[i].strip():
+        if lines[i].startswith("- "):
+            items.append(lines[i][2:])
+        else:
+            items[-1] += " " + lines[i].strip()
+        i += 1
+    after = []
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    while i < len(lines) and lines[i].strip():
+        after.append(lines[i].strip())
+        i += 1
+    return [one_line(item) for item in items], one_line(" ".join(after))
+
+
+def test_readme_and_writeup_give_the_same_five_learning_goals():
+    readme, readme_after = bullets_after((ROOT / "README.md").read_text(encoding="utf-8"), "You will:")
+    writeup, writeup_after = bullets_after(WRITEUP.read_text(encoding="utf-8"), "In this homework you will:")
+    assert readme == LEARNING_GOALS
+    assert writeup == LEARNING_GOALS
+    assert readme_after == writeup_after == EXTRA_CREDIT_GOAL
+
+
+def test_the_learning_goals_come_before_part_0_and_hold_no_answer():
+    text = WRITEUP.read_text(encoding="utf-8")
+    assert text.index("## Learning goals") < text.index("# Part 0")
+    assert "Learning goals" in sections(text)
+    assert not questions(sections(text)["Learning goals"].split("# Part 0")[0])
+
+
+# ---- what the outline of Nov 10 removed --------------------------------------------------------
+
+REMOVED = [
+    "Mel Duncan",                      # 1b has one claim now
+    "Compare cost",                    # the old step 2b
+    "2c",                              # the old 2c is 2b
+    "How I used AI",                   # the AI-use question in 3c
+    "what you expect",                 # no step asks for an expectation before a run
+    "Claim (1 or 2)",                  # 1b's table has no claim column
+    "Which rule took you longest",     # a removed 1a question
+    "Was that the change you expected",  # a removed 1d question
+]
+
+
+@pytest.mark.parametrize("name", OWNED)
+def test_nothing_removed_comes_back(name):
+    text = one_line((ROOT / name).read_text(encoding="utf-8"))
+    left = [old for old in REMOVED if old in text]
+    assert not left, f"{name} still has {left}"
+
+
+def test_0b_links_the_retrieval_code_and_the_lines_hold_the_search():
+    link = "https://github.com/shilad/comp440-hw3/blob/main/finder/search.py#L1-L165"
+    assert f"[retrieval code]({link})" in WRITEUP.read_text(encoding="utf-8")
+    code = (ROOT / "finder/search.py").read_text(encoding="utf-8").splitlines()
+    start = {name: next(i + 1 for i, line in enumerate(code) if line.startswith(f"def {name}("))
+             for name in ("search", "pick")}
+    assert start["search"] <= 165 < start["pick"], start

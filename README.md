@@ -1,17 +1,20 @@
 # COMP 440 HW3: Checking Claims Against Wikipedia
 
 In this homework assignment you will study a small AI agent that checks claims against Wikipedia, and
-measure what it adds over simpler methods. You will:
+measure the effectiveness of different methods. You will:
 
 - Understand what makes a program an *agent*: a language model that picks the next thing to look up,
   reads what comes back, and decides when to stop.
 - Gain hands-on experience with the loop around the model by writing it yourself: its tools, its
   instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in
   what it read.
-- Compare the agent with two simpler methods, and measure where it helps, where it doesn't, and what
-  it costs.
-- Run it on the dataset's claims about a few topics you know well, and find out where Wikipedia,
-  which is written by its volunteer editors, is thin, out of date or wrong.
+- Build a small dataset of claims about topics you are interested in, and see how a retrieval system
+  finds them by keyword and by meaning.
+- Compare the agent with two simpler methods on your claims, and measure how effective each one is.
+- Check the agent's evidence yourself, and decide whether accuracy alone is a fair measure of it.
+
+For extra credit, in Part 3, you find out why the agent fails on your claims, make one change, and see
+where Wikipedia, which is written by its volunteer editors, is thin, out of date or wrong.
 
 ## The task
 
@@ -24,7 +27,7 @@ I chose it because it is short and about a recording few people know, so it is a
 the model remembers.
 
 The agent has to give a *verdict*: *supported*, *refuted* or *doesn't say*. It also has to quote the
-sentences from Wikipedia that its verdict rests on, its *evidence*. No source comes with the claim.
+sentences from Wikipedia that its verdict is based on, its *evidence*. No source comes with the claim.
 The agent finds its own evidence by searching and reading Wikipedia as it is today.
 
 The claims in this homework come from HoVer, a public dataset of claims that each need two, three or
@@ -33,9 +36,8 @@ fact has to be found before you know which page to read next. Whether one search
 is one of the things you'll measure. The agent works out what a claim is made of, looks up each piece,
 and puts the pieces together, and how it does that is what you'll study.
 
-You study it on HoVer's claims about a few topics you know better than most people. In step 0b you pick
-the topics and select 112 claims about them, and every run after that uses them. I ask for topics you
-know because then you can judge the agent's answers, and the dataset's labels, for yourself.
+You study it on HoVer's claims about a few topics you are interested in. In step 0b you pick the topics
+and select 112 claims about them, and every run after that uses them.
 
 ## What you need before you start
 
@@ -47,8 +49,9 @@ You used all of these in earlier homeworks:
 - git, and your GitHub account.
 - A text editor. You type every answer in it.
 - Your API key. I sent you your own API key by Slack direct message. The agent calls the Claude API
-  directly, not through your Claude Code account, so it needs this key. Doing the whole homework once
-  costs about 55 cents on your key. That is charged to my account for the course, not to you.
+  directly, not through your Claude Code account, so it needs this key. Doing Parts 0 to 2 once costs
+  about 35 cents on your key, and Part 3 about 20 cents more. That is charged to my account for the
+  course, not to you.
 
 ## Getting started
 
@@ -81,8 +84,8 @@ You used all of these in earlier homeworks:
 ## How this homework works
 
 - The homework page lists every step, 0a to 3c, and ticks each one when it is done. For each step it
-  shows what the step is for and its tasks. Under "If you're stuck" it shows the step's
-  full instructions, from the pages in `instructions/`. Open it for every step, stuck or not: it has
+  shows a short summary and its tasks. Part 3 is extra credit. Under "If you're stuck" it shows the
+  step's full instructions, from the pages in `instructions/`. Open it for every step, stuck or not: it has
   the exact commands and what I am looking for. Step 0a, the set-up step, shows them in full.
 - Each step has its own Claude session: a Claude Code session that is your tutor and lab assistant for
   that step. The homework page shows the command that starts it, with a **Copy** button. Open a new
@@ -92,12 +95,15 @@ You used all of these in earlier homeworks:
 - Claude Code will sometimes ask your permission before it runs a command. Read the command. If it is
   what you asked for, say yes.
 - You decide what happens. Claude does nothing until you ask, and each step's instructions say what to
-  ask for. Before it runs anything whose result you'll judge, Claude will ask what you expect.
+  ask for.
 - You type your answers yourself, in `WRITEUP.md`, in your editor. Claude will not write them, because
   you are graded on your own explanations and judgments. Keep each answer free of blank lines: a blank
   line ends the answer, so to start a new paragraph put a line with just `>` between the two.
 - Claude will run commands for you, explain the code, the tools, Wikipedia's API and the scores as often
   as you ask, and paste a program's output into `WRITEUP.md` where a question asks for it.
+- In step 1a, Claude can help you write your loop. It explains the API and Python, reads your code with
+  you, and says what is wrong when the check fails. It will not write the whole loop for you, because
+  writing it is how you learn what each part does.
 - The results viewer is where you read your runs. Open **Results** at the top of the homework page; it
   opens in a new tab. It shows each run's accuracy and cost, each claim's verdicts from all three
   versions, the agent's trace for a claim one entry at a time, and two runs side by side. Long results
@@ -114,30 +120,30 @@ You used all of these in earlier homeworks:
   an answer after that, it commits the change too. I read `TRANSCRIPT.md` when I grade, so start every Claude session in the homework's folder. Don't edit
   `TRANSCRIPT.md` yourself: the page writes it again before each commit.
 - Two runs are long: the full run in step 1e takes about 10 minutes, and the run after your change in
-  step 3b about 6 minutes. You start each of them yourself, in a terminal tab of its own, because a run
-  started by Claude stops if you close that Claude session.
+  step 3b, which is extra credit, about 6 minutes. You start each of them yourself, in a terminal tab of
+  its own, because a run started by Claude stops if you close that Claude session.
 
 ## The parts
 
 | Part | What you do | Weight |
 |---|---|---|
-| [Part 0: Set up and find your claims](instructions/part0.md) | Get your copy running, select the dataset's claims about a few topics you know, then check one claim three ways: the model alone, one search, and the agent | 10% |
-| [Part 1: How the agent works](instructions/part1.md) | Write the agent's loop, check two claims yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 25% |
-| [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy and cost by how many articles a claim needs, and check the agent's evidence yourself | 35% |
-| [Part 3: Why the agent fails, and one change](instructions/part3.md) | Sort the agent's failures on your claims, make one change, and write up what you found | 30% |
+| [Part 0: Set up and find your claims](instructions/part0.md) | Get your copy running, create a dataset of claims about a few topics you are interested in, then check one claim three ways: with an LLM alone, with one Wikipedia search, and with the agent | 15% |
+| [Part 1: How the agent works](instructions/part1.md) | Write the agent's loop, check one claim yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 35% |
+| [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy by how many articles a claim needs, and check the agent's evidence yourself | 50% |
+| [Part 3 (extra credit): Why the agent fails, and one change](instructions/part3.md) | Sort the agent's failures on your claims, make one change, and write up what you found | Extra credit |
 
 Everything is due 8:00am Tuesday, November 24.
 
-I expect this homework to take about 6 hours and 40 minutes in all, in four sittings: about 1 hour and
-35 minutes for Part 0, about 3 hours and 5 minutes for Part 1, about 50 minutes for Part 2, and about 1
-hour and 10 minutes for Part 3. On top of that, the full run in Part 1 takes about 10 minutes and the
-run after your change in Part 3 about 6 minutes, while you do other things.
+I expect this homework to take about 4 hours in all, in three sittings: a little over an hour for
+Part 0, about 2 hours for Part 1, and about 40 minutes for Part 2. On top of that, the full run in
+Part 1 takes about 10 minutes while you do other things. Part 3, which is extra credit, takes a little
+over an hour more, and its run about 6 minutes.
 
 ## Words this homework uses
 
 - A **claim** is one sentence that is either true or false.
 - A **verdict** is the answer to a claim, always one of *supported*, *refuted* or *doesn't say*.
-- The **evidence** is the sentences quoted from Wikipedia that a verdict rests on.
+- The **evidence** is the sentences quoted from Wikipedia that a verdict is based on.
 - **The agent** is the program in `agent.py` and the loop that drives it: `my_loop.py` once yours
   passes, `reference_loop.py` until then. In the loop, the model picks the next lookup, reads what comes
   back, and decides when to answer.
@@ -153,6 +159,8 @@ run after your change in Part 3 about 6 minutes, while you do other things.
   an answer).
 - **The three versions** are the no-tools baseline, the one-search baseline and the agent.
 - **The model** is Claude Haiku, the small Claude model that the agent and both baselines call.
+- An **LLM**, a large language model, is a model of this kind: it writes text in reply to text. The model
+  is the LLM in this homework.
 - **Claude** is your Claude Code session, your tutor and lab assistant. It is not the model.
 - **The number of articles** is how many Wikipedia articles a claim needs (2, 3 or 4), from the dataset.
 - **HoVer** is the public dataset the claims come from. It labels each claim *supported* or *not
@@ -167,6 +175,8 @@ run after your change in Part 3 about 6 minutes, while you do other things.
   out in Part 1.
 - **Your evaluation claims** are the other 100 of your claims, in `data/eval.jsonl`, which the full run
   in step 1e checks and Parts 2 and 3 study.
+- **Retrieval** is finding the items in a collection that best match a request. The claim finder's
+  retrieval code is in `finder/search.py`.
 - A **run** is one use of `evaluate.py`, saved in a folder under `runs/`.
 - **The limit of 12 lookups** is the most lookups the loop allows for one claim.
 - An **API** is the way one program asks another for something over the network. The agent's program
@@ -175,11 +185,11 @@ run after your change in Part 3 about 6 minutes, while you do other things.
 
 ## Submitting
 
-Submit once, when all four parts are done, through the
-[assignment submission form](https://forms.gle/mgKcnqzTGxNaGvteA). Choose "Homework submission",
-then "HW3", and give your
-repository's address. Before you submit, check on GitHub that your fork shows the `Part 3 done`
-commit, since I grade what is on GitHub.
+Submit once, when Parts 0 to 2 are done, through the
+[assignment submission form](https://forms.gle/mgKcnqzTGxNaGvteA). If you do Part 3 for extra credit,
+finish it first. Choose "Homework submission", then "HW3", and give your repository's address. Before
+you submit, check on GitHub that your fork shows the `Part 2 done` commit, and `Part 3 done` if you did
+the extra credit, since I grade what is on GitHub.
 
 In your repository I look for:
 
@@ -250,7 +260,11 @@ your own judgment. Ask questions in `#comp440-f26` on Slack. Follow the class's
 
 ## Extra credit
 
-Either of these earns extra credit, and you may do both.
+Any of these earns extra credit, and you may do more than one.
+
+**Why the agent fails, and one change.** Part 3 is extra credit: you sort the agent's failures on your
+claims, make one change aimed at the most common one, and write up what you found. Its steps are on the
+homework page, and its instructions are on [Part 3's page](instructions/part3.md).
 
 **Find where Wikipedia has changed.** Find claims where the agent's quoted evidence supports its
 verdict and today's Wikipedia disagrees with the dataset's label, which was made from the Wikipedia of
@@ -259,10 +273,12 @@ find where Wikipedia has changed". Do it any time after Part 2.
 
 **Give the agent a fifth tool.** Give the agent a fifth tool that reads one other well-known public
 site, for example a government statistics site or an encyclopedia other than Wikipedia. Tell me which
-site before you start. Do it only after Part 3 is done, because it changes the agent. Then run the agent
-on your evaluation claims again. When do the two sources disagree, and how should the agent decide which to
-believe?
+site before you start. Do it only after Part 2 is done, and after Part 3 if you do it, because it changes
+the agent. Then run the agent on your evaluation claims again. When do the two sources disagree, and how
+should the agent decide which to believe?
 
-Write what you found under a heading `## Extra credit` at the end of `WRITEUP.md`. Keep the homework
-page running while you work on it: once Part 3 is done, the page commits and pushes any further change
-about a minute after you save it, as `Part 3 updated`. Check on GitHub that your fork shows it.
+Write what you found for the last two under a heading `## Extra credit` at the end of `WRITEUP.md`.
+Keep the homework page running while you work on it: once Part 3 is done, the page commits and pushes
+any further change about a minute after you save it, as `Part 3 updated`. If you did not do Part 3,
+commit and push it yourself in a terminal in the homework's folder, with `git add -A`, then
+`git commit -m "Extra credit"`, then `git push`. Check on GitHub that your fork shows it.
