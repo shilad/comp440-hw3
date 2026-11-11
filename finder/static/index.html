@@ -56,7 +56,11 @@
     </form>
     <p class="status" id="status">Search a topic you are interested in. Its claims will appear here, best first, and
       you select the ones that are on your topic.</p>
-    <p class="matches" id="matches"></p>
+    <div class="above" id="above" hidden>
+      <p class="matches" id="matches"></p>
+      <button class="pick" id="all" type="button">Select all shown</button>
+    </div>
+    <p class="all-said" id="all-said" aria-live="polite"></p>
     <ol class="claims" id="results"></ol>
     <div class="more" id="more-row" hidden>
       <p id="shown"></p>
