@@ -3,8 +3,8 @@
 In this homework assignment you will study a small AI agent that checks claims against Wikipedia, and
 measure the effectiveness of different methods. You will:
 
-- Understand what makes a program an *agent*: a language model that picks the next thing to look up,
-  reads what comes back, and decides when to stop.
+- Understand what makes a program an *agent*. You will study a language model that picks the next Wikipedia search query,
+  reads the page that comes back, and decides when to stop.
 - Gain hands-on experience with the loop around the model by writing it yourself: its tools, its
   instructions, its limit of 12 lookups, and the check that every sentence it quotes really appears in
   what it read.
@@ -18,25 +18,21 @@ where Wikipedia, which is written by its volunteer editors, is thin, out of date
 
 Everything is due 8:00am Tuesday, November 24.
 
-## The task
+## The claim checking task
 
-The agent is given a claim, one sentence that is either true or false, and nothing else. Here is the
-claim you'll check in Part 0:
+The agent is designed to evaluate a claim, one sentence that is either true or false. Here is an
+example claim you'll check in Part 0:
 
 > The composer of "Persian Surgery Dervishes" was born on June 24, 1935.
-
-I chose it because it is short and about a recording few people know, so it tests what the model
-remembers.
 
 The agent gives a *verdict*: *supported*, *refuted* or *doesn't say*. It also quotes the sentences from
 Wikipedia that its verdict is based on, its *evidence*. No source comes with the claim: the agent searches
 and reads Wikipedia as it is today.
 
 The claims come from HoVer, a public dataset of claims that each need two, three or four Wikipedia
-articles to check. Many do not name the page that holds the answer, so one fact has to be found before
-you know which page to read next. You measure whether one search is enough, and you study how the agent
-breaks a claim into pieces, looks up each one and puts them together. In step 0b you pick a few topics
-you are interested in and select 112 claims about them; every run after that uses them.
+articles to check. Many claims do not name the page that holds the answer, so one fact has to be found before
+you know which page to read next. You will study how the agent
+breaks a claim into pieces, looks up each one, and synthesizes the results. 
 
 ## What you need before you start
 
@@ -79,6 +75,9 @@ You used all of these in earlier homeworks:
 5. On the homework page, open step 0a.
 
 ## How this homework works
+
+This describes how the homework page is structured, but it is intended that you can follow along with it directly.
+If you are curious, here are additional details.
 
 - The homework page lists every step, 0a to 3c, and ticks each one when it is done. Part 3 is extra
   credit. For each step it shows a short summary and its tasks. Below the tasks, the step's instructions,
