@@ -78,7 +78,7 @@ def same_text(text):
 
 def test_no_claim_the_homework_already_uses():
     used = [row for name in ("eval.jsonl", "dev.jsonl") for row in read_jsonl(ROOT / "data" / name)]
-    if len(used) != 212:
+    if len(used) != 112 or (ROOT / "data" / "my-topic.json").exists():
         pytest.skip("data/eval.jsonl and data/dev.jsonl hold claims saved by the claim finder, not the sample")
     assert not {row["id"] for row in used} & {c["id"] for c in search.claims()}
     assert not {same_text(row["claim"]) for row in used} & {same_text(c["claim"]) for c in search.claims()}

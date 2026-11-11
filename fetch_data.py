@@ -3,18 +3,22 @@
     python fetch_data.py
 
 The instructor runs this once; students get the files it writes. It draws a
-fixed, seeded sample, so running it again gives the same claims. These are only
-the sample claims the homework ships with: in step 0b the claim finder replaces
-both files with the 112 claims a student selects on topics they know, 12 in
-data/dev.jsonl and 100 in data/eval.jsonl.
+fixed, seeded sample, so running it again gives the same claims. Every student
+uses these claims: 12 in data/dev.jsonl and 100 in data/eval.jsonl.
 
 HoVer's labelled dev set (4,000 claims) comes from the HoVer GitHub repository.
 Its test set's labels are withheld, so the dev set is the one we can score
 against. The sample is the one the instructor's baselines use: for each of 2,
 3 and 4 articles, 50 supported and 50 not supported claims, drawn with
 random.Random(440) after sorting by uid, 300 claims in all. Two thirds of it,
-200 claims, are the eval set; the dev set is 12 claims from the other third,
-2 for each number of articles and label, so the two never share a claim.
+200 claims, are shuffled; the eval set is the first 100 of them that fill
+EVAL_CELLS: 34, 33 and 33 claims that need 2, 3 and 4 articles, and 50 of
+each label. The dev set is 12 claims from the other third, 2 for each number
+of articles and label, so the two never share a claim.
+
+Until Nov 11, 2026 the eval set was all 200, and a step of the homework had
+each student replace both files with claims they selected in the claim finder
+(finder/). The step is gone, and EVAL_CELLS cut the 200 to the 100 that ship.
 """
 
 import json
@@ -29,6 +33,22 @@ DATA = Path(__file__).parent / "data"
 SEED = 440
 PER_CELL = 50        # sampled claims per (hops, label): 3 hop counts x 2 labels x 50 = 300
 DEV_PER_CELL = 2     # dev claims per (hops, label), from the third not in eval: 12
+# Eval claims per (hops, label), the first of each in the shuffled order: 34 / 33 / 33 by hops,
+# 50 / 50 by label, 100 in all.
+EVAL_CELLS = {(2, "SUPPORTED"): 17, (2, "NOT_SUPPORTED"): 17,
+              (3, "SUPPORTED"): 17, (3, "NOT_SUPPORTED"): 16,
+              (4, "SUPPORTED"): 16, (4, "NOT_SUPPORTED"): 17}
+
+
+def first_of_each(rows, cells):
+    """The first claims of each (hops, label) in rows, as many as cells gives, in the order of rows."""
+    left, out = dict(cells), []
+    for row in rows:
+        key = (row["hops"], row["label"])
+        if left.get(key, 0) > 0:
+            out.append(row)
+            left[key] -= 1
+    return out
 
 
 def download(url):
@@ -65,6 +85,7 @@ def main():
     rng = random.Random(SEED)
     rng.shuffle(eval_set)
     rng.shuffle(dev_set)
+    eval_set = first_of_each(eval_set, EVAL_CELLS)
     DATA.mkdir(exist_ok=True)
     for name, rows in (("eval", eval_set), ("dev", dev_set)):
         path = DATA / f"{name}.jsonl"

@@ -5,8 +5,8 @@
 Each line of the claims file is a JSON object with: id, claim, source, label and,
 for HoVer, hops (how many Wikipedia articles the claim needs). In this homework
 every claim is HoVer's ("source": "hover"): data/dev.jsonl and data/eval.jsonl
-hold the claims you saved in step 0b, or the sample claims they ship with. The
-label is the dataset's own, SUPPORTED or NOT_SUPPORTED.
+hold the homework's claims, the same for every student. The label is the
+dataset's own, SUPPORTED or NOT_SUPPORTED.
 
 Every result is saved as it finishes, so if a run stops partway you can start
 it again and it picks up where it left off. A claim that fails with an error,
