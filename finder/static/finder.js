@@ -105,7 +105,7 @@ function matchesText(answer) {
     return "No claim contains your word, so the claims below were found by meaning alone and may be off your topic.";
   }
   if (all < FEW_CLAIMS) {
-    return `Only ${contain(all)} all of your words, so the list may drift off your topic further down. ` +
+    return `Only ${contain(all)} all of your words, so further down, the list may stop being about your topic. ` +
       "Select the ones that are on your topic, and search another topic for the rest.";
   }
   return `${contain(all)} all of your words.`;

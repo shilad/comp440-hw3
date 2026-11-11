@@ -178,10 +178,15 @@ function update() {
   byId("bar").style.width = `${(100 * n / Math.max(1, required.length)).toFixed(1)}%`;
   byId("count").textContent = `${n} of ${required.length} steps done`
     + (extra.length ? `. Part ${extra.join(" and Part ")} ${extra.length > 1 ? "are" : "is"} extra credit.` : "");
+  // Once the required steps are done, the next open step is extra credit, and the page says so.
   const now = S.now && stepOf(S.now);
-  paint(byId("next"), now ? `Now: <a href="#step-${now.label}" id="jump">${esc(now.label)}, ${esc(now.title)}</a>` : "Every step is done.");
   const part = now && A.parts.find((p) => p.number === now.part);
-  byId("due").textContent = part?.due ? `Part ${part.number} is due ${due(part)}` : "";
+  const jump = now ? `<a href="#step-${now.label}" id="jump">${esc(now.label)}, ${esc(now.title)}</a>` : "";
+  paint(byId("next"), !now ? "Every step is done."
+    : part?.extra_credit && n === required.length ? `Every required step is done. Extra credit: ${jump}`
+    : `Now: ${jump}`);
+  byId("due").textContent = part?.due
+    ? `Part ${part.number}${part.extra_credit ? " (extra credit)" : ""} is due ${due(part)}` : "";
 
   for (const p of A.parts) {
     const mine = S.steps.filter((x) => x.part === p.number), done = mine.filter((x) => x.complete).length;
@@ -335,7 +340,7 @@ function recordCol(s, st, ss) {
   }
   if (!ss.started) {
     const state = st.locked ? `Empty. This step's Claude opens when you finish ${when}.` : "Empty. Start this step's Claude in a terminal.";
-    return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(state)} What you predict, what you ask it, and what comes back will be recorded here.</span></div>${ss.results ? `<p class="small">${resultsLink(ss)}</p>` : ""}${cmd}`;
+    return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(state)} What you ask Claude, and what comes back, will be recorded here.</span></div>${ss.results ? `<p class="small">${resultsLink(ss)}</p>` : ""}${cmd}`;
   }
   return `<div class="record-head"><span class="label">Your record</span><span class="state">${esc(stateLine(ss))}</span></div>
     ${recordList(s, ss.record)}${links(s, ss)}${cmd}`;

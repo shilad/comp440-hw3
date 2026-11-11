@@ -496,6 +496,10 @@ def test_a_part_marked_extra_credit_is_labelled_not_counted_and_still_committed(
     assert '${p.extra_credit ? " (extra credit)" : ""}' in js
     assert "const required = S.steps.filter((x) => !extra.includes(x.part));" in js
     assert "extra credit." in js
+    # Once the required steps are done, the next step is named as extra credit, and so is its due date.
+    assert "`Every required step is done. Extra credit: ${jump}`" in js and '"Every step is done."' in js
+    assert '${part.extra_credit ? " (extra credit)" : ""} is due ${due(part)}' in js
+    assert "What you ask Claude, and what comes back, will be recorded here." in js and "What you predict" not in js
     finish_part0(h.student)
     (h.student / "WRITEUP.md").write_text(FILLED.replace("each turn?\n\n>", "each turn?\n\n> The messages."))
     app.commit_finished_parts()

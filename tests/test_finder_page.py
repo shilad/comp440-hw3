@@ -162,7 +162,7 @@ def test_the_screen_uses_the_names_the_student_sees():
             "Its rank is ${m} by meaning. It contains none of your words, so the search by keyword did not find it.",
             # the count of claims with all the words, and the calm sentence for a narrow topic
             "return `${contain(all)} all of your words.`;",
-            "return `Only ${contain(all)} all of your words, so the list may drift off your topic further down. ` +\n"
+            "return `Only ${contain(all)} all of your words, so further down, the list may stop being about your topic. ` +\n"
             "      \"Select the ones that are on your topic, and search another topic for the rest.\";",
             "\"No claim contains all of your words, which is usual for a description of several words. \" +\n"
             "      \"Read down the list, and select the claims that are on your topic.\";",
