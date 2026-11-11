@@ -154,8 +154,9 @@ Grep tool and read only that line (the Read tool's offset and limit).
 
 Facts about the programs:
 
-- evaluate.py saves each claim's result as it finishes. The same command started again picks up
-  where a stopped run left off; on a finished run it prints the tables again and costs nothing.
+- evaluate.py saves each claim's result as it finishes. If a run stops, the same command started
+  again keeps every claim it already finished and checks only the rest; on a finished run it
+  prints the tables again and costs nothing.
 - check.py and evaluate.py first print which loop drove the agent: "Agent loop: yours
   (my_loop.py)" once check_loop.py has passed the student's loop, or "Agent loop: the reference
   loop (reference_loop.py)" before that (all of Part 0) or if they chose to keep it.
