@@ -20,7 +20,8 @@ yours. Four files are part of this step:
   goes.
 - `reference_loop.py` is a loop I wrote. Your copy's agent uses it until your own loop passes the check,
   so nothing else in the homework waits on this step. Don't open it until your loop passes: reading it
-  first shows you a finished loop before you have written your own. Claude cannot open it at all.
+  first shows you a finished loop before you have written your own. Claude cannot open it, so to talk
+  about it with Claude, paste the lines you want into the chat.
 - `check_loop.py` checks your loop against the six rules below, with a stand-in for the model and for
   Wikipedia. Run it as often as you like: it needs no key and no network, takes a few seconds, and costs
   nothing.
@@ -61,10 +62,11 @@ what your loop sends back to the model for one tool call. *The reference loop* i
    a problem, send back `REJECTED` followed by the problem, and after `MAX_REJECTED` rejected answers stop
    with no verdict.
 5. **Enforce the limit.** Once `steps` has reached `max_steps`, do not run another lookup. The first time,
-   send back `OUT_OF_STEPS`. If the model asks for a lookup again on a later turn, stop with no verdict.
-6. **Stop when the model stops.** If a reply has no tool call, remind the model once with `REMINDER`; if
-   the next reply has none either, stop with no verdict. If a reply's `stop_reason` is `"refusal"`, stop
-   with no verdict.
+   send back `OUT_OF_STEPS`, and remember that you sent it. If the model asks for a lookup again on a later
+   turn, stop with no verdict.
+6. **Stop when the model stops.** If a reply has no tool call, remind the model with `REMINDER`; if the
+   next reply has none either, stop with no verdict. The model is reminded each time it stops calling tools,
+   but never twice in a row. If a reply's `stop_reason` is `"refusal"`, stop with no verdict.
 
 **What the code gives you** (the details the rules and the check rely on):
 
@@ -83,9 +85,13 @@ what your loop sends back to the model for one tool call. *The reference loop* i
   refused at the limit.
 - In rule 5, "the first time" is the first reply that asks for a lookup when `steps` has already
   reached `max_steps`. Each lookup in that reply gets `OUT_OF_STEPS.format(n=max_steps)` as its result
-  and is not run.
+  and is not run, however many it holds. Keep a variable that says whether `OUT_OF_STEPS` has been sent:
+  that is how your loop knows, on a later turn, to stop.
 - A trace entry is `{"tool": name, "input": input, "result": result}`. An accepted answer's result is
   `ACCEPTED`. A reminder is recorded as tool `"(reminder)"`, input `{}`, result `REMINDED`.
+- The reminder goes to the model as a user turn whose content is the string itself,
+  `{"role": "user", "content": REMINDER}`, not as a `tool_result`: the reply it follows has no tool call
+  for a result to answer.
 - Every tool call gets one entry in `trace`, with the result it was given: what a lookup returned,
   `ACCEPTED`, `REJECTED` followed by the problem, or `OUT_OF_STEPS`. The results viewer numbers these
   entries, so a loop that records only lookups shows wrong traces. The one exception is a lookup the
@@ -157,7 +163,8 @@ text after the `>`.
 the API, the tools and Python, reads `my_loop.py` with you, and says what is wrong and why when the
 check fails. When you are stuck, it suggests how to fix one part, with a few lines of example code. It
 will not write the whole loop for you, because the point is that you write one and know what each part
-does. Don't open `reference_loop.py` before your loop passes, and Claude cannot open it at all. The code
+does. Don't open `reference_loop.py` before your loop passes. Claude cannot open it, but you can paste
+lines of it into the chat to talk about them. The code
 calls a lookup a "step": `MAX_STEPS` is the limit of 12 lookups, and `OUT_OF_STEPS` tells the model it
 has used all its steps.
 
