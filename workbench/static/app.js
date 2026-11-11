@@ -88,6 +88,39 @@ function md(text) {
   return out.join("\n");
 }
 
+// A step's instructions: as md(), except that each part labeled **Troubleshooting:** or **Hint:**
+// is folded away, to open with a click. A part is the paragraph that starts with the label (the
+// rest of its first line included) and everything after it, up to the next paragraph that starts
+// with a bold label, the next heading, or the end of the text. Each fold has a key (the step and
+// its number in the text), so one the student opened stays open if the page rebuilds itself.
+const FOLD = /^\*\*(Troubleshooting|Hint):\*\*\s*(.*)$/;
+const LABELLED = /^\*\*[^*]+:\*\*/;
+function doc(text, key) {
+  const lines = String(text || "").split("\n");
+  const out = [], plain = [];
+  let i = 0, fence = false, n = 0;
+  const flush = () => { if (plain.length) out.push(md(plain.splice(0).join("\n"))); };
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^\s*```/.test(l)) fence = !fence;
+    const m = !fence && (i === 0 || !lines[i - 1].trim()) ? l.match(FOLD) : null;
+    if (!m) { plain.push(l); i++; continue; }
+    flush();
+    const body = [m[2]];
+    let inner = false;
+    for (i++; i < lines.length; i++) {
+      const x = lines[i];
+      if (/^\s*```/.test(x)) inner = !inner;
+      if (!inner && (/^#{1,6}\s/.test(x) || (LABELLED.test(x) && !lines[i - 1].trim()))) break;
+      body.push(x);
+    }
+    out.push(`<details class="fold" data-key="${esc(key)}:${n++}"><summary>${m[1]}</summary>`
+      + `<div class="fold-body">${md(body.join("\n"))}</div></details>`);
+  }
+  flush();
+  return out.join("\n");
+}
+
 // Replace an element's HTML only when it changed, so polling keeps the student's place.
 function paint(el, html) {
   if (!el || el._html === html) return false;
@@ -153,10 +186,10 @@ function minutes(s) {
 
 function leftCol(s) {
   const plain = s.setup;   // a setup step: the brief's text in full
-  return (plain ? `<span class="label">Instructions</span><div class="doc">${md(s.body)}</div>`
+  return (plain ? `<span class="label">Instructions</span><div class="doc">${doc(s.body, s.label)}</div>`
     : `${s.claim && A.sample_claim ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : ""}`)
     + `<div class="counts" id="dw-${s.label}"></div>`
-    + (!plain && s.body ? `<details class="stuck"><summary>If you're stuck</summary><div class="stuck-body doc">${md(s.body)}</div></details>` : "");
+    + (!plain && s.body ? `<details class="stuck" data-key="${esc(s.label)}:stuck"><summary>If you're stuck</summary><div class="stuck-body doc">${doc(s.body, s.label)}</div></details>` : "");
 }
 
 // ---- what changes: progress, state, the open steps -------------------------------------------
@@ -425,7 +458,9 @@ async function refresh() {
   if (S.version !== A.version) {   // the steps file or a page changed: rebuild, keeping what is open
     A = await get("/api/assignment");
     for (const id of [...openSteps]) if (!stepOf(id)) openSteps.delete(id);
+    const keep = new Set([...byId("parts").querySelectorAll("details[open][data-key]")].map((d) => d.dataset.key));
     build();
+    for (const d of byId("parts").querySelectorAll("details[data-key]")) if (keep.has(d.dataset.key)) d.open = true;
   }
   await Promise.all([...openSteps].map(pollStep));
   update();

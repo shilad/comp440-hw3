@@ -559,6 +559,79 @@ def test_the_session_opens_on_the_summary_and_asks_for_no_prediction(tmp_path):
     assert "Waiting for your prediction" not in skill and "said their prediction" not in skill
 
 
+def render_docs(texts):
+    """Each text as the page renders a step's instructions (doc()), run in node; None without node."""
+    node = node_or_none()
+    if not node:
+        return None
+    lines = (ROOT / "workbench/static/app.js").read_text().splitlines()
+    first = next(i for i, x in enumerate(lines) if x.startswith("const esc ="))
+    last = next(i for i, x in enumerate(lines) if x.startswith("// Replace an element's HTML"))
+    run = "\n".join(lines[first:last]) + "\n" + "\n".join(
+        f"console.log(JSON.stringify(doc({json.dumps(t)}, 'x')));" for t in texts)
+    return [json.loads(x) for x in subprocess.run([node, "-e", run], capture_output=True, text=True).stdout.splitlines()]
+
+
+def folds(html_text):
+    """(summary, body) of each folded part, in order."""
+    import re
+    return re.findall(r'<details class="fold" data-key="[^"]*"><summary>([^<]*)</summary>'
+                      r'<div class="fold-body">(.*?)</div></details>', html_text, re.S)
+
+
+def test_troubleshooting_and_hint_fold_and_nothing_else_does():
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert "${doc(s.body, s.label)}" in js and js.count("doc(s.body, s.label)") == 2   # both places
+    assert "${md(e.text)}" in js                            # Claude's messages are not folded
+    css = (ROOT / "workbench/static/style.css").read_text()
+    assert 'details.fold[open] > summary::before { content: "− "; }' in css
+    texts = [
+        "Before.\n\n**Troubleshooting:**\n\n- One.\n- Two.\n\n**Hint:** Read it twice.\nAnd slowly.\n\n**Completion:** Done.",
+        "**Write-up:** Type it.\n\n**Actions:**\n\n1. Do this.\n\n**Words in this step:** A word.",
+        "**Hint:** First.\n\nMore of the hint.\n\n```\nuv run python x.py\n```\n\n### A heading\n\nAfter it.",
+        "```\n**Hint:** inside a code block\n```\n\n**Output:** Something.",
+    ]
+    out = render_docs(texts)
+    if out is None:                                         # a laptop without node: the checks above stand
+        return
+    first = folds(out[0])
+    assert [x[0] for x in first] == ["Troubleshooting", "Hint"]
+    assert "<li>One.</li>" in first[0][1] and "<li>Two.</li>" in first[0][1] and "Hint" not in first[0][1]
+    assert "Read it twice. And slowly." in first[1][1]       # the sentence on the label's line is inside
+    assert "<p>Before.</p>" in out[0] and "<p><strong>Completion:</strong> Done.</p>" in out[0]
+    assert "Completion" not in first[1][1]
+    assert folds(out[1]) == [] and "<details" not in out[1]  # other labels never fold
+    third = folds(out[2])
+    assert len(third) == 1 and "More of the hint." in third[0][1] and "uv run python x.py" in third[0][1]
+    assert "After it." not in third[0][1] and "<h4>A heading</h4>" in out[2]
+    assert folds(out[3]) == [] and "**Hint:** inside a code block" in out[3]
+
+
+def test_every_troubleshooting_and_hint_in_the_real_pages_folds_and_nothing_more():
+    import re
+    a = steps.load(ROOT / "steps.toml")
+    bodies = [steps.body(s, a, ROOT) for s in a.steps]
+    out = render_docs(bodies)
+    if out is None:
+        return
+    found = {"Troubleshooting": 0, "Hint": 0}
+    for s, text, rendered in zip(a.steps, bodies, out):
+        fence, want = False, []
+        for i, line in enumerate(text.split("\n")):
+            fence ^= line.lstrip().startswith("```")
+            m = re.match(r"\*\*(Troubleshooting|Hint):\*\*", line)
+            if m and not fence and (i == 0 or not text.split("\n")[i - 1].strip()):
+                want.append(m.group(1))
+        got = folds(rendered)
+        assert [x[0] for x in got] == want, s.id
+        for name, body in got:
+            assert not re.search(r"<p><strong>[^<]+:</strong>", body), (s.id, name)   # no next label inside
+            assert "<h4>" not in body, (s.id, name)
+            found[name] += 1
+    assert found["Troubleshooting"] > 0 and found["Hint"] > 0
+    print("folded parts:", found)
+
+
 # -- saving the student's work -------------------------------------------------------------------
 
 def finish_part0(repo):

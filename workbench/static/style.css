@@ -108,6 +108,14 @@ details.stuck[open] summary::before { content: "− "; }
 .stuck-body { margin-top: 8px; font-size: 13.5px; max-width: 60ch; }
 .stuck-body p { margin: 0 0 8px; }
 .stuck-body ul { margin: 0 0 8px; padding-left: 20px; }
+/* Troubleshooting and Hint in a step's instructions: folded, opened with a click, in the plain style
+   of "If you're stuck" (its + and - marker), a little lighter than a heading. */
+details.fold { margin: 0 0 8px; }
+details.fold > summary { cursor: pointer; color: var(--link); list-style: none; font-weight: 500; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::before { content: "+ "; }
+details.fold[open] > summary::before { content: "− "; }
+.fold-body { margin-top: 6px; }
 
 .record { background: var(--sunk); border-radius: 8px; padding: 14px 16px; display: grid; gap: 14px; align-content: start; }
 .record-head { display: grid; gap: 2px; }
