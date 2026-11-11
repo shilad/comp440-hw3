@@ -511,8 +511,8 @@ def test_rules_1_to_3_can_pass_before_the_loop_can_stop(tmp_path):
         "page it had read, and your loop called lookup() for it.",
         "NOT YET    5. Enforce the limit: the model's third reply asked for a third search with "
         "the limit of 2 lookups reached, and your loop ran it: it had run 2 lookups before that "
-        "one, and max_steps was 2; in another made-up check the model asked for 6 searches, and "
-        "your loop ran all 6 and never sent back OUT_OF_STEPS.",
+        "one, and max_steps was 2; in another made-up check the model asked for one search in "
+        "each of 6 replies, and your loop ran all 6 and never sent back OUT_OF_STEPS.",
         "NOT YET    6. Stop when the model stops: the model's first reply had text and no tool "
         "call, and the next request your loop sent did not end with one user turn holding "
         "REMINDER ('Please finish by calling answer().').",
@@ -598,7 +598,8 @@ BROKEN = {
                                  "loop returned had no entry for the search"]),
     "only the first call": (2, [("for call in calls:", "for call in calls[:1]:")],
                             ["the model's third reply asked for a wikidata lookup and a read, and "
-                             "your loop had not called lookup() for the read"]),
+                             "your loop called lookup() for the wikidata lookup only, then asked "
+                             "the model again without running the read"]),
     "results not sent": (3, [('        messages.append({"role": "user", "content": results})\n', "")],
                          ["asked for a search and a read", "no user turn of results"]),
     "wrong id": (3, [('"tool_use_id": call.id', '"tool_use_id": calls[0].id')],
@@ -673,7 +674,8 @@ BROKEN = {
     "the limit checked one late": (5, [("elif steps >= max_steps:", "elif steps > max_steps:")],
                                    ["your loop ran it: it had run 2 lookups before that one, and "
                                     "max_steps was 2; in another made-up check the model asked "
-                                    "for 6 searches, and your loop first sent back OUT_OF_STEPS "
+                                    "for one search in each of 6 replies, and your loop first sent "
+                                    "back OUT_OF_STEPS "
                                     "when it had run 3 lookups"]),
     "the limit checked one early": (5, [("elif steps >= max_steps:",
                                          "elif steps >= max_steps - 1:")],
@@ -688,7 +690,27 @@ BROKEN = {
     "no reminder": (6, [('            trace.append({"tool": "(reminder)"',
                          '            return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)\n'
                          '            trace.append({"tool": "(reminder)"')],
-                    ["had text and no tool call", "instead of reminding the model"]),
+                    ["had text and no tool call", "your loop returned a result instead of "
+                     "asking the model again with REMINDER"]),
+    "a break out of the while loop": (6, [
+        ('            trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})\n',
+         '            break\n'
+         '            trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})\n')],
+        ["the model's first reply had text and no tool call, and your loop ended without an "
+         "answer (run_agent() returned None) instead of asking the model again with REMINDER"]),
+    # The limit is reached, then one reply asks for two lookups: each must get OUT_OF_STEPS.
+    "the first lookup at the limit warns, the second stops": (5, [
+        ("                if warned_before:\n", "                if warned:\n")],
+        ["the model's third reply asked for a search and a read in one reply, with the limit of "
+         "2 lookups reached (it had run 2 lookups, and max_steps was 2), and your loop returned "
+         "a result, with the explanation 'The agent ran out of steps.', instead of sending back "
+         "OUT_OF_STEPS for each of the two"]),
+    "the second lookup at the limit gets no result": (3, [
+        ("                result = OUT_OF_STEPS.format(n=max_steps)\n",
+         "                if warned:\n                    continue\n"
+         "                result = OUT_OF_STEPS.format(n=max_steps)\n")],
+        ["the model's third reply asked for a search and a read in one reply, and the next "
+         "request your loop sent held no result with the read call's id"]),
     "reminds forever": (6, [('            if trace and trace[-1]["tool"] == "(reminder)":\n'
                              '                return finish(claim, None, [], NO_ANSWER, trace, '
                              'tokens, steps)\n', "")],
@@ -710,6 +732,101 @@ def test_a_broken_loop_fails_its_rule_and_says_what_happened(tmp_path, name):
     for phrase in phrases:
         assert phrase in line, line
     assert line.endswith(".") and "\n" not in line
+
+
+# A student's loop that stopped at the second lookup of one reply at the limit, and the same
+# student's fix: a flag for "a lookup was refused in this reply", turned into "warned" only
+# after the whole reply is handled.
+STUDENT_GAP = """
+import anthropic
+
+from agent import (ACCEPTED, DECLINED, INSTRUCTIONS, MAX_REJECTED, MAX_STEPS, MODEL, NO_ANSWER,
+                   OUT_OF_STEPS, RAN_OUT, REJECTED, REJECTED_TOO_OFTEN, REMINDED, REMINDER,
+                   TOOLS, answer_problem, clean_answer, finish, run_tool)
+
+
+def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
+    client = client or anthropic.Anthropic()
+    system = INSTRUCTIONS.read_text()
+    messages = [{"role": "user", "content": f"Claim: {claim}"}]
+    trace, read_so_far = [], []
+    tokens = {"input": 0, "output": 0}
+    steps = 0
+    rejected = 0
+
+    warned = False
+    reminded = False
+    while True:
+        reply = client.messages.create(model=MODEL, max_tokens=16000, system=system,
+                                       tools=TOOLS, messages=messages)
+        tokens["input"] += reply.usage.input_tokens
+        tokens["output"] += reply.usage.output_tokens
+        messages.append({"role": "assistant", "content": reply.content})
+        if reply.stop_reason == "refusal":
+            return finish(claim, None, [], DECLINED, trace, tokens, steps)
+        tool_calls = [block for block in reply.content if block.type == "tool_use"]
+        if len(tool_calls) == 0:
+            if reminded:
+                return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)
+            reminded = True
+            trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})
+            messages.append({"role": "user", "content": REMINDER})
+            continue
+        results = []
+        for call in tool_calls:
+            if call.name == "answer":
+                answer = clean_answer(call.input)
+                problem = answer_problem(answer, read_so_far)
+                if problem is None:
+                    trace.append({"tool": call.name, "input": call.input, "result": ACCEPTED})
+                    return finish(claim, answer["verdict"], answer["evidence"],
+                                  answer["explanation"], trace, tokens, steps)
+                rejected += 1
+                trace.append({"tool": call.name, "input": call.input, "result": REJECTED + problem})
+                if rejected >= MAX_REJECTED:
+                    return finish(claim, None, [], REJECTED_TOO_OFTEN.format(n=rejected),
+                                  trace, tokens, steps)
+                results.append({"type": "tool_result", "tool_use_id": call.id,
+                                "content": REJECTED + problem})
+                continue
+            if steps >= max_steps:
+                if warned:
+                    return finish(claim, None, [], RAN_OUT, trace, tokens, steps)
+                warned = True
+                out = OUT_OF_STEPS.format(n=max_steps)
+                trace.append({"tool": call.name, "input": call.input, "result": out})
+                results.append({"type": "tool_result", "tool_use_id": call.id, "content": out})
+                continue
+            result = lookup(call.name, call.input)
+            steps += 1
+            trace.append({"tool": call.name, "input": call.input, "result": result})
+            if call.name == "read" or call.name == "wikidata":
+                read_so_far.append(result)
+            results.append({"type": "tool_result", "tool_use_id": call.id, "content": result})
+        messages.append({"role": "user", "content": results})
+"""
+STUDENT_FIXED = (STUDENT_GAP
+                 .replace("        results = []\n",
+                          "        results = []\n        refused_this_turn = False\n")
+                 .replace("                warned = True\n", "                refused_this_turn = True\n")
+                 .replace('        messages.append({"role": "user", "content": results})\n',
+                          "        if refused_this_turn:\n            warned = True\n"
+                          '        messages.append({"role": "user", "content": results})\n'))
+
+
+def test_a_loop_that_stops_at_the_second_lookup_of_one_reply_at_the_limit_is_not_yet(tmp_path):
+    problems = check_loop.check(a_loop(tmp_path, STUDENT_GAP))
+    assert problems[:4] == [None] * 4 and problems[5] is None     # rule 5 only
+    assert problems[4] == (
+        "the model's third reply asked for a search and a read in one reply, with the limit of 2 "
+        "lookups reached (it had run 2 lookups, and max_steps was 2), and your loop returned a "
+        "result, with the explanation 'The agent ran out of steps.', instead of sending back "
+        "OUT_OF_STEPS for each of the two")
+
+
+def test_the_students_fixed_loop_passes(tmp_path):
+    assert STUDENT_FIXED.count("refused_this_turn") == 3
+    assert check_loop.check(a_loop(tmp_path, STUDENT_FIXED)) == [None] * 6
 
 
 def test_every_broken_rule_is_covered():
