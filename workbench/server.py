@@ -169,6 +169,7 @@ class App:
         return {
             "title": a.title,
             "lede": lede,
+            "goals": stepmod.goals(overview),
             "sample_claim": a.sample_claim,
             "parts": parts,
             "steps": [{"id": s.id, "label": a.label(s), "part": s.part, "title": s.title, "summary": s.summary,

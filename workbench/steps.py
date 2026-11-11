@@ -152,6 +152,26 @@ def intro(text: str | None) -> str:
     return ""
 
 
+def goals(text: str | None) -> list[str]:
+    """The bullets right after a page's first paragraph (README's "You will:" list), each on one
+    line, word for word; [] if no bullet list follows that paragraph."""
+    paras = [p for p in (text or "").split("\n\n") if p.strip()]
+    for i, para in enumerate(paras):
+        flat = " ".join(para.split())
+        if not flat.startswith(("#", ">", "Due ", "```", "|", "- ")):   # the first paragraph, as intro()
+            items: list[str] = []
+            for line in (paras[i + 1] if i + 1 < len(paras) else "").splitlines():
+                m = re.match(r"^\s*[-*]\s+(.*)$", line)
+                if m:
+                    items.append(m.group(1).strip())
+                elif line.strip() and items:
+                    items[-1] += " " + line.strip()
+                elif line.strip():
+                    return []
+            return items
+    return []
+
+
 def present(repo: Path, pattern: str) -> list[Path]:
     """The files a step's `files` entry names: one path, or every match of a glob."""
     if any(ch in pattern for ch in "*?["):

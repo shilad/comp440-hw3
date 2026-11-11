@@ -108,7 +108,12 @@ details.stuck[open] summary::before { content: "− "; }
 .stuck-body { margin-top: 8px; font-size: 13.5px; max-width: 60ch; }
 .stuck-body p { margin: 0 0 8px; }
 .stuck-body ul { margin: 0 0 8px; padding-left: 20px; }
-/* Troubleshooting and Hint in a step's instructions: folded, opened with a click, in the plain style
+/* The learning goals under the opening sentence: the opening's own text style, kept compact. */
+.top .goals:empty { display: none; }
+.top .goals p { margin: 0 0 2px; }
+.top .goals ul { margin: 0; padding-left: 20px; }
+.top .goals li { margin: 1px 0; }
+/* The folded parts of a step's instructions (see FOLDED in app.js), opened with a click, in the plain style
    of "If you're stuck" (its + and - marker), a little lighter than a heading. */
 details.fold { margin: 0 0 8px; }
 details.fold > summary { cursor: pointer; color: var(--link); list-style: none; font-weight: 500; }

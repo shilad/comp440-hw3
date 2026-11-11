@@ -579,57 +579,147 @@ def folds(html_text):
                       r'<div class="fold-body">(.*?)</div></details>', html_text, re.S)
 
 
-def test_troubleshooting_and_hint_fold_and_nothing_else_does():
+FOLDED = ["Words in this step", "Interpreting output", "Completion", "Troubleshooting", "Hint"]
+
+
+def test_the_page_folds_the_five_labels_in_its_list_and_no_other():
     js = (ROOT / "workbench/static/app.js").read_text()
-    assert "${doc(s.body, s.label)}" in js and js.count("doc(s.body, s.label)") == 2   # both places
+    assert "const FOLDED = " + json.dumps(FOLDED) + ";" in js
+    assert "${doc(text, s.label)}" in js and js.count("doc(text, s.label)") == 2   # both places
     assert "${md(e.text)}" in js                            # Claude's messages are not folded
     css = (ROOT / "workbench/static/style.css").read_text()
     assert 'details.fold[open] > summary::before { content: "− "; }' in css
     texts = [
-        "Before.\n\n**Troubleshooting:**\n\n- One.\n- Two.\n\n**Hint:** Read it twice.\nAnd slowly.\n\n**Completion:** Done.",
-        "**Write-up:** Type it.\n\n**Actions:**\n\n1. Do this.\n\n**Words in this step:** A word.",
-        "**Hint:** First.\n\nMore of the hint.\n\n```\nuv run python x.py\n```\n\n### A heading\n\nAfter it.",
-        "```\n**Hint:** inside a code block\n```\n\n**Output:** Something.",
+        "Opening.\n\n**Words in this step:** A *word*.\n\n**Actions:**\n\n1. Do this.\n\n"
+        "**Interpreting output:** It prints a line.\n\n```\nok\n```\n\n**Write-up:** Type it.\n\n"
+        "**Completion:** Done.\n\n**Troubleshooting:**\n\n- One.\n- Two.\n\n**Hint:** Read it twice.\nAnd slowly.",
+        "**The six rules:**\n\n1. Ask the model.\n\n**Output:** An old label.\n\n**Something else:** Stays.",
+        "**Hint:** First.\n\nMore of the hint.\n\n### A heading\n\nAfter it.",
+        "```\n**Hint:** inside a code block\n```\n\n**Write-up:** Something.",
     ]
     out = render_docs(texts)
     if out is None:                                         # a laptop without node: the checks above stand
         return
     first = folds(out[0])
-    assert [x[0] for x in first] == ["Troubleshooting", "Hint"]
-    assert "<li>One.</li>" in first[0][1] and "<li>Two.</li>" in first[0][1] and "Hint" not in first[0][1]
-    assert "Read it twice. And slowly." in first[1][1]       # the sentence on the label's line is inside
-    assert "<p>Before.</p>" in out[0] and "<p><strong>Completion:</strong> Done.</p>" in out[0]
-    assert "Completion" not in first[1][1]
-    assert folds(out[1]) == [] and "<details" not in out[1]  # other labels never fold
+    assert [x[0] for x in first] == FOLDED
+    body = dict(first)
+    assert "<em>word</em>" in body["Words in this step"] and "Actions" not in body["Words in this step"]
+    assert "<pre><code>ok</code></pre>" in body["Interpreting output"]
+    assert "<li>One.</li>" in body["Troubleshooting"] and "Read it twice. And slowly." in body["Hint"]
+    for open_label in ("Actions", "Write-up"):              # seen without a click
+        assert f"<p><strong>{open_label}:</strong>" in out[0]
+        assert all(f"<strong>{open_label}:" not in b for b in body.values())
+    assert "<p>Opening.</p>" in out[0] and "<li>Do this.</li>" in out[0]
+    assert folds(out[1]) == [] and "<details" not in out[1]  # The six rules, an old or unknown label
     third = folds(out[2])
-    assert len(third) == 1 and "More of the hint." in third[0][1] and "uv run python x.py" in third[0][1]
-    assert "After it." not in third[0][1] and "<h4>A heading</h4>" in out[2]
+    assert len(third) == 1 and "More of the hint." in third[0][1] and "After it." not in third[0][1]
     assert folds(out[3]) == [] and "**Hint:** inside a code block" in out[3]
 
 
-def test_every_troubleshooting_and_hint_in_the_real_pages_folds_and_nothing_more():
+def test_in_the_real_pages_only_the_five_labels_fold_and_1as_rules_stay_open():
     import re
     a = steps.load(ROOT / "steps.toml")
     bodies = [steps.body(s, a, ROOT) for s in a.steps]
     out = render_docs(bodies)
     if out is None:
         return
-    found = {"Troubleshooting": 0, "Hint": 0}
+    found = {}
     for s, text, rendered in zip(a.steps, bodies, out):
-        fence, want = False, []
-        for i, line in enumerate(text.split("\n")):
+        fence, want, lines = False, [], text.split("\n")
+        for i, line in enumerate(lines):
             fence ^= line.lstrip().startswith("```")
-            m = re.match(r"\*\*(Troubleshooting|Hint):\*\*", line)
-            if m and not fence and (i == 0 or not text.split("\n")[i - 1].strip()):
+            m = re.match(r"\*\*([^*]+):\*\*", line)
+            if m and m.group(1) in FOLDED and not fence and (i == 0 or not lines[i - 1].strip()):
                 want.append(m.group(1))
         got = folds(rendered)
         assert [x[0] for x in got] == want, s.id
         for name, body in got:
             assert not re.search(r"<p><strong>[^<]+:</strong>", body), (s.id, name)   # no next label inside
             assert "<h4>" not in body, (s.id, name)
-            found[name] += 1
-    assert found["Troubleshooting"] > 0 and found["Hint"] > 0
+            found[name] = found.get(name, 0) + 1
+        for open_label in ("Actions", "Write-up", "The six rules"):
+            if f"**{open_label}:**" in text:
+                assert f"<p><strong>{open_label}:</strong>" in rendered, (s.id, open_label)
+                assert all(f"<strong>{open_label}:" not in b for _, b in got), (s.id, open_label)
+    rules = dict(zip([s.id for s in a.steps], out))["1a"]
+    assert "<strong>The six rules:</strong>" in rules and "The six rules" not in [x[0] for x in folds(rules)]
+    assert found.get("Troubleshooting") and found.get("Hint") and found.get("Completion")
     print("folded parts:", found)
+
+
+def run_page_js(calls):
+    """Each JavaScript expression's value, from the page's own text helpers run in node; None
+    without node."""
+    node = node_or_none()
+    if not node:
+        return None
+    lines = (ROOT / "workbench/static/app.js").read_text().splitlines()
+    first = next(i for i, x in enumerate(lines) if x.startswith("const esc ="))
+    last = next(i for i, x in enumerate(lines) if x.startswith("// Replace an element's HTML"))
+    run = "\n".join(lines[first:last]) + "\n" + "\n".join(f"console.log(JSON.stringify({c}));" for c in calls)
+    return [json.loads(x) for x in subprocess.run([node, "-e", run], capture_output=True, text=True).stdout.splitlines()]
+
+
+def test_a_steps_summary_is_not_shown_a_second_time_in_its_instructions():
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert "const text = withoutSummary(s.body, s.summary);" in js and js.count("doc(text, s.label)") == 2
+    body = "In this step you ask the\nmodel a question.\n\n**Actions:**\n\n1. Ask it."
+    out = run_page_js([f"withoutSummary({json.dumps(body)}, {json.dumps('In this step you ask the model a question.')})",
+                       f"withoutSummary({json.dumps(body)}, {json.dumps('In this step you ask the model one question.')})",
+                       f"withoutSummary({json.dumps('In this step you ask it.')}, {json.dumps('In this step you ask it.')})",
+                       f"withoutSummary({json.dumps(body)}, {json.dumps('')})"])
+    if out is None:
+        return
+    assert out[0] == "**Actions:**\n\n1. Ask it."             # the same sentence, wrapped differently: dropped
+    assert out[1] == body                                     # one word different: kept
+    assert out[2] == ""                                       # nothing but the summary: nothing left
+    assert out[3] == body                                     # no summary: nothing dropped
+
+
+def test_no_real_step_shows_its_summary_twice():
+    import re
+    a = steps.load(ROOT / "steps.toml")
+    calls = [f"withoutSummary({json.dumps(steps.body(s, a, ROOT))}, {json.dumps(s.summary)})" for s in a.steps]
+    out = run_page_js(calls)
+    if out is None:
+        return
+    flat = lambda t: " ".join(str(t).split())                 # noqa: E731
+    for s, shown in zip(a.steps, out):
+        firstpara = flat(re.split(r"\n\s*\n", shown.strip(), maxsplit=1)[0]) if shown.strip() else ""
+        assert firstpara != flat(s.summary) and flat(s.summary) not in flat(shown), s.id
+        assert shown.strip(), s.id                            # each step still has instructions to show
+
+
+def test_an_open_part_stays_open_through_the_refresh():
+    js = (ROOT / "workbench/static/app.js").read_text()
+    update = js[js.index("function update() {"):js.index("\n}\n", js.index("function update() {"))]
+    assert "leftCol(" not in update                         # the refresh never redraws the instructions
+    assert "keep.has(d.dataset.key)" in js                  # and a rebuild reopens what was open
+
+
+def test_the_learning_goals_come_from_readme_word_for_word():
+    import re
+    readme = (ROOT / "README.md").read_text()
+    first, bullets = [p for p in readme.split("\n\n") if p.strip()][1:3]
+    assert first.rstrip().endswith("You will:")
+    want = [" ".join(x.split()) for x in re.split(r"(?m)^- ", bullets) if x.strip()]
+    assert steps.goals(readme) == want and len(want) == 5
+    assert want[0].startswith("Understand what makes a program an *agent*")
+    assert steps.goals("# T\n\nOpening sentence.\n\n## The task\n\nMore.\n") == []
+    assert steps.goals("# T\n\nOpening. You will:\n\nA paragraph, not a list.\n") == []
+    assert steps.goals(None) == []
+    js = (ROOT / "workbench/static/app.js").read_text()
+    assert "`<p>You will:</p><ul>${A.goals.map((g) => `<li>${inline(g)}</li>`).join(\"\")}</ul>`" in js
+    assert '<div class="lede goals" id="goals"></div>' in (ROOT / "workbench/static/index.html").read_text()
+
+
+def test_the_page_serves_the_goals_and_none_without_them(tmp_path):
+    h = homework(tmp_path, {"README.md": "# HW9\n\nA small homework. You will:\n\n- Learn *one* thing.\n- Learn\n  another.\n\nFor extra credit, more.\n",
+                            "steps.toml": STEPS.replace('writeup = "WRITEUP.md"', 'writeup = "WRITEUP.md"\noverview = "README.md"')})
+    a = server.App(h.student).assignment()
+    assert a["goals"] == ["Learn *one* thing.", "Learn another."] and a["lede"] == "A small homework."
+    (h.student / "README.md").write_text("# HW9\n\nA small homework.\n\n## The task\n")
+    assert server.App(h.student).assignment()["goals"] == []
 
 
 # -- saving the student's work -------------------------------------------------------------------

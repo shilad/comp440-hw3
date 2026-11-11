@@ -88,12 +88,15 @@ function md(text) {
   return out.join("\n");
 }
 
-// A step's instructions: as md(), except that each part labeled **Troubleshooting:** or **Hint:**
-// is folded away, to open with a click. A part is the paragraph that starts with the label (the
+// A step's instructions: as md(), except that each part with one of the labels in FOLDED is folded
+// away, to open with a click. The student sees without a click only what they need to do the step:
+// its opening paragraph, Actions, Write-up and (in 1a) The six rules; a label not in the list stays
+// open. A part is the paragraph that starts with the label (the
 // rest of its first line included) and everything after it, up to the next paragraph that starts
 // with a bold label, the next heading, or the end of the text. Each fold has a key (the step and
 // its number in the text), so one the student opened stays open if the page rebuilds itself.
-const FOLD = /^\*\*(Troubleshooting|Hint):\*\*\s*(.*)$/;
+const FOLDED = ["Words in this step", "Interpreting output", "Completion", "Troubleshooting", "Hint"];
+const FOLD = new RegExp(`^\\*\\*(${FOLDED.join("|")}):\\*\\*\\s*(.*)$`);
 const LABELLED = /^\*\*[^*]+:\*\*/;
 function doc(text, key) {
   const lines = String(text || "").split("\n");
@@ -119,6 +122,17 @@ function doc(text, key) {
   }
   flush();
   return out.join("\n");
+}
+
+// A step's instructions without their first paragraph when it repeats the summary shown under the
+// step's title (compared with the whitespace collapsed). If it differs in any way, it stays.
+const flat = (t) => String(t || "").split(/\s+/).join(" ").trim();
+function withoutSummary(body, summary) {
+  const text = String(body || "").replace(/^\s+/, "");
+  const cut = text.search(/\n\s*\n/);
+  const first = cut < 0 ? text : text.slice(0, cut);
+  if (!flat(summary) || flat(first) !== flat(summary)) return String(body || "");
+  return cut < 0 ? "" : text.slice(cut).replace(/^\s+/, "");
 }
 
 // Replace an element's HTML only when it changed, so polling keeps the student's place.
@@ -158,6 +172,9 @@ function build() {
   byId("title").textContent = A.title.includes(":") ? A.title.slice(A.title.indexOf(":") + 1).trim() : A.title;
   document.title = A.title;
   byId("lede").textContent = A.lede || "";
+  // The learning goals, from README's bullets after its first paragraph; nothing if it has none.
+  paint(byId("goals"), A.goals && A.goals.length
+    ? `<p>You will:</p><ul>${A.goals.map((g) => `<li>${inline(g)}</li>`).join("")}</ul>` : "");
   byId("parts").innerHTML = A.parts.map((p) => `
     <section class="part" id="part-${p.number}">
       <button class="part-head" data-part="${p.number}" aria-expanded="false" aria-controls="steps-${p.number}" type="button">
@@ -186,10 +203,11 @@ function minutes(s) {
 
 function leftCol(s) {
   const plain = s.setup;   // a setup step: the brief's text in full
-  return (plain ? `<span class="label">Instructions</span><div class="doc">${doc(s.body, s.label)}</div>`
+  const text = withoutSummary(s.body, s.summary);   // the summary is already under the step's title
+  return (plain ? `<span class="label">Instructions</span><div class="doc">${doc(text, s.label)}</div>`
     : `${s.claim && A.sample_claim ? `<div class="claimbox">${esc(A.sample_claim)}</div>` : ""}`)
     + `<div class="counts" id="dw-${s.label}"></div>`
-    + (!plain && s.body ? `<details class="stuck" data-key="${esc(s.label)}:stuck"><summary>If you're stuck</summary><div class="stuck-body doc">${doc(s.body, s.label)}</div></details>` : "");
+    + (!plain && text.trim() ? `<details class="stuck" data-key="${esc(s.label)}:stuck"><summary>If you're stuck</summary><div class="stuck-body doc">${doc(text, s.label)}</div></details>` : "");
 }
 
 // ---- what changes: progress, state, the open steps -------------------------------------------
