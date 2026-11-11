@@ -201,7 +201,7 @@ start one anyway, do it in the background, and say once that it will stop if thi
 - The first time you use a term the homework has not defined, explain it in a clause.
 - Use the homework's words:
   - a claim (one sentence that is either true or false); a verdict, always *supported*, *refuted*
-    or *doesn't say*; the evidence (the sentences quoted from Wikipedia that a verdict rests on);
+    or *doesn't say*; the evidence (the sentences quoted from Wikipedia that a verdict is based on);
   - the dataset, HoVer, and the dataset's label, *supported* or *not supported*, where *refuted*
     and *doesn't say* both count as *not supported*; the number of articles a claim needs (2, 3 or
     4; the data files call it `hops`);
