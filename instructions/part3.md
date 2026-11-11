@@ -1,15 +1,17 @@
-# COMP 440 HW3 Part 3: Why the agent fails, and one change
+# COMP 440 HW3 Part 3 (extra credit): Why the agent fails, and one change
 
 Due 8:00am Tuesday, November 24. Back to the [assignment page](../README.md).
 
 In this part you sort out why the agent fails on your evaluation claims, make one change aimed at the
-most common failure, and write up what you found. It should take about 1 hour and 10 minutes, plus about
-6 minutes for the run after your change, which goes on by itself while you do other things.
+most common failure, and write up what you found. It should take a little over an hour.
+
+Part 3 is extra credit: the homework is complete when Parts 0 to 2 are done. If you do Part 3, finish it
+before you submit. The run after your change takes about 6 minutes more, and it goes on by itself while
+you do other things.
 
 ## 3a. Sort the failures
 
-In this step you find out why the agent fails on your evaluation claims. You also see whether Claude
-reads the same failures the same way you do.
+In this step you find out why the agent fails on your evaluation claims.
 
 **Words in this step:** A *failure* is one of your evaluation claims where the agent's verdict does not
 match the dataset's label, in the full run you started in step 1e. A *trace* is the agent's lookups for one claim, in order, with what each returned. An *entry* is
@@ -79,15 +81,14 @@ failure on your evaluation claims.
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
 2. Decide on **one** change aimed at your most common failure from 3a (see the Hint).
 3. Make the change in your editor, or tell Claude exactly what to change.
-4. Before you start the run, tell Claude what you changed and what you expect it to do.
-5. Start the run yourself in another terminal tab in the homework's folder, with the first command under
+4. Start the run yourself in another terminal tab in the homework's folder, with the first command under
    "Output".
-6. Leave that tab open, your laptop awake and your change alone until the run ends.
-7. Open **Results** at the top of the homework page, click "Compare two runs", then "Step 3b:
+5. Leave that tab open, your laptop awake and your change alone until the run ends with two tables.
+6. Open **Results** at the top of the homework page, click "Compare two runs", then "Step 3b:
    runs/part2 with runs/part3/after".
-8. Read "Accuracy". Then, under "Claims that changed", set "Change" to "does not match in A, matches in
+7. Read "Accuracy". Then, under "Claims that changed", set "Change" to "does not match in A, matches in
    B", and then to "matches in A, does not match in B".
-9. Answer the three questions.
+8. Answer the three questions.
 
 **Output:** Claude makes exactly the change you describe and shows you what changed. You run
 the first command below yourself, on your 100 evaluation claims, the same claims as your full run in 1e.
@@ -136,21 +137,16 @@ In this step you say what you learned, in your own words.
 
 1. Start this step's Claude session with the command the homework page shows for 3c, in a terminal tab in the
    homework's folder. If the last step's Claude is still open in that tab, type `/exit` first.
-2. Answer the three questions under `### Write-up` in 3c, using your own numbers and examples.
-3. Answer the question under `### How I used AI`.
-4. Ask Claude to show you any of your own numbers or results you want to use.
+2. Ask Claude to show you any of your own numbers or results you want to use.
+3. Answer the three questions in `WRITEUP.md`, using your own numbers and examples.
 
-**Write-up:** In `WRITEUP.md`, under 3c, answer under `### Write-up`:
+**Write-up:** Answer these questions in `WRITEUP.md`, under 3c:
 
 - What does the agent's loop add over one search, what does it cost, and when would you not use an agent for a job like this? Use your numbers from Part 2 and Part 3.
 - What did your topics show you about Wikipedia as a source? Where it was thin or wrong, why might that be, given who writes it?
 - Your numbers rest on 100 claims about the topics you chose. Which of your conclusions would you trust on another 100 claims, which might be chance, and what would you measure to find out?
 
-and under `### How I used AI`:
-
-- How did you use AI in this homework, what did you check yourself, and what is one decision you made on your own?
-
-**Completion:** The homework page ticks 3c: all four answers have text after the `>`. That
+**Completion:** The homework page ticks 3c: all three answers have text after the `>`. That
 finishes Part 3, so the page commits your work as `Part 3 done` and pushes it to your fork. The page does
 not hand your homework in: submit it yourself, as the Submitting section of the README says.
 
@@ -160,7 +156,7 @@ Claude will not write or suggest a sentence, because the write-up is yours.
 
 ## What I look for
 
-Part 3 is 30% of the homework. At a minimum I am looking for the following:
+Part 3 is extra credit. At a minimum I am looking for the following:
 
 - Failure labels: 35% - Each label in 3a is backed by the entry of the trace that shows it, you say
   whether the dataset's label is right, and you explain where you and Claude disagreed.
