@@ -162,7 +162,8 @@ question, table and pasted block in that section. A key the page doesn't know is
 note in the terminal.
 
 A step's `summary` (a sentence or two on what the step is) shows under its title, open or closed,
-and opens its Claude session's prompt. A step's `goal` is no longer shown. Only a step with
+and opens its Claude session's prompt. A step has no `goal` any more; one in an older steps file
+is ignored, with a note. Only a step with
 `setup = true` shows its instruction section in full; every other step shows its tasks, with the
 section folded under "If you're stuck". A task's or a question's text may hold `code` spans and
 `[links](address)`: an address that starts with `https://`, `http://` or one `/` (a page of the

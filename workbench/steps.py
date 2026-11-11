@@ -37,7 +37,6 @@ class Step:
     page: str | None = None      # or take the body from a Markdown page...
     section: str | None = None   # ...the part under this "## " heading
     summary: str = ""            # what the step is, in a sentence or two, shown under its title
-    goal: str = ""               # no longer shown; kept so an older steps file still loads
     setup: bool = False          # a setup step: its text and checkpoints show as plain steps
     claim: bool = False          # show the assignment's sample claim above the step's tasks
     # A command the student runs in a terminal tab of their own (a long run), shown in a second
