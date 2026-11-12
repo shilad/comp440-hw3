@@ -7,9 +7,12 @@ The page never talks to Claude. For each step it writes two files into .workbenc
   - <step>.json, the step's settings: the calls it may make without asking, and the hook
     (guard.py) that refuses commits, pushes and anything touching the student's key.
 
-It shows the student the `claude` command that starts the step's session with those files under a
-session id kept in .workbench/state.json, and once the step has been worked on, the `claude
---resume` command that goes back to that conversation. Every step after the first also shows a
+It shows the student the `claude` command that starts a new conversation for the step with those
+files. The command names no session id, so it works however many times it is run, and the page
+finds each conversation itself: every transcript Claude Code recorded for this folder whose first
+message is "Start step <label>." (the session ids that older copies kept in .workbench/state.json
+still count). Once the step has been worked on, the page also shows the `claude --resume` command
+that goes back to its latest conversation. Every step after the first also shows a
 one-line prompt, "Start step 0c. Read .workbench/0c.md and follow it ...", which the student pastes
 into the Claude session they already have open: that session then serves the new step. So one
 conversation can hold several steps, each from its own "Start step <label>." message to the next
@@ -143,20 +146,27 @@ class StepSession:
 
     # -- the command --------------------------------------------------------------------------
     @property
-    def session_id(self) -> str:
-        return self.hub.session_id(self.step.id)
+    def session_id(self) -> str | None:
+        """The session id .workbench/state.json gave this step, from before the new-session
+        command stopped naming one; None for a step that never had one."""
+        return self.hub.known_id(self.step.id)
 
     def stretches(self) -> list[dict]:
         """This step's stretches of the homework's conversations, oldest first."""
         return [x for x in self.hub.stretches() if x["step"] == self.step.id]
 
+    def latest_session(self) -> str | None:
+        """The conversation that served this step last."""
+        mine = self.stretches()
+        return mine[-1]["session"] if mine else None
+
     def transcript(self) -> Path | None:
         """The file of the conversation this step was last worked in; before that, of the step's
-        own session, if it exists."""
+        own session from state.json, if it exists."""
         mine = self.stretches()
         if mine:
             return mine[-1]["path"]
-        return self.hub.find(self.session_id)
+        return self.hub.find(self.session_id) if self.session_id else None
 
     def prepare(self) -> None:
         """Write this step's prompt and settings into .workbench/, if they have changed. The
@@ -180,22 +190,32 @@ class StepSession:
             if not f.exists() or f.read_text(encoding="utf-8") != text:
                 f.write_text(text, encoding="utf-8")
 
+    def flags(self) -> str:
+        a, label = self.hub.assignment, self.hub.assignment.label(self.step)
+        model = (f" --model {a.model}" if a.model else "") + (f" --effort {a.effort}" if a.effort else "")
+        return (f"{model} --setting-sources user --settings .workbench/{label}.json "
+                f"--append-system-prompt-file .workbench/{label}.md --plugin-dir .workbench/plugin")
+
     def command(self) -> str:
-        """The terminal command: a new session for this step, or, once the step has been worked
-        on, the one that opens its latest conversation again. If that conversation has gone on to
-        another step since, the command also says to start this one again."""
+        """The terminal command that starts a new conversation for this step. It names no session
+        id, so it works however many times it is run: Claude Code gives each run its own, and the
+        page finds the conversation by its first message, "Start step <label>."."""
         a, s = self.hub.assignment, self.step
         label = a.label(s)
-        files = (f"--setting-sources user --settings .workbench/{label}.json "
-                 f"--append-system-prompt-file .workbench/{label}.md --plugin-dir .workbench/plugin")
-        model = (f" --model {a.model}" if a.model else "") + (f" --effort {a.effort}" if a.effort else "")
+        return f"claude -n {dq(f'{label} {s.title}')}{self.flags()} {dq(f'Start step {label}.')}"
+
+    def back_command(self) -> str | None:
+        """The terminal command that opens this step's latest conversation again, once there is
+        one. If that conversation has gone on to another step since, it also moves it back onto
+        this one."""
+        label = self.hub.assignment.label(self.step)
         mine = self.stretches()
         if mine:
             back = "" if mine[-1]["last"] else f" {dq(continue_prompt(label))}"
-            return f"claude --resume {mine[-1]['session']}{model} {files}{back}"
-        if self.hub.find(self.session_id):
-            return f"claude --resume {self.session_id}{model} {files} {dq(continue_prompt(label))}"
-        return f"claude -n {dq(f'{label} {s.title}')} --session-id {self.session_id}{model} {files} {dq(f'Start step {label}.')}"
+            return f"claude --resume {mine[-1]['session']}{self.flags()}{back}"
+        if self.session_id and self.hub.find(self.session_id):
+            return f"claude --resume {self.session_id}{self.flags()} {dq(continue_prompt(label))}"
+        return None
 
     def continue_prompt(self) -> str | None:
         """The prompt that moves an open session onto this step; none for the first step, which
@@ -220,15 +240,29 @@ class StepSession:
         turns: list[list[float]] = []      # [start, last activity] per student message
         last_t, last_kind = 0.0, None
 
+        where: dict[str, str | None] = {"session": None}   # the conversation the line being read is in
+
         def emit(t: float, kind: str, **data: Any) -> dict:
-            e = {"t": t, "kind": kind, **data}
+            e = {"t": t, "kind": kind, "session": where["session"], **data}
             events.append(e)
             return e
 
         # Each stretch of a conversation that served this step, oldest first; how the latest one
-        # ends says whether Claude is working or waiting.
-        lines = [d for st in stretches for d in st["lines"]]
+        # ends says whether Claude is working or waiting. When more than one conversation served
+        # it, a line marks where each begins, so the panel shows them all, in order.
+        many = len({st["session"] for st in stretches}) > 1
+        lines, began = [], set()
+        for st in stretches:
+            if many and st["session"] not in began and st["lines"]:
+                lines.append({"_begins": st["session"], "timestamp": st["lines"][0].get("timestamp")})
+            began.add(st["session"])
+            lines += [{**d, "_session": st["session"]} for d in st["lines"]]
         for d in lines:
+            if "_begins" in d:
+                where["session"] = d["_begins"]
+                emit(stamp(d["timestamp"]) - 0.001, "note", text=f"Claude session {d['_begins'][:8]} begins here.")
+                continue
+            where["session"] = d["_session"]
             kind = d.get("type")
             if kind not in ("user", "assistant") or d.get("isSidechain"):
                 continue
@@ -298,9 +332,10 @@ class StepSession:
         # from each conversation while it served this step.
         before: dict[str, str] = {}
         asked_at = 0.0
-        hooked = sorted((r for st in stretches for r in self.hub.hook_records(st["session"])
-                         if st["start"] <= r["t"] < st["end"]), key=lambda r: r["t"])
-        for r in hooked:
+        hooked = sorted(((r, st["session"]) for st in stretches for r in self.hub.hook_records(st["session"])
+                         if st["start"] <= r["t"] < st["end"]), key=lambda x: x[0]["t"])
+        for r, sid in hooked:
+            where["session"] = sid
             if r["kind"] == "refused":
                 emit(r["t"], "note", text=r["text"])
             elif r["kind"] == "asking":
@@ -316,8 +351,9 @@ class StepSession:
                     if answer != old.get(k) and (k in old or filled(answer)):
                         emit(r["t"] + 0.001, "slot", key=k, filled=filled(answer), outside=k not in mine,
                              answer=answer, label=("Wrote into" if filled(answer) else "Cleared") + f" “{k.split(' / ')[-1]}”")
-        # What Claude told the page with the `page` skill.
+        # What Claude told the page with the `page` skill, by step label, from any conversation.
         said = None
+        where["session"] = None
         for r in self.hub.page_records(self.step.id):
             if r["kind"] == "status":
                 said = emit(r["t"], "status", text=r["text"])
@@ -411,8 +447,14 @@ class StepSession:
                         "done": all(filled(slots.get(k)) for k in extra),
                         "slots": [self.slot(k, slots) for k in extra]})
 
+        # The record is the latest conversation's: when a step was started again in a new session,
+        # the earlier conversation stays in the step's conversation panel ("The conversation"), in
+        # TRANSCRIPT.md, and one `claude --resume` away.
+        latest = self.latest_session()
         entries = []
         for e in self.events:
+            if e.get("session") not in (latest, None):
+                continue
             if e["kind"] == "student" and not e.get("opening"):
                 entries.append({"kind": "asked", "t": e["t"], "text": e["text"][:400]})
             elif e["kind"] == "tool" and e["category"] in ("run", "write"):
@@ -520,7 +562,9 @@ class StepSession:
         return {"id": self.step.id, "label": a.label(self.step), "state": self.state,
                 "now": self.now, "busy": self.busy, "totals": self.totals, "events": list(self.events),
                 "started": self.state != "not started", "status": self.status, "record": self.record(),
-                "command": None if locked else self.command(), "session_id": self.session_id,
+                "command": None if locked else self.command(),
+                "back_command": None if locked else self.back_command(),
+                "session_id": self.latest_session() or self.session_id,
                 "continue_prompt": None if locked else self.continue_prompt(),
                 "model_flags": " ".join(x for x in (f"--model {a.model}" if a.model else "",
                                                     f"--effort {a.effort}" if a.effort else "") if x),
@@ -555,6 +599,8 @@ class Hub:
         self.convos: dict[str, tuple[tuple, list[dict]]] = {}  # session id -> ((path, size), lines)
         self.cut: tuple[tuple, list[dict]] = ((), [])          # (conversations' key, stretches)
         self.missed: dict[str, float] = {}                     # session id -> when a search last found nothing
+        self.found: dict[Path, dict] = {}                      # transcript -> what its first lines say
+        self.scanned_at = 0.0                                  # when the folders were last listed
         self.read_lock = threading.Lock()
         self.sessions = {s.id: StepSession(self, s) for s in assignment.steps}
 
@@ -586,15 +632,95 @@ class Hub:
         self.paths[session_id] = max(found, key=lambda p: p.stat().st_mtime)
         return self.paths[session_id]
 
+    def known_id(self, step_id: str) -> str | None:
+        """The session id .workbench/state.json kept for a step, if any (from before the command
+        stopped naming one)."""
+        with self.state_lock:
+            return self.state.get("sessions", {}).get(step_id)
+
+    def peek(self, path: Path, size: int) -> dict:
+        """What a transcript says about itself, from its first lines: the folder it was recorded in
+        (`cwd`) and the student's first message. Settled once both are known."""
+        info = {"size": size, "cwd": None, "first": None, "settled": False}
+        try:
+            with open(path, encoding="utf-8", errors="replace") as f:
+                for n, raw in enumerate(f):
+                    if n > 400:
+                        break
+                    try:
+                        d = json.loads(raw)
+                    except ValueError:
+                        continue
+                    if not isinstance(d, dict):
+                        continue
+                    info["cwd"] = info["cwd"] or d.get("cwd")
+                    if info["cwd"] and not self.here(info["cwd"]):
+                        info["settled"] = True          # another folder's: never this homework's
+                        break
+                    said = said_by_student(d)
+                    if said:
+                        info["first"], info["settled"] = said, bool(info["cwd"])
+                        break
+        except OSError:
+            pass
+        info["here"] = bool(info["cwd"]) and self.here(info["cwd"])
+        return info
+
+    def here(self, cwd: str) -> bool:
+        try:
+            return os.path.normcase(str(Path(cwd).resolve())) == os.path.normcase(str(self.repo.resolve()))
+        except OSError:
+            return False
+
+    def discovered(self) -> dict[str, Path]:
+        """The homework's conversations that the page did not name in advance: every transcript
+        Claude Code recorded for this folder (under projects/, in the folder named after this
+        repository's path, and in any folder where a state.json session was found) whose first
+        student message starts "Start step <label>." for one of the steps. The folders are listed
+        at most every two seconds; a file is read again only when its size changes, and then only
+        its first lines."""
+        now = time.time()
+        if now - self.scanned_at >= 2.0:
+            self.scanned_at = now
+            projects = claude_home() / "projects"
+            folders = {projects / re.sub(r"[^A-Za-z0-9]", "-", str(p)) for p in (self.repo, self.repo.resolve())}
+            folders |= {p.parent for p in self.paths.values()}
+            for folder in folders:
+                try:
+                    found = [e for e in os.scandir(folder) if e.name.endswith(".jsonl") and e.is_file()]
+                except OSError:
+                    continue
+                for e in found:
+                    path, size = Path(e.path), e.stat().st_size
+                    info = self.found.get(path)
+                    if info and (info["settled"] or info["size"] == size):
+                        info["size"] = size
+                        continue
+                    self.found[path] = self.peek(path, size)
+        labels = {self.assignment.label(s) for s in self.assignment.steps}
+        with self.state_lock:
+            # Conversations from before the steps were renumbered open with the old labels, so a
+            # port lists them here and the page reads them for no step (TRANSCRIPT.md still writes
+            # them, under "Other Claude sessions in this folder").
+            retired = set(self.state.get("retired_sessions", []))
+        out = {}
+        for path, info in self.found.items():
+            m = START.match(info["first"] or "")
+            if info["here"] and m and m.group(1) in labels and path.stem not in retired:
+                out[path.stem] = path
+        return out
+
     def conversations(self) -> dict[str, tuple[Path, list[dict]]]:
-        """Every conversation the page started, one per step started in a new session: session
-        id -> (its transcript, its lines). A transcript is read again only when it has grown."""
+        """Every conversation of the homework: the sessions .workbench/state.json names, and the
+        ones found by their first message (see discovered()): session id -> (its transcript, its
+        lines). A transcript is read again only when it has grown."""
         with self.state_lock:
             ids = list(dict.fromkeys(self.state.get("sessions", {}).values()))
         out = {}
         with self.read_lock:
-            for sid in ids:
-                path = self.find(sid)
+            found = self.discovered()
+            for sid in ids + [x for x in found if x not in ids]:
+                path = found.get(sid) or self.find(sid)
                 if not path:
                     continue
                 size = path.stat().st_size
@@ -669,6 +795,15 @@ class Hub:
                 ids.append(st["session"])
         return out
 
+    def homes(self) -> dict[str, str]:
+        """The step each conversation is written under in TRANSCRIPT.md: the one state.json gave
+        it, else the one its first message started."""
+        with self.state_lock:
+            out = {sid: step for step, sid in self.state.get("sessions", {}).items()}
+        for st in self.stretches():
+            out.setdefault(st["session"], st["step"])
+        return out
+
     def convo_size(self, step_id: str) -> int:
         """How much of the homework's conversations served this step, in transcript lines."""
         return sum(len(st["lines"]) for st in self.stretches() if st["step"] == step_id)
@@ -696,6 +831,8 @@ class Hub:
         return f"{dq(sys.executable)} {dq(str(self.dir / 'guard.py'))} {mode}"
 
     def session_id(self, step_id: str) -> str:
+        """Give a step a session id in state.json, as older copies did for every step. The page no
+        longer does; the tests use it to make a conversation that state.json names."""
         with self.state_lock:
             sessions = self.state.setdefault("sessions", {})
             if step_id not in sessions:

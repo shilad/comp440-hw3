@@ -396,16 +396,17 @@ function command(label, cmd, where) {
     <span class="small">${where}</span></div>`;
 }
 const IN_CHAT = "Paste this into the Claude session you already have open from this page, as a message. Claude then works on this step.";
-const IN_TERMINAL = "Paste this into a terminal in your homework folder, not into a Claude chat. If another Claude session is open in that terminal, type /exit first.";
+const GO_BACK = "Paste this into a terminal in your homework folder to open this step's last conversation again. If another Claude session is open in that terminal, type /exit first.";
+const IN_TERMINAL = "Paste this into a terminal in your homework folder, not into a Claude chat. It starts a new conversation for this step every time you run it. If another Claude session is open in that terminal, type /exit first.";
 
 // How to work on a step with Claude: go on in the session already open (every step after the
-// first), or the terminal command, which starts a new session or, once the step has been worked
-// on, opens its conversation again.
+// first); once the step has been worked on, open its last conversation again; or start a new
+// conversation for it, which works however many times the command is run.
 function claudeBoxes(ss) {
   if (!ss.command) return "";
   const go = ss.continue_prompt ? command("Continue in the Claude session you have open", ss.continue_prompt, IN_CHAT) : "";
-  const label = ss.started ? "Or go back to this step's conversation" : go ? "Or start a new Claude session" : "Start a new Claude session";
-  return go + command(label, ss.command, IN_TERMINAL);
+  const back = ss.back_command ? command(go ? "Or go back to this step's conversation" : "Go back to this step's conversation", ss.back_command, GO_BACK) : "";
+  return go + back + command(go || back ? "Or start a new Claude session" : "Start a new Claude session", ss.command, IN_TERMINAL);
 }
 
 // A command the student runs in a terminal tab of their own (a long run), under the Claude command.

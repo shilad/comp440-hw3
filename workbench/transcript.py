@@ -211,9 +211,10 @@ def section(session_id: str, start: str, body: str) -> str:
 
 
 def build(repo: Path, a: Assignment, session_ids: dict[str, str],
-          worked: dict[str, list[str]] | None = None) -> str:
-    """The whole file. `session_ids` maps each step's id to its own session id; `worked`, each
-    step's id to the sessions whose conversation served it, as the page reads them."""
+          worked: dict[str, list[str]] | None = None, homes: dict[str, str] | None = None) -> str:
+    """The whole file. `session_ids` maps each step's id to its own session id from state.json;
+    `worked`, each step's id to the sessions whose conversation served it, as the page reads them;
+    `homes`, each other conversation the page found to the step it is written under."""
     old: dict[str, tuple[str | None, str, str]] = {}   # session id -> (step label, start, body)
     path = repo / NAME
     if path.exists():
@@ -230,11 +231,12 @@ def build(repo: Path, a: Assignment, session_ids: dict[str, str],
             return section(sid, *got)
         return section(sid, old[sid][1], old[sid][2]) if sid in old else ""
 
-    out, mine = [HEADER], set(session_ids.values())
     home = {sid: step for step, sid in session_ids.items()}     # where each conversation is written
+    home.update({sid: step for sid, step in (homes or {}).items() if sid not in home})
+    out, mine = [HEADER], set(home)
     for s in a.steps:
         label = a.label(s)
-        ids = [session_ids[s.id]] if s.id in session_ids else []
+        ids = [sid for sid, step in home.items() if step == s.id]    # state.json's first, then by time
         ids += [k for k, v in old.items() if v[0] == label and k not in ids and k not in mine]
         done = [x for x in (one(sid) for sid in ids) if x]
         # A conversation written under another step that also served this one.
@@ -254,9 +256,9 @@ def build(repo: Path, a: Assignment, session_ids: dict[str, str],
 
 
 def write(repo: Path, a: Assignment, session_ids: dict[str, str],
-          worked: dict[str, list[str]] | None = None) -> bool:
+          worked: dict[str, list[str]] | None = None, homes: dict[str, str] | None = None) -> bool:
     """Write TRANSCRIPT.md if it changed. True if the file now holds at least one conversation."""
-    text = build(repo, a, session_ids, worked)
+    text = build(repo, a, session_ids, worked, homes)
     path = repo / NAME
     if not (path.exists() and path.read_text(encoding="utf-8", errors="replace") == text):
         path.write_text(text, encoding="utf-8", newline="\n")

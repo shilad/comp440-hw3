@@ -60,8 +60,9 @@ Python 3.11 or later; `.python-version` asks `uv` for 3.12.
 
 Before each commit the page writes every Claude conversation of the homework into `TRANSCRIPT.md`:
 each step's session under a heading naming the step (`# 0b. Ask the model with no tools`), in step
-order, then any session started in this folder some other way. A step's session id is kept in
-`.workbench/state.json`; resuming the session adds to the same conversation. A conversation that
+order, then any session started in this folder some other way. Resuming a session adds to the
+same conversation; a step started again with its new-session command gets a conversation of its
+own, written under the same heading. A conversation that
 is in the file but no longer on the laptop is kept as it was. `uv run python -m workbench.transcript`
 writes the file by hand.
 
@@ -134,7 +135,7 @@ The page writes two files per step into the git-ignored `.workbench/` folder, an
 command uses them:
 
 ```bash
-claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus-5-5 --effort medium \
+claude -n "0b Ask the model with no tools" --model claude-opus-5-5 --effort medium \
     --setting-sources user --settings .workbench/0b.json \
     --append-system-prompt-file .workbench/0b.md --plugin-dir .workbench/plugin "Start step 0b."
 ```
@@ -157,18 +158,32 @@ claude -n "0b Ask the model with no tools" --session-id <id> --model claude-opus
   stay with their own step); the hook is the same file for every step. What is lost: a command
   another step needs no longer asks first (an `evaluate.py` run in Part 0, say), so only the
   briefs keep each step to its own commands.
-- **Each step's record follows the step, not the session.** The page reads every conversation
-  it started (the session ids in `.workbench/state.json`) and cuts each one at every message that
-  starts with "Start step <label>.": a stretch serves that step until the next such message;
-  anything before the first serves the step the session was started for. A step's record, its
+- **The new-session command names no session id**, so it works however many times it is run
+  (from the terminal's history, say): Claude Code gives each run its own id. The page finds the
+  homework's conversations itself: every transcript under Claude Code's `projects/` folder for
+  this repository (the folder named after its path, and any folder where a session of
+  `.workbench/state.json` was found) whose recorded `cwd` is this repository and whose first
+  student message starts "Start step <label>." for one of the steps. The session ids older copies
+  kept in `state.json` still count. The folders are listed at most every two seconds, and a file
+  is read again only when its size changes. A session id in `state.json`'s `retired_sessions` is
+  read for no step: a copy ported from before the steps were renumbered lists its old
+  conversations there, because they open with the old labels.
+- **Each step's record follows the step, not the session.** The page cuts each conversation at
+  every message that starts with "Start step <label>.": a stretch serves that step until the next
+  such message; anything before the first serves the step `state.json` gave the session. A step's
   state line and its saved `record/` file come from its stretches, wherever they are, and the hook
-  log's lines are matched to a stretch by session id and time. A step whose latest stretch is
-  followed by another step's says that the session went on to that step. Its terminal command is
-  then `claude --resume <that session> ... "Start step <label>. Read ..."`, which reopens the
-  conversation and moves it back onto the step; before the step has any stretch, it is the new
-  session command. `TRANSCRIPT.md` writes each conversation once, under the step it was started
-  for, and gives each other step it served one line saying where. A session the page did not start
-  (plain `claude`) is not read for the record.
+  log's lines are matched to a stretch by session id and time. The record on the page is the
+  latest conversation's; when a step was started again in a new session, the earlier conversation
+  stays in the step's conversation panel ("The conversation", where a line marks where each
+  begins) and in `TRANSCRIPT.md`. Ticks and status lines go by the step's label, from any
+  conversation. A step whose latest stretch is followed by another step's says that the session
+  went on to that step.
+- **A started step offers three choices**: its prompt, to paste into the open session; `claude
+  --resume <its latest conversation> ...`, which reopens that conversation (and, if it went on to
+  another step, adds the step's prompt to move it back); and the new-session command.
+  `TRANSCRIPT.md` writes each conversation once, under the step `state.json` gave it or the step
+  its first message started, and gives each other step it served one line saying where. A session
+  that does not open with "Start step" (plain `claude`) is not read for the record.
 - Every step's Tasks list begins with how to start the step with Claude (`start_task` in the steps
   file, which a step may reword or leave out); the page ticks it once Claude has started on the
   step. A `stop_task` would end the list, with no tick; HW3 leaves it empty, and the new-session

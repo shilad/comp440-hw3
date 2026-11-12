@@ -546,10 +546,10 @@ def test_one_conversation_can_serve_several_steps_and_each_record_follows_its_st
     assert hub.worked_in() == {"0b": [sid], "1a": [sid]}
     flags = f"--model claude-opus-5-5 --effort medium --setting-sources user"
     # Back to 1a: reopen the conversation as it is. Back to 0b: reopen it and move it back onto 0b.
-    assert a1.command().startswith(f"claude --resume {sid} {flags} --settings .workbench/1a.json ")
-    assert not a1.command().endswith('."')
-    assert b.command().startswith(f"claude --resume {sid} {flags} --settings .workbench/0b.json ")
-    assert b.command().endswith(f' "{go_on("0b")}"')
+    assert a1.back_command().startswith(f"claude --resume {sid} {flags} --settings .workbench/1a.json ")
+    assert not a1.back_command().endswith('."')
+    assert b.back_command().startswith(f"claude --resume {sid} {flags} --settings .workbench/0b.json ")
+    assert b.back_command().endswith(f' "{go_on("0b")}"')
     # TRANSCRIPT.md: the conversation once, under 0b; 1a says where its part is.
     ids = {s.id: hub.session_id(s.id) for s in app.a.steps}
     text = transcript.build(h.student, app.a, ids, hub.worked_in())
@@ -563,18 +563,113 @@ def test_one_conversation_can_serve_several_steps_and_each_record_follows_its_st
     for s in (b, a1):
         s.refresh()
     assert a1.state == "moved on" and b.state != "moved on"
-    assert not b.command().endswith('."') and a1.command().endswith(f' "{go_on("1a")}"')
+    assert not b.back_command().endswith('."') and a1.back_command().endswith(f' "{go_on("1a")}"')
 
-    # 1a goes on later in a new session of its own: its record holds both stretches.
+    # 1a goes on later in a new session of its own: the record is the latest conversation's, and
+    # the conversation panel (the events) holds both, each marked where it begins.
     own = hub.session_id("1a")
     save_session(h.student, own, [("user", "Start step 1a."), ("user", "And the tools?"),
                                   ("assistant", [{"type": "text", "text": "Four of them."}])], hour=20)
     assert own in hub.missed                         # looked for a moment ago: the page waits 2 seconds
     hub.missed.clear()                               # before it looks for a new session again
     a1.refresh()
-    assert asked(a1) == ["What does Claude get sent?", "And the tools?"]
+    assert asked(a1) == ["And the tools?"]
+    said = [e["text"] for e in a1.events if e["kind"] == "student"]
+    assert "What does Claude get sent?" in said and "And the tools?" in said
+    assert [e["text"] for e in a1.events if e["kind"] == "note" and "begins here" in e["text"]] == \
+        [f"Claude session {sid[:8]} begins here.", f"Claude session {own[:8]} begins here."]
     assert hub.worked_in()["1a"] == [sid, own] and a1.state != "moved on"
-    assert a1.command().startswith(f"claude --resume {own} ")
+    assert a1.back_command().startswith(f"claude --resume {own} ")
+
+
+# -- a new-session command that can be run any number of times (instructor, Nov 11, 9:20pm:
+# "Error: Session ID 45c672c2-... is already in use.") ------------------------------------------
+
+def project_folder(repo):
+    """The folder Claude Code keeps a working folder's conversations in, under projects/."""
+    import re
+    return re.sub(r"[^A-Za-z0-9]", "-", str(repo))
+
+
+def test_no_new_session_command_names_a_session_id(tmp_path):
+    import shutil as sh
+    h = homework(tmp_path)
+    for name in ("steps.toml", "WRITEUP.md", "README.md", "instructions"):
+        src = ROOT / name
+        (sh.copytree if src.is_dir() else sh.copyfile)(src, h.student / name)
+    app = server.App(h.student)
+    for s in app.a.steps:
+        cmd = app.hub.sessions[s.id].command()
+        assert "--session-id" not in cmd and cmd.startswith(f'claude -n "{app.a.label(s)} '), s.id
+        assert cmd.endswith(f'"Start step {app.a.label(s)}."'), s.id
+    assert "sessions" not in app.hub.state or not app.hub.state["sessions"]   # no id is made in advance
+
+
+def test_a_steps_conversations_are_found_by_their_first_message_and_the_latest_is_its_record(tmp_path):
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    hub, b = app.hub, app.hub.sessions["0b"]
+    here = project_folder(h.student)
+    # Two runs of 0b's command: two conversations, neither in state.json.
+    save_session(h.student, "first-run", [("user", "Start step 0b."), ("user", "Run it."),
+                                          ("assistant", [{"type": "text", "text": "Ran it."}])], folder=here)
+    save_session(h.student, "second-run", [("user", "Start step 0b."), ("user", "Run it again."),
+                                           ("assistant", [{"type": "text", "text": "Ran it again."}])],
+                 folder=here, hour=20)
+    # Not the homework's: the same opening message recorded for another folder, in its own folder
+    # and in this one; and a plain `claude` conversation in this folder.
+    save_session(tmp_path / "elsewhere", "elsewhere-run", [("user", "Start step 0b.")], folder=project_folder(tmp_path / "elsewhere"))
+    save_session(tmp_path / "elsewhere", "stray-run", [("user", "Start step 0b.")], folder=here)
+    save_session(h.student, "plain-run", [("user", "hello")], folder=here)
+    assert "sessions" not in hub.state or not hub.state["sessions"]
+    b.refresh()
+    assert sorted(hub.discovered()) == ["first-run", "second-run"]
+    assert hub.worked_in() == {"0b": ["first-run", "second-run"]}
+    asked = [x["text"] for x in b.record()["entries"] if x["kind"] == "asked"]
+    assert asked == ["Run it again."]                                       # the latest conversation
+    assert "Run it." in [e["text"] for e in b.events if e["kind"] == "student"]   # the earlier one, in the panel
+    assert b.back_command().startswith("claude --resume second-run ")
+    assert "--session-id" not in b.command()
+    text = transcript.build(h.student, app.a, {}, hub.worked_in(), hub.homes())
+    for sid in ("first-run", "second-run"):
+        assert text.count(f"<!-- transcript-session: {sid} |") == 1
+        assert text.index("# 0b.") < text.index(sid)
+    assert text.index("plain-run") > text.index("# Other Claude sessions in this folder")
+    assert "elsewhere-run" not in text and "stray-run" not in text
+
+
+def test_a_session_id_already_in_state_json_is_still_read(tmp_path):
+    """Records made before the command stopped naming an id: state.json's sessions still count, in
+    whatever folder Claude Code put them, and their step's go-back command resumes them."""
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    hub = app.hub
+    hub.state["sessions"] = {"0b": "old-0b"}
+    save_session(h.student, "old-0b", [("user", "Start step 0b."), ("user", "Run it."),
+                                       ("assistant", [{"type": "text", "text": "Ran it."}])], folder="-somewhere-else")
+    b = hub.sessions["0b"]
+    b.refresh()
+    assert [x["text"] for x in b.record()["entries"] if x["kind"] == "asked"] == ["Run it."]
+    assert b.back_command().startswith("claude --resume old-0b ")
+    ids = {s.id: sid for s in app.a.steps if (sid := hub.known_id(s.id))}
+    assert ids == {"0b": "old-0b"}
+    text = transcript.build(h.student, app.a, ids, hub.worked_in(), hub.homes())
+    assert text.count("<!-- transcript-session: old-0b |") == 1 and text.index("# 0b.") < text.index("old-0b")
+
+
+def test_a_retired_conversation_is_read_for_no_step(tmp_path):
+    """A conversation from before the steps were renumbered opens with an old label ("Start step
+    0c." was the no-tools step): a port lists it in state.json's retired_sessions, and the page then
+    reads it for no step. TRANSCRIPT.md still writes it, with the folder's other conversations."""
+    h = homework(tmp_path)
+    app = server.App(h.student)
+    hub = app.hub
+    save_session(h.student, "before-renumbering", [("user", "Start step 0b."), ("user", "Old step 0b.")],
+                 folder=project_folder(h.student))
+    hub.state["retired_sessions"] = ["before-renumbering"]
+    assert hub.discovered() == {} and hub.worked_in() == {}
+    text = transcript.build(h.student, app.a, {}, hub.worked_in(), hub.homes())
+    assert text.index("before-renumbering") > text.index("# Other Claude sessions in this folder")
 
 
 def test_a_start_message_for_a_step_that_does_not_exist_starts_nothing(tmp_path):
@@ -627,19 +722,26 @@ def test_the_page_offers_both_ways_and_only_the_command_for_the_first_step(tmp_p
     lines = js.splitlines()
     first_line = next(i for i, x in enumerate(lines) if x.startswith("const esc ="))
     last_line = next(i for i, x in enumerate(lines) if x.startswith("let A"))
-    consts = [x for x in lines if x.startswith(("const IN_CHAT =", "const IN_TERMINAL ="))]
+    consts = [x for x in lines if x.startswith(("const IN_CHAT =", "const GO_BACK =", "const IN_TERMINAL ="))]
     run = "\n".join(lines[first_line:last_line] + consts + [page_function(js, "command"), page_function(js, "claudeBoxes")])
-    cases = [{"command": "claude -n x", "continue_prompt": None, "started": False},
-             {"command": "claude -n y", "continue_prompt": "Start step 0b. Read it.", "started": False},
-             {"command": "claude --resume z", "continue_prompt": "Start step 0b. Read it.", "started": True}]
+    cases = [{"command": "claude -n x", "continue_prompt": None, "back_command": None},
+             {"command": "claude -n y", "continue_prompt": "Start step 0b. Read it.", "back_command": None},
+             {"command": "claude -n z", "continue_prompt": "Start step 0b. Read it.", "back_command": "claude --resume z"},
+             {"command": "claude -n w", "continue_prompt": None, "back_command": "claude --resume w"}]
     run += "\n" + "\n".join(f"console.log(JSON.stringify(claudeBoxes({json.dumps(c)})));" for c in cases)
     out = [json.loads(x) for x in subprocess.run([node, "-e", run], capture_output=True, text=True).stdout.splitlines()]
     labels_of = lambda html_text: __import__("re").findall(r'<span class="label">([^<]*)</span>', html_text)  # noqa: E731
     assert labels_of(out[0]) == ["Start a new Claude session"]
     assert labels_of(out[1]) == ["Continue in the Claude session you have open", "Or start a new Claude session"]
-    assert labels_of(out[2]) == ["Continue in the Claude session you have open", "Or go back to this step's conversation"]
-    assert out[1].index("Start step 0b. Read it.") < out[1].index("claude -n y")    # the easier one first
-    assert "Paste this into the Claude session you already have open from this page, as a message." in out[1]
+    # A started step: three choices, the easiest first, each with its Copy button and its sentence.
+    assert labels_of(out[2]) == ["Continue in the Claude session you have open", "Or go back to this step's conversation",
+                                 "Or start a new Claude session"]
+    assert labels_of(out[3]) == ["Go back to this step's conversation", "Or start a new Claude session"]   # 0a, started
+    assert out[2].count('class="copy"') == 3 and out[2].count('<span class="small">') == 3
+    assert out[2].index("Start step 0b. Read it.") < out[2].index("claude --resume z") < out[2].index("claude -n z")
+    assert "Paste this into the Claude session you already have open from this page, as a message." in out[2]
+    assert "to open this step's last conversation again." in out[2]
+    assert "It starts a new conversation for this step every time you run it." in out[2]
     assert "If another Claude session is open in that terminal, type /exit first." in out[1]
 
 
@@ -651,8 +753,9 @@ def test_the_name_has_its_own_plain_now_line(tmp_path):
     slot = rec["checkpoints"][0]["slots"][0]
     assert slot["todo"] == "Not written yet. Type it after Name: at the top of WRITEUP.md."
     js = (ROOT / "workbench/static/app.js").read_text()
-    assert "Paste this into a terminal in your homework folder, not into a Claude chat. If another Claude " \
-           "session is open in that terminal, type /exit first." in js
+    assert "Paste this into a terminal in your homework folder, not into a Claude chat. It starts a new " \
+           "conversation for this step every time you run it. If another Claude session is open in that " \
+           "terminal, type /exit first." in js
 
 
 def test_a_step_can_carry_a_command_the_student_runs_themselves(tmp_path):
