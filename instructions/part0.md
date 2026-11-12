@@ -159,7 +159,8 @@ from Wikipedia that a verdict is based on.
    open in that terminal).
 2. Ask Claude to run the agent on the claim, and read the trace it pastes, one entry at a time.
 3. Click "Open these results" under 0d and read "The agent's trace", with each lookup's full result.
-4. Type your answers to the two questions in `WRITEUP.md`, in your editor, under 0d.
+4. Find out what Wikidata is: ask Claude, or look at wikidata.org.
+5. Type your answers to the three questions in `WRITEUP.md`, in your editor, under 0d.
 
 **Interpreting output:** Claude runs this command:
 
@@ -182,6 +183,7 @@ quoted sentence was not in anything the agent had read. Text in a search result 
 
 - In one or two sentences, how did the agent get from the claim to its verdict? Point to the trace entries by their numbers.
 - Which lookup would you have done differently, and how? If none, which one surprised you?
+- Describe Wikidata briefly. Why may it be important to this task?
 
 **Troubleshooting:**
 

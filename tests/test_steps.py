@@ -411,6 +411,17 @@ def test_a_session_serves_one_step_at_a_time_and_can_go_on_to_the_next(a):
     assert "in its own session" not in flat(a.step("0a").brief)
 
 
+def test_0d_explains_wikidata_but_the_why_is_the_students(a):
+    brief = flat(a.step("0d").brief)
+    for must in ("step's three questions in WRITEUP.md",
+                 "explain in general terms what Wikidata is",
+                 "what the agent's wikidata tool does: it asks Wikidata for one property of one entity",
+                 "Why it may be important to this task is theirs to say: do not write, outline or grade that "
+                 "answer, and do not list reasons; say that it goes in WRITEUP.md, under 0d, in their editor."):
+        assert must in brief, must
+    assert "two questions" not in brief
+
+
 def test_run_notes_are_the_outlines():
     steps = {s["id"]: s for s in raw()["step"]}
     assert {i: s["run_yourself"]["note"] for i, s in steps.items() if "run_yourself" in s} == RUN_NOTES

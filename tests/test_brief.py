@@ -63,7 +63,7 @@ OLD_FIRST_LABELS = ["**What you're finding out:**", "**What this step is for:**"
 
 
 # How many answers WRITEUP.md holds in all: one per question, table and pasted block, plus Name.
-SLOTS = 32
+SLOTS = 33
 
 # Part 3 is extra credit: its headings say so after the part's number.
 EXTRA_CREDIT = {3}
@@ -394,6 +394,20 @@ def test_actions_and_write_up_hold_no_loose_explanation(step):
         if not (is_quote or leads_to_quote):
             loose.append(f"opening: {one_line(para)[:70]}")
     assert not loose, f"{step}: move these under Words in this step, Interpreting output, Troubleshooting or Hint: {loose}"
+
+
+def test_0d_asks_about_wikidata_and_says_how_to_find_out():
+    """The instructor, Nov 11: "include a section that asks the user to describe wikidata briefly
+    and explain why it may be important to this task." It is 0d's third question, where the
+    agent's wikidata tool first shows in a trace; the trace does not always call it, so the
+    Actions say how to find out."""
+    question = "Describe Wikidata briefly. Why may it be important to this task?"
+    asked = questions(sections(WRITEUP.read_text(encoding="utf-8"))["0d. Run the agent and read its trace"])
+    assert len(asked) == 3 and asked[-1] == question
+    page = one_line(sections((ROOT / "instructions/part0.md").read_text(encoding="utf-8"))["0d. Run the agent and read its trace"])
+    assert "4. Find out what Wikidata is: ask Claude, or look at wikidata.org. " \
+           "5. Type your answers to the three questions in `WRITEUP.md`, in your editor, under 0d." in page
+    assert f"- {question}" in page
 
 
 @pytest.mark.parametrize("step", ALL_STEPS[1:])           # 0a's only answer is the name

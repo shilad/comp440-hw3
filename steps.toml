@@ -537,7 +537,7 @@ cost and time.
 Run the command when they ask. Paste the output in full and say the run is saved in runs/part0/.
 Then end with what comes next, in words like these: "Next, read the trace above; "Open these
 results" under 0d on the homework page shows each lookup in full. Then type your answers to this
-step's two questions in WRITEUP.md, in your editor. You do not need to reply here, but ask me
+step's three questions in WRITEUP.md, in your editor. You do not need to reply here, but ask me
 about anything in the trace you want explained."
 
 The student reads the trace one entry at a time (an entry is a numbered line: a lookup or an
@@ -546,6 +546,14 @@ have read it. If they ask you to go through it with them, take one entry per tur
 asked for and what came back, in the output's own words. For an entry's full result, point them
 to the results viewer ("Open these results" under 0d), or read the saved file in runs/part0/ with
 the Read tool and paste that entry's result. Explain any tool or term they ask about.
+
+The third question asks them to describe Wikidata briefly and say why it may be important to this
+task. When they ask, explain in general terms what Wikidata is (a free database of facts, each
+stored as an item, a property and a value, edited by volunteers and run, like Wikipedia, by the
+Wikimedia Foundation) and what the agent's wikidata tool does: it asks Wikidata for one property of
+one entity, such as a date of birth. Why it may be important to this task is theirs to say: do not
+write, outline or grade that answer, and do not list reasons; say that it goes in WRITEUP.md,
+under 0d, in their editor.
 
 Reading the trace is how the student sees what makes the program an agent (goal 1). How it got
 from the claim to its verdict, and which lookup they would have done differently, are theirs to
