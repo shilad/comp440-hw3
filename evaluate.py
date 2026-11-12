@@ -218,6 +218,11 @@ def main():
     args = parser.parse_args()
     methods = args.methods.split(",")
     if "agent" in methods:
+        # The runs of 1c, 1d, 1e and 3b: only the student's own loop, once it has passed the
+        # check. Nothing is run or forgotten (not even with --fresh) until it has.
+        if agent.which_loop() != "yours":
+            print(agent.NOT_PASSED, flush=True)
+            sys.exit(1)
         print(f"Agent loop: {LOOPS[agent.which_loop()][1]}", flush=True)
 
     items = [json.loads(line) for line in Path(args.claims).read_text().splitlines() if line.strip()]

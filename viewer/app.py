@@ -30,9 +30,10 @@ STATIC_TYPES = {".css": "text/css; charset=utf-8", ".js": "text/javascript; char
 HTML = "text/html; charset=utf-8"
 
 # What one version of the agent is made of, said the same way everywhere: evaluate.py's
-# fingerprint (agent_version) covers these files and the loop file in use.
-AGENT_FILES = ('<code>instructions.md</code>, <code>agent.py</code>, <code>wiki.py</code> and the loop '
-               '(<code>my_loop.py</code> or <code>reference_loop.py</code>)')
+# fingerprint (agent_version) covers these files and the loop file in use, which for every run of
+# evaluate.py is the student's own (it runs no agent until that loop has passed the check).
+AGENT_FILES = ('<code>instructions.md</code>, <code>agent.py</code>, <code>wiki.py</code> and your loop '
+               '(<code>my_loop.py</code>)')
 
 FOLD_AT = 700      # results longer than this many characters start folded
 PEEK = 260         # characters shown while a result is folded

@@ -96,38 +96,40 @@ def test_the_reference_loop_passes_and_is_saved_as_yours(tmp_path, monkeypatch, 
     assert agent.which_loop() == "yours"
 
 
-def test_use_reference_records_reference(saved, capsys):
-    assert check_loop.main(["--use-reference"]) == 0
-    assert capsys.readouterr().out.strip() == check_loop.KEPT_REFERENCE
-    assert saved.read_text().splitlines()[0] == "reference"
-    assert agent.which_loop() == "reference"
+def test_there_is_no_way_to_keep_the_reference_loop(saved, capsys):
+    """The instructor, Nov 11: "i don't want them to be able to use the reference loop." The option
+    is gone, and an old record of that choice counts as a loop that has not passed."""
+    with pytest.raises(SystemExit):
+        check_loop.main(["--use-reference"])
+    assert not saved.exists()
+    saved.parent.mkdir(parents=True)
+    saved.write_text("reference\nRecorded: your copy keeps using the reference loop.\n")
+    assert agent.which_loop() == "not passed"
+    with pytest.raises(agent.LoopNotPassed):
+        agent.run_agent("c")
 
 
-def test_a_failing_check_rewrites_a_yours_file_as_reference(tmp_path, monkeypatch, saved, capsys):
+def test_a_failing_check_after_a_pass_stops_the_agent(tmp_path, monkeypatch, saved, capsys):
     a_loop(tmp_path, REFERENCE, monkeypatch)
     assert check_loop.main([]) == 0 and agent.which_loop() == "yours"
     capsys.readouterr()
-    # A later change breaks the loop: the copy goes back on the reference loop, and the file
-    # stays, so the homework page still counts step 1a as done.
+    # A later change breaks the loop: no agent runs until it passes again, and the file stays,
+    # so the homework page still counts step 1a as done.
     a_loop(tmp_path, broken(("                steps += 1\n", "")), monkeypatch)
     assert check_loop.main([]) == 1
     printed = capsys.readouterr().out.splitlines()
-    assert printed[6:] == ["", check_loop.FAILED, check_loop.BACK_ON_REFERENCE]
-    assert saved.read_text().splitlines() == ["reference", check_loop.FELL_BACK] + printed[:6]
-    assert agent.which_loop() == "reference"
-    # Once it says "reference", a failing check leaves the file as it is.
+    assert printed[6:] == ["", check_loop.FAILED, check_loop.NOT_PASSING_NOW]
+    assert saved.read_text().splitlines() == ["not passing", check_loop.FELL_BACK] + printed[:6]
+    assert agent.which_loop() == "not passed"
+    # Once it says "not passing", a failing check leaves the file as it is.
     before = saved.read_text()
     assert check_loop.main([]) == 1
-    assert check_loop.BACK_ON_REFERENCE not in capsys.readouterr().out
+    assert check_loop.NOT_PASSING_NOW not in capsys.readouterr().out
     assert saved.read_text() == before
-    # So does it for a student who chose the reference loop.
-    check_loop.main(["--use-reference"])
-    chosen = saved.read_text()
-    assert check_loop.main([]) == 1
-    assert saved.read_text() == chosen
-    # And passing again puts the copy back on the student's loop.
+    # And passing again puts the agent back on the student's loop.
     a_loop(tmp_path, REFERENCE, monkeypatch)
     assert check_loop.main([]) == 0 and agent.which_loop() == "yours"
+
 
 
 def printing(source, what):
@@ -193,23 +195,26 @@ def test_a_failing_check_makes_no_file_when_there_was_none(tmp_path, monkeypatch
     a_loop(tmp_path, broken(("                steps += 1\n", "")), monkeypatch)
     assert check_loop.main([]) == 1
     assert not saved.exists() and not saved.parent.exists()
-    assert check_loop.BACK_ON_REFERENCE not in capsys.readouterr().out
+    assert check_loop.NOT_PASSING_NOW not in capsys.readouterr().out
 
 
 def test_which_loop_follows_the_file(saved):
+    """No file: the loop has never passed, so Part 0 runs the reference loop. "yours": the loop
+    passed. Anything else (a loop that fails now, an old record of keeping the reference loop, a
+    file that cannot be read) is a loop that has not passed, and no agent runs on it."""
     assert agent.which_loop() == "reference"           # no file
     saved.parent.mkdir(parents=True)
     for text, loop in (("yours\nok ...\n", "yours"), ("yours", "yours"),
-                       ("reference\n", "reference"), ("", "reference"),
-                       ("yours \n", "reference"), ("Yours\n", "reference"),
-                       ("ok\nyours\n", "reference")):
+                       ("reference\n", "not passed"), ("not passing\n", "not passed"), ("", "not passed"),
+                       ("yours \n", "not passed"), ("Yours\n", "not passed"),
+                       ("ok\nyours\n", "not passed")):
         saved.write_text(text)
         assert agent.which_loop() == loop, text
     saved.write_bytes(b"\xff\xfe\x00yours")              # not text
-    assert agent.which_loop() == "reference"
+    assert agent.which_loop() == "not passed"
     saved.unlink()
     saved.mkdir()                                        # not a file
-    assert agent.which_loop() == "reference"
+    assert agent.which_loop() == "not passed"
 
 
 # ---------- fair to loops written differently ----------
@@ -920,6 +925,11 @@ def test_run_agent_runs_the_loop_in_use(monkeypatch, saved):
     assert calls == [("reference_loop", "c1", "client", 5, lookup),
                      ("my_loop", "c2", "client", 5, lookup),
                      ("my_loop", "c3", None, agent.MAX_STEPS, agent.run_tool)]
+    # A loop that passed and fails now runs nothing, and never the reference loop.
+    saved.write_text("not passing\n")
+    with pytest.raises(agent.LoopNotPassed, match="has not passed the check"):
+        agent.run_agent("c4")
+    assert len(calls) == 3
 
 
 def test_check_py_says_which_loop_when_the_agent_runs(monkeypatch, tmp_path, saved, capsys):
@@ -932,11 +942,16 @@ def test_check_py_says_which_loop_when_the_agent_runs(monkeypatch, tmp_path, sav
         check.main()
         return capsys.readouterr().out.splitlines()
 
-    assert run("agent")[0] == "Agent loop: the reference loop (reference_loop.py)"
+    assert run("agent")[0] == "Agent loop: the reference loop (reference_loop.py)"    # Part 0
     saved.parent.mkdir(parents=True)
     saved.write_text("yours\n")
     assert run("agent")[0] == "Agent loop: yours (my_loop.py)"
     assert not any(line.startswith("Agent loop") for line in run("no-tools"))
+    saved.write_text("not passing\n")
+    with pytest.raises(SystemExit) as stopped:
+        run("agent")
+    assert stopped.value.code == 1
+    assert capsys.readouterr().out.strip() == agent.NOT_PASSED
 
 
 def test_evaluate_py_says_which_loop_when_the_agent_runs(monkeypatch, tmp_path, saved, capsys):
@@ -953,11 +968,25 @@ def test_evaluate_py_says_which_loop_when_the_agent_runs(monkeypatch, tmp_path, 
         evaluate.main()
         return capsys.readouterr().out.splitlines()
 
-    assert run("no-tools,agent", "a")[0] == "Agent loop: the reference loop (reference_loop.py)"
+    # Before the student's loop has passed, evaluate.py runs no agent, and never the reference loop.
+    with pytest.raises(SystemExit) as stopped:
+        run("no-tools,agent", "a")
+    assert stopped.value.code == 1 and capsys.readouterr().out.strip() == agent.NOT_PASSED
+    assert not (tmp_path / "a").exists()
     saved.parent.mkdir(parents=True)
     saved.write_text("yours\n")
     assert run("agent", "b")[0] == "Agent loop: yours (my_loop.py)"
     assert not any(line.startswith("Agent loop") for line in run("no-tools", "c"))
+    # A loop that fails now stops the run before anything is run or forgotten, --fresh or not.
+    kept = (tmp_path / "b" / "agent.jsonl").read_text()
+    saved.write_text("not passing\n")
+    for extra in ([], ["--fresh"]):
+        monkeypatch.setattr(sys, "argv", ["evaluate.py", str(claims), "--methods", "agent",
+                                          "--out", str(tmp_path / "b"), *extra])
+        with pytest.raises(SystemExit):
+            evaluate.main()
+        assert capsys.readouterr().out.strip() == agent.NOT_PASSED
+        assert (tmp_path / "b" / "agent.jsonl").read_text() == kept
 
 
 def test_the_fingerprint_covers_the_loop_in_use(monkeypatch, tmp_path, saved):

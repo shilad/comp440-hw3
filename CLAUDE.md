@@ -175,7 +175,9 @@ Facts about the programs:
   prints the tables again and costs nothing.
 - check.py and evaluate.py first print which loop drove the agent: "Agent loop: yours
   (my_loop.py)" once check_loop.py has passed the student's loop, or "Agent loop: the reference
-  loop (reference_loop.py)" before that (all of Part 0) or if they chose to keep it.
+  loop (reference_loop.py)" before it ever has (all of Part 0). There is no way to keep the
+  reference loop. If the loop passed and a later check fails, both programs run no agent and say
+  so until it passes again.
 - Saved results are never run again, even after the student changes instructions.md, agent.py,
   wiki.py or the loop. On a finished folder the command then prints a note after the tables that
   the saved results were made by an earlier version of the agent; if claims are still to run, it
@@ -232,7 +234,7 @@ start one anyway, do it in the background, and say once that it will stop if thi
     the three versions;
   - the loop: the part of the agent that asks the model, runs its lookups, sends back the results
     and stops; the student's own, in my_loop.py, once check_loop.py (the check) passes it, and the
-    reference loop until then;
+    reference loop before that, in Part 0 only;
   - the model, or the LLM: Claude Haiku, which all three versions call. agent.py calls it
     "Claude"; say "the model" or "Claude Haiku", and never "I" or "me", for it. "Claude" is you;
   - a lookup: one call to search, read or wikidata. The code says "step" for a lookup (MAX_STEPS

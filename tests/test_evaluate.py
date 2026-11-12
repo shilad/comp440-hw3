@@ -23,6 +23,16 @@ def always_supported(claim):
             "trace": [], "steps": 1, "tokens": {"input": 10, "output": 2}, "cost_usd": 0.001}
 
 
+@pytest.fixture(autouse=True)
+def a_passed_loop(monkeypatch, tmp_path):
+    """evaluate.py runs the agent only once the student's loop has passed the check (the runs of
+    Part 1 and later): these tests run it as if it had."""
+    record = tmp_path / "runs" / "part1" / "loop-check.txt"
+    record.parent.mkdir(parents=True)
+    record.write_text("yours\n")
+    monkeypatch.setattr(evaluate.agent, "LOOP_CHECK", record)
+
+
 def run_main(monkeypatch, tmp_path):
     claims = tmp_path / "claims.jsonl"
     claims.write_text("\n".join(json.dumps(item) for item in ITEMS) + "\n")

@@ -14,17 +14,12 @@ Claude API, so a loop that passes here does not fail on its first real run.
 When every rule passes, it saves the lines it printed as
 runs/part1/loop-check.txt, with "yours" on the first line, and from then on
 your copy's agent runs on your loop. If your loop passed earlier and a rule
-fails now, it rewrites that file with "reference" on the first line, so your
-copy is back on the reference loop until every rule passes again. The file is
-still there, so step 1a stays done on the homework page.
+fails now, it rewrites that file with "not passing" on the first line: until
+every rule passes again, evaluate.py and check.py run no agent and say so. The
+file is still there, so step 1a stays done on the homework page.
 
-If you cannot finish your loop and want to go on with the homework:
-
-    uv run python check_loop.py --use-reference
-
-saves the file with "reference" on the first line, and your copy keeps using
-the reference loop. You can still finish your loop later and run the check
-again without --use-reference.
+There is no way to keep the reference loop instead: from step 1a on, the agent
+runs only on your own loop.
 """
 
 import argparse
@@ -55,12 +50,9 @@ PLENTY = 20         # the limit of lookups in the made-up checks that do not tes
 LIMIT = 2           # the limit in the two that do
 PASSED = "Every rule passes. From now on your copy's agent runs on your loop (my_loop.py)."
 FAILED = "Not yet. Fix the first NOT YET line, then run this again."
-FELL_BACK = ("Your loop passed the check earlier and does not pass now, so your copy is back on "
-             "the reference loop.")
-BACK_ON_REFERENCE = ("Your loop passed earlier and does not pass now, so your copy is back on the "
-                     "reference loop until every rule passes again.")
-KEPT_REFERENCE = ("Recorded: your copy keeps using the reference loop. You can still finish "
-                  "your loop later: run this check again without --use-reference.")
+FELL_BACK = "Your loop passed the check earlier and does not pass now."
+NOT_PASSING_NOW = ("Your loop passed earlier and does not pass now, so no agent run starts until every "
+                   "rule passes again.")
 NOT_FOUND = ("the check could not find `{name}` in run_agent(): keep the names of the set-up "
              "lines at the top of the function")
 
@@ -1152,15 +1144,8 @@ def lines(problems):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Check the loop in my_loop.py.")
-    parser.add_argument("--use-reference", action="store_true",
-                        help="keep your copy on the reference loop")
-    args = parser.parse_args(argv)
+    parser.parse_args(argv)
     saved = agent.LOOP_CHECK
-    if args.use_reference:
-        saved.parent.mkdir(parents=True, exist_ok=True)
-        saved.write_text(f"reference\n{KEPT_REFERENCE}\n")
-        print(KEPT_REFERENCE)
-        return 0
 
     found = examine(MY_LOOP)
     problems = [problem for problem, _ in found]
@@ -1174,10 +1159,9 @@ def main(argv=None):
         return 0
     print(f"\n{FAILED}")
     if agent.which_loop() == "yours":
-        # Back on the reference loop until the check passes again. The file stays, so step 1a
-        # stays done; a file that already says "reference" is left as it is.
-        saved.write_text(f"reference\n{FELL_BACK}\n" + "\n".join(printed) + "\n")
-        print(BACK_ON_REFERENCE)
+        # No agent run until the check passes again. The file stays, so step 1a stays done.
+        saved.write_text(f"not passing\n{FELL_BACK}\n" + "\n".join(printed) + "\n")
+        print(NOT_PASSING_NOW)
     # What the loop printed during the made-up check behind the first NOT YET line. It is
     # shown to help find the problem, and never saved.
     number, output = next((n, out) for n, (problem, out) in enumerate(found, 1) if problem)

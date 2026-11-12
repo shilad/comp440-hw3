@@ -14,11 +14,11 @@ chooses, sends back what they return, and stops.
 **Words in this step:** A *tool* is one of the four things the agent can call: `search`, `read`,
 `wikidata` and `answer`. A *lookup* is a call to one of the first three. A *tool_use block* is the part
 of the model's reply that asks for a tool, and a *tool_result* is what your loop sends back for one tool
-call. *The reference loop*, in `reference_loop.py`, is a loop I wrote. Your copy's agent uses it until
-your loop passes the check, so nothing else in the homework waits on this step. Claude cannot open it;
-to talk about it, paste its lines into the chat. *The check*, `check_loop.py`, tests the loop in
-`my_loop.py` against the six rules, with a stand-in for the model and for Wikipedia. It needs no key and
-no network, takes a few seconds, and costs nothing.
+call. *The reference loop*, in `reference_loop.py`, is a loop I wrote. Your copy's agent uses it only in
+Part 0, before your loop has passed the check; from this step on it runs only on your loop. Claude
+cannot open it; to talk about it, paste its lines into the chat. *The check*, `check_loop.py`, tests the
+loop in `my_loop.py` against the six rules, with a stand-in for the model and for Wikipedia. It needs no
+key and no network, takes a few seconds, and costs nothing.
 
 **Actions:**
 
@@ -121,13 +121,11 @@ your copy's agent runs on your loop (my_loop.py)." and saves `runs/part1/loop-ch
   Claude what the error means.
 - The check says your loop did not stop. It stops a loop that runs for more than a few seconds; read
   that rule again.
-- You can't finish your loop. Run `uv run python check_loop.py --use-reference` (or ask Claude to). Your
-  copy keeps the reference loop, and the rest of the homework works as before; you lose only the points
-  for the loop itself. If your loop passes later, your copy switches to it. For 1a's questions, open
-  `reference_loop.py`: answer the first two about it, with its line numbers, and in the third say how far
-  your own loop got and what stopped you.
-- You changed `my_loop.py` after it passed. Run the check again; until it passes, your copy uses the
-  reference loop.
+- You can't finish your loop. Ask Claude to explain the first `NOT YET` line and to help you with that
+  rule, then run the check again. If you are still stuck, post the `NOT YET` line in `#comp440-f26` on
+  Slack.
+- You changed `my_loop.py` after it passed. Run the check again: while a rule is `NOT YET`, `check.py`
+  and `evaluate.py` run no agent and say so, and they use your loop again once every rule passes.
 
 **Hint:** Write rules 1 to 3 first, then run the check. Claude explains the API, the tools and Python,
 reads `my_loop.py` with you, and says what is wrong and why when the check fails. When you are stuck, it

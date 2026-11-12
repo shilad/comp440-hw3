@@ -854,7 +854,7 @@ def test_the_3b_comparison_appears_only_if_the_homework_has_its_run(repo):
 
 
 def test_a_version_of_the_agent_includes_its_loop(repo):
-    files = "instructions.md, agent.py, wiki.py and the loop (my_loop.py or reference_loop.py)"
+    files = "instructions.md, agent.py, wiki.py and your loop (my_loop.py)"
     rows = [dict(r, agent_version="aaa") for r in full_rows()["agent"]]
     write_jsonl(repo / "runs" / "part2" / "agent.jsonl", rows)
     write_jsonl(repo / "runs" / "b" / "agent.jsonl", rows)

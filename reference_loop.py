@@ -1,5 +1,5 @@
-"""The reference loop. The homework uses it until your own loop, in my_loop.py,
-passes the check (uv run python check_loop.py).
+"""The reference loop. The homework uses it in Part 0, before your own loop, in
+my_loop.py, has passed the check (uv run python check_loop.py), and not after.
 
 Do not open this file before step 1a is done: reading it first gives the
 exercise away. After that, compare it with yours (the write-up asks you to).

@@ -93,8 +93,8 @@ give the same answer every time, so a difference of a few claims between the two
 
 **Hint:** The change can be to `instructions.md`, to a tool (for example, what `search` returns, in
 `wiki.py`), or to the limit of 12 lookups (in `agent.py`). Leave your loop, `my_loop.py`, as it passed
-the check: a loop that breaks one of the six rules is replaced by the reference loop the next time the
-check runs. Claude will not propose a change, because the choice is yours.
+the check: once the check finds one of the six rules broken, no agent run starts until your loop passes
+again. Claude will not propose a change, because the choice is yours.
 
 ## 3c. Write it up
 

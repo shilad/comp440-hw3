@@ -34,8 +34,7 @@ DUE = "8:00am Tuesday, November 24"
 CHECK = ["Bash(uv run python check.py:*)"]
 EVALUATE = ["Bash(uv run python evaluate.py:*)"]
 LOOKUP = ["Bash(uv run python lookup.py:*)"]
-LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loop.py --use-reference)",
-              "Bash(uv run pytest:*)"]
+LOOP_CHECK = ["Bash(uv run python check_loop.py)", "Bash(uv run pytest:*)"]
 
 # id: (part, section heading without "## ", files, allow, minutes)
 EXPECTED = {
@@ -105,8 +104,8 @@ TASKS = {
     "0d": ["Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.",
            "In the results viewer, read the trace, one entry at a time."],
     "1a": ["In your editor or with Claude, read agent.py: the four tools, the evidence check and finish().",
-           "In your editor, write your loop in my_loop.py until it passes every rule of the check, or choose "
-           "to keep the reference loop. (Remember, Claude can help you!)"],
+           "In your editor, write your loop in my_loop.py until it passes every rule of the check. "
+           "(Remember, Claude can help you!)"],
     "1b": ["By hand, make your first lookup: ask Claude to run it, with the tool and the words you choose. "
            "It is saved in "
            "runs/part1/lookups.jsonl.",
@@ -714,9 +713,15 @@ def test_1a_helps_with_the_loop_but_never_writes_it(a):
                  "Do not write the whole loop for them, and never paste a finished loop",
                  "do not edit my_loop.py yourself",
                  "never describe it from memory or guesswork",
-                 "uv run python check_loop.py --use-reference",
-                 "only when they ask for exactly that"):
+                 # The instructor, Nov 11: "i don't want them to be able to use the reference loop."
+                 "There is no way to keep the reference loop: the step is done only when the student's own "
+                 "loop passes every rule",
+                 "say in one line that this is not possible, then offer to help with the first NOT YET line"):
         assert must in brief, must
+    for s in a.steps:
+        assert "--use-reference" not in s.brief and "--use-reference" not in " ".join(s.allow), s.id
+        assert "keep the reference loop" not in " ".join(c.task for c in stepmod.checkpoints(s)), s.id
+    assert "chose to keep it" not in flat(a.tutor) and "There is no way to keep the reference loop." in flat(a.tutor)
     for gone in ("Never write, dictate, complete or correct a line of my_loop.py", "Hints that hand over the code"):
         assert gone not in brief, gone
     tutor = flat(a.tutor)

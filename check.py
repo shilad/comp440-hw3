@@ -51,6 +51,10 @@ def main():
     args = parser.parse_args()
 
     if args.method == "agent":
+        # The reference loop runs only before the student's loop has ever passed (Part 0).
+        if agent.which_loop() == "not passed":
+            print(agent.NOT_PASSED, flush=True)
+            raise SystemExit(1)
         print(f"Agent loop: {LOOPS[agent.which_loop()]}", flush=True)
     start = time.time()
     result = METHODS[args.method](args.claim)

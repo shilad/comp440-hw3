@@ -6,8 +6,8 @@ model and for Wikipedia, so it needs no key and costs nothing:
 
     uv run python check_loop.py
 
-Until every rule passes, your copy's agent runs on the reference loop. Once
-they all pass, it runs on this one.
+Part 0 runs the agent on the reference loop. Once every rule passes, the agent
+runs on this loop and no other: the runs of 1c and later need it to pass.
 """
 
 import anthropic

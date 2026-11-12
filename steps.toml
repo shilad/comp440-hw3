@@ -237,7 +237,9 @@ Facts about the programs:
   prints the tables again and costs nothing.
 - check.py and evaluate.py first print which loop drove the agent: "Agent loop: yours
   (my_loop.py)" once check_loop.py has passed the student's loop, or "Agent loop: the reference
-  loop (reference_loop.py)" before that (all of Part 0) or if they chose to keep it.
+  loop (reference_loop.py)" before it ever has (all of Part 0). There is no way to keep the
+  reference loop. If the loop passed and a later check fails, both programs run no agent and say
+  so until it passes again.
 - Saved results are never run again, even after the student changes instructions.md, agent.py,
   wiki.py or the loop. On a finished folder the command then prints a note after the tables that
   the saved results were made by an earlier version of the agent; if claims are still to run, it
@@ -294,7 +296,7 @@ start one anyway, do it in the background, and say once that it will stop if thi
     the three versions;
   - the loop: the part of the agent that asks the model, runs its lookups, sends back the results
     and stops; the student's own, in my_loop.py, once check_loop.py (the check) passes it, and the
-    reference loop until then;
+    reference loop before that, in Part 0 only;
   - the model, or the LLM: Claude Haiku, which all three versions call. agent.py calls it
     "Claude"; say "the model" or "Claude Haiku", and never "I" or "me", for it. "Claude" is you;
   - a lookup: one call to search, read or wikidata. The code says "step" for a lookup (MAX_STEPS
@@ -578,11 +580,11 @@ slots = ["1a.*"]
 files = ["runs/part1/loop-check.txt"]
 # The file is the check's own record, not a run: no link to it in the results viewer.
 hide_results = true
-allow = ["Bash(uv run python check_loop.py)", "Bash(uv run python check_loop.py --use-reference)", "Bash(uv run pytest:*)"]
+allow = ["Bash(uv run python check_loop.py)", "Bash(uv run pytest:*)"]
 summary = "In this step you write the agent loop yourself. The loop asks the model for lookups, runs the lookups it chooses, sends back what they return, and stops."
 checkpoints = [
   { text = "You have read agent.py: the four tools, the evidence check and finish()", task = "In your editor or with Claude, read agent.py: the four tools, the evidence check and finish().", tick = false },
-  { text = "Your loop in my_loop.py passes every rule of the check, or you have chosen to keep the reference loop", task = "In your editor, write your loop in my_loop.py until it passes every rule of the check, or choose to keep the reference loop. (Remember, Claude can help you!)", files = ["runs/part1/loop-check.txt"] },
+  { text = "Your loop in my_loop.py passes every rule of the check", task = "In your editor, write your loop in my_loop.py until it passes every rule of the check. (Remember, Claude can help you!)", files = ["runs/part1/loop-check.txt"] },
   { text = "Your answers are in WRITEUP.md", slots = ["1a.*"] },
 ]
 brief = '''
@@ -639,17 +641,11 @@ block with its line numbers, since they cannot see what you read. agent.py and m
 them. The page shows reading agent.py with no tick: never tick it or ask whether they have read
 it. Checkpoint 2 ticks itself when the check saves runs/part1/loop-check.txt.
 
-Bring up keeping the reference loop only if the student says they want to stop. If they cannot
-finish and ask to keep it, first say in one sentence what that does: their copy keeps using the
-reference loop for the rest of the homework, they lose this step's points for the loop itself, and
-they can still come back and finish later. Run this only when they ask for exactly that:
-
-    uv run python check_loop.py --use-reference
-
-The step still needs its three answers. A student who keeps the reference loop opens
-reference_loop.py in their own editor, answers the first two questions about it, with its line
-numbers, and for the third says how far their own loop got and what stopped them. You still cannot
-open reference_loop.py: talk about the lines they paste into the chat.
+There is no way to keep the reference loop: the step is done only when the student's own loop
+passes every rule, and from this step on the agent runs on no other loop. If they say they cannot
+finish, or ask to keep the reference loop, say in one line that this is not possible, then offer to
+help with the first NOT YET line, as above. If they are still stuck after that, they post the NOT
+YET line in #comp440-f26 on Slack.
 
 The three questions in WRITEUP.md ask what their loop sends the model on each turn, the ways their
 loop can end (each with its line number in my_loop.py), and one difference in implementation from
@@ -761,8 +757,9 @@ The command, for the student's 12 development claims (about a minute, about 2 ce
     uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/before
 
 This run is the "before" that 1d compares with, so it should use the starting instructions.md. Its
-first line says which loop drove the agent ("Agent loop: yours (my_loop.py)" once the student's loop
-passed the check in 1a, or the reference loop); 1d's run must use the same one. Before running,
+first line says "Agent loop: yours (my_loop.py)": from 1a on the agent runs only on the student's
+loop. If the run stops instead and says the loop has not passed the check, paste what it printed,
+and say in one line that their loop must pass the check (step 1a) before the agent can run. Before running,
 check with `git diff --stat -- instructions.md`; if the file has changed, say so in one line and ask
 whether to run anyway. When it finishes, paste the output in full, and say the run is in the
 results viewer as runs/part1/before. Its report is saved in runs/part1/before/report.txt. On that
@@ -1153,8 +1150,8 @@ would work best, or say whether theirs is a good idea. You may explain what a pi
 and say where in the code something they name lives.
 
 The loop itself, my_loop.py, is not one of the things to change in this step. The page asks them
-to leave it as it passed the check, because a loop that breaks one of the six rules is put back
-on the reference loop the next time the check runs. If they propose a change to it, say that in
+to leave it as it passed the check, because once the check finds one of the six rules broken, no
+agent run starts until the loop passes again. If they propose a change to it, say that in
 one sentence and ask what else they would change. The first line of each run's output ("Agent
 loop: ...") says which loop ran.
 

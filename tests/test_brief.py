@@ -230,9 +230,14 @@ def test_1a_gives_the_six_rules_word_for_word_and_in_order():
 def test_1a_says_what_is_given_and_what_is_theirs():
     page = section_1a()
     for name in ("`agent.py`", "`my_loop.py`", "`reference_loop.py`", "`check_loop.py`",
-                 "uv run python check_loop.py", "uv run python check_loop.py --use-reference",
-                 "runs/part1/loop-check.txt"):
+                 "uv run python check_loop.py", "runs/part1/loop-check.txt"):
         assert name in page, f"1a doesn't name {name}"
+    # No way to keep the reference loop (instructor, Nov 11), anywhere a student reads.
+    for name in OWNED:
+        text = one_line((ROOT / name).read_text(encoding="utf-8"))
+        for gone in ("--use-reference", "keep the reference loop", "keeps the reference loop",
+                     "replaced by the reference loop", "nothing else in the homework waits on this step"):
+            assert gone not in text, (name, gone)
 
 
 def test_nothing_still_says_the_student_reads_the_loop():

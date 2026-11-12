@@ -8,9 +8,11 @@ The loop itself is in another file. Each turn it sends the model the
 conversation so far, runs the lookups the model asked for, and adds what they
 returned to the conversation, until the model gives an answer that passes the
 evidence check or a limit ends it first. You write it in my_loop.py, in step
-1a. Until your loop passes the check (uv run python check_loop.py), the agent
-uses the reference loop in reference_loop.py. run_agent(), at the bottom of
-this file, chooses between the two.
+1a. In Part 0, before your loop has ever passed the check (uv run python
+check_loop.py), the agent uses the reference loop in reference_loop.py. Once
+your loop has passed, the agent runs on your loop and no other: if a later
+check finds a rule broken, no agent run starts until your loop passes again.
+run_agent(), at the bottom of this file, decides.
 """
 
 import re
@@ -164,20 +166,39 @@ def finish(claim, verdict, evidence, explanation, trace, tokens, steps):
 LOOP_CHECK = Path(__file__).parent / "runs" / "part1" / "loop-check.txt"
 
 
+NOT_PASSED = ("The agent runs only on your own loop from step 1a on, and the loop in my_loop.py has not "
+              "passed the check: run uv run python check_loop.py, fix the first NOT YET line, then run "
+              "this command again.")
+
+
+class LoopNotPassed(Exception):
+    """The student's loop passed the check once and does not pass it now."""
+
+
 def which_loop():
-    """"yours" once check_loop.py has passed the loop in my_loop.py, "reference" until then."""
+    """From runs/part1/loop-check.txt, which check_loop.py writes: "yours" while its first line
+    says the loop in my_loop.py passed; "reference" while there is no such file, because the loop
+    has never passed (Part 0, which the reference loop runs); "not passed" for any other file: the
+    loop passed once and a later check found a rule broken, or the file is an old record of a
+    choice to keep the reference loop, which the homework no longer offers."""
     try:
         lines = LOOP_CHECK.read_text().splitlines()
-    except (OSError, UnicodeDecodeError):  # no file yet, or one that cannot be read
+    except FileNotFoundError:
         return "reference"
-    return "yours" if lines and lines[0] == "yours" else "reference"
+    except (OSError, UnicodeDecodeError):  # a file that cannot be read
+        return "not passed"
+    return "yours" if lines and lines[0] == "yours" else "not passed"
 
 
 def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
-    """Check one claim with the loop in use: yours (my_loop.py) or the
-    reference loop (reference_loop.py). Returns what finish() returns."""
+    """Check one claim with the loop in use: yours (my_loop.py), or, before
+    your loop has ever passed the check, the reference loop (reference_loop.py).
+    Returns what finish() returns."""
     # Imported here, not at the top, because both files import from this one.
-    if which_loop() == "yours":
+    loop_now = which_loop()
+    if loop_now == "not passed":
+        raise LoopNotPassed(NOT_PASSED)
+    if loop_now == "yours":
         import my_loop as loop
     else:
         import reference_loop as loop
