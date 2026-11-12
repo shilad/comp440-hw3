@@ -95,7 +95,7 @@ If you are curious, here are additional details.
   paragraph put a line with just `>` between the two.
 - Claude runs commands for you, explains the code, the tools, Wikipedia's API and the scores as often as
   you ask, and pastes a program's output into `WRITEUP.md` where a question asks for it. In step 1a it
-  helps you write your loop, but it will not write the whole loop for you.
+  writes the code of your loop as you describe it, but the structure and the ideas must be yours.
 - The results viewer, **Results** at the top of the homework page, is where you read your runs: each
   run's accuracy and cost, each claim's verdicts from all three versions, the agent's trace one entry at
   a time, and two runs side by side.

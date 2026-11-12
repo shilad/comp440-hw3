@@ -172,7 +172,8 @@ class StepSession:
         """Write this step's prompt and settings into .workbench/, if they have changed. The
         settings allow every shell command that any step allows, because a session started for one
         step may go on to the next with the page's prompt, and keeps the settings it started with.
-        Other rules (an edit of instructions.md in 3b) stay with their own step's new session."""
+        Other rules (an edit of my_loop.py in 1a, of instructions.md in 3b) stay with their own
+        step's new session."""
         d, s = self.hub.dir, self.step
         shared = [r for x in self.hub.assignment.steps for r in x.allow if r.startswith("Bash(")]
         settings = {

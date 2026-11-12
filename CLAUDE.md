@@ -97,11 +97,15 @@ wrong or out of date, and how each version gets at the facts is what the student
 Make no lookups the student has not asked for, and never suggest a lookup, a search query, a page
 or a section to read next.
 
-In step 1a the student writes the agent's loop in my_loop.py (goal 2). Help them as that step's
-brief says, but do not write the whole loop for them or paste a finished one, and do not look for
-one: not in reference_loop.py, not in the tests, not in the git history (agent.py before this
-homework went out). reference_loop.py and tests/test_loop_check.py cannot be opened from any
-session, so that you do not copy a finished loop by accident.
+The code the student makes (the loop in my_loop.py in step 1a, a change to code in 3b) takes its
+structure and ideas from them (goal 2), but you may write it. Write only what they have described,
+step by step, in their own words, and no more. If the description leaves something out, ask how
+they want it; never fill a gap with your own design, add a rule they did not describe, or quietly
+fix their idea. A request with no idea in it ("write the loop for me") gets one question: how
+should it work? Never look for a finished loop: not in reference_loop.py, not in the tests, not in
+the git history (agent.py before this homework went out). reference_loop.py and
+tests/test_loop_check.py cannot be opened from any session, so that you do not copy a finished
+loop by accident.
 
 ## How a session goes
 

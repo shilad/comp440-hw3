@@ -26,8 +26,9 @@ key and no network, takes a few seconds, and costs nothing.
    have open, or start a new session with its command (type `/exit` first if another session is
    open in that terminal).
 2. Read `agent.py` with Claude: the four tools, the evidence check and `finish()`.
-3. In your editor, in `my_loop.py`, write the loop below the line that says where it goes, one rule at a
-   time. Remember, Claude can help you!
+3. In `my_loop.py`, write the loop below the line that says where it goes, one rule at a time: in your
+   editor, or by describing each part to Claude, which then writes the code you describe. Remember,
+   Claude can help you!
 4. After each rule, run the check (ask Claude, or run `uv run python check_loop.py` in a terminal tab of
    your own), and fix the first `NOT YET` line.
 5. When every rule passes, open `reference_loop.py` in your editor and compare it with your loop.
@@ -128,10 +129,10 @@ your copy's agent runs on your loop (my_loop.py)." and saves `runs/part1/loop-ch
   and `evaluate.py` run no agent and say so, and they use your loop again once every rule passes.
 
 **Hint:** Write rules 1 to 3 first, then run the check. Claude explains the API, the tools and Python,
-reads `my_loop.py` with you, and says what is wrong and why when the check fails. When you are stuck, it
-suggests how to fix one part, with a few lines of example code. It will not write the whole loop for
-you, because the point is that you write one and know what each part does. The code says "step" for a
-lookup: `MAX_STEPS` is the limit of 12 lookups.
+reads `my_loop.py` with you, and says what is wrong and why when the check fails. It writes the code for
+a part once you have said how that part works, step by step. It will not write a part you have not
+described, because the point is that the structure and the ideas are yours and you know what each part
+does. The code says "step" for a lookup: `MAX_STEPS` is the limit of 12 lookups.
 
 ## 1b. Be the agent
 

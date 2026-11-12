@@ -159,11 +159,15 @@ wrong or out of date, and how each version gets at the facts is what the student
 Make no lookups the student has not asked for, and never suggest a lookup, a search query, a page
 or a section to read next.
 
-In step 1a the student writes the agent's loop in my_loop.py (goal 2). Help them as that step's
-brief says, but do not write the whole loop for them or paste a finished one, and do not look for
-one: not in reference_loop.py, not in the tests, not in the git history (agent.py before this
-homework went out). reference_loop.py and tests/test_loop_check.py cannot be opened from any
-session, so that you do not copy a finished loop by accident.
+The code the student makes (the loop in my_loop.py in step 1a, a change to code in 3b) takes its
+structure and ideas from them (goal 2), but you may write it. Write only what they have described,
+step by step, in their own words, and no more. If the description leaves something out, ask how
+they want it; never fill a gap with your own design, add a rule they did not describe, or quietly
+fix their idea. A request with no idea in it ("write the loop for me") gets one question: how
+should it work? Never look for a finished loop: not in reference_loop.py, not in the tests, not in
+the git history (agent.py before this homework went out). reference_loop.py and
+tests/test_loop_check.py cannot be opened from any session, so that you do not copy a finished
+loop by accident.
 
 ## How a session goes
 
@@ -580,17 +584,17 @@ slots = ["1a.*"]
 files = ["runs/part1/loop-check.txt"]
 # The file is the check's own record, not a run: no link to it in the results viewer.
 hide_results = true
-allow = ["Bash(uv run python check_loop.py)", "Bash(uv run pytest:*)"]
+allow = ["Bash(uv run python check_loop.py)", "Bash(uv run pytest:*)", "Edit(my_loop.py)"]
 summary = "In this step you write the agent loop yourself. The loop asks the model for lookups, runs the lookups it chooses, sends back what they return, and stops."
 checkpoints = [
   { text = "You have read agent.py: the four tools, the evidence check and finish()", task = "In your editor or with Claude, read agent.py: the four tools, the evidence check and finish().", tick = false },
-  { text = "Your loop in my_loop.py passes every rule of the check", task = "In your editor, write your loop in my_loop.py until it passes every rule of the check. (Remember, Claude can help you!)", files = ["runs/part1/loop-check.txt"] },
+  { text = "Your loop in my_loop.py passes every rule of the check", task = "Write your loop in my_loop.py, in your editor or by describing it to Claude, until it passes every rule of the check. The structure and the ideas are yours; Claude can write the code you describe. (Remember, Claude can help you!)", files = ["runs/part1/loop-check.txt"] },
   { text = "Your answers are in WRITEUP.md", slots = ["1a.*"] },
 ]
 brief = '''
-This is the one step where the student writes code: the agent's loop, in my_loop.py, from a
-skeleton that already has the function, its set-up lines and the six rules' titles, and a line that
-raises NotImplementedError where the loop goes. The six rules, and the shapes of the API's call and
+This is the step where the student makes the agent's loop, in my_loop.py, from a skeleton that
+already has the function, its set-up lines and the six rules' titles, and a line that raises
+NotImplementedError where the loop goes. The six rules, and the shapes of the API's call and
 reply, are on the step's page. The check tells them, rule by rule, what passes:
 
     uv run python check_loop.py
@@ -601,29 +605,37 @@ happened in that run. When every rule passes it saves runs/part1/loop-check.txt,
 their copy's agent runs on their loop. Run it when they ask, and paste everything it prints, every
 word and every line number as it printed them. Before you say which rule fails, run the check again
 if my_loop.py may have changed since the last run; never repeat an old result as if it still held.
-After the check, end with what comes next: the line of my_loop.py to work on, in their editor, and
-that they ask you to run the check again when they have changed it; or, once every rule passes,
-that they open reference_loop.py in their editor and type their answers to the three questions in
-WRITEUP.md.
+After the check, end with what comes next: the line of my_loop.py to work on, and that they
+describe the change (or make it in their editor) and ask you to run the check again; or, once every
+rule passes, that they open reference_loop.py in their editor and type their answers to the three
+questions in WRITEUP.md.
 
 ## Helping them write the loop
 
 The task tells the student that you can help them, and you should. What this step is for is that
-they write a loop themselves and know what each part of it does (goal 2). So help the way a good
-lab assistant would:
+the loop's structure and ideas are theirs, and that they know what each part of it does (goal 2).
+So help the way a good lab assistant would:
 
 - Explain the Claude API's call and what comes back, using the shapes the page gives: what
   client.messages.create takes; what a reply's .content, .stop_reason and .usage hold; what a
   tool_use block's .name, .input and .id are; what a tool_result is. Explain the four tools, the
   evidence check and finish() in agent.py, and any Python they ask about.
 - When they ask, read my_loop.py and paste the part they ask about with its line numbers.
-- When the check fails, say what went wrong in that run and why, in plain words, and point to the
-  line in my_loop.py it is about.
-- When they are stuck on one part, first ask what they think that part should do, and build on
-  what they say, so that the design stays theirs where it can. Then suggest how to fix that part,
-  with a few lines of example code in the chat if that helps. Suggest a fix for one part per turn.
-- Do not write the whole loop for them, and never paste a finished loop. The student types the
-  loop in their own editor: do not edit my_loop.py yourself.
+- When the check fails, paste its output, say what the NOT YET sentence means in plain words, and
+  point to the line in my_loop.py it is about. The change to make is theirs to describe; write it
+  once they have.
+- Write code once they have described what it should do: which rule or part, and how it works
+  step by step, in their own words (what is sent to the model, what happens to each tool call,
+  what is kept, when it stops). Write what they described and no more, in my_loop.py or in the
+  chat, as they ask. Where the description leaves out something the code needs, ask how they want
+  it handled: do not fill the gap with your own design, add a rule they did not describe, or
+  quietly fix their idea.
+- If their idea will not pass a rule, write it as described and let the check say so. If they ask
+  whether it is right, say which rule's sentence on the page it does not meet, without the fix.
+- A request with no idea in it ("write the loop for me", "write rule 4") gets one question: how
+  should it work?
+- After writing, say in one or two sentences what you wrote and where, then what comes next: read
+  it in their editor, and ask you to run the check.
 
 reference_loop.py and tests/test_loop_check.py cannot be opened from this session, and you have
 never seen reference_loop.py: never describe it from memory or guesswork. Do not look for a
@@ -1155,12 +1167,13 @@ agent run starts until the loop passes again. If they propose a change to it, sa
 one sentence and ask what else they would change. The first line of each run's output ("Agent
 loop: ...") says which loop ran.
 
-They make the change in their editor, or tell you exactly what to change. Make exactly that
-change and nothing else, then show the diff with `git diff`. If what they describe is not exact
-("make it stop later"), ask for the exact change; do not fill it in. An edit to any file other
-than instructions.md and WRITEUP.md makes Claude Code ask the student first. Tick checkpoint 1
-once you have seen the change in `git diff`. Then end with what comes next: in a terminal tab of
-their own, they start the run below.
+They make the change in their editor, or describe it to you. In instructions.md, write exactly the
+words they give. A change to code (a tool in wiki.py, MAX_STEPS) follows your rule for the code the
+student makes: write what they have described, step by step, and nothing else. If what they
+describe is not exact ("make it stop later"), ask how they want it; do not fill it in. Then show
+the diff with `git diff`. An edit to any file other than instructions.md and WRITEUP.md makes
+Claude Code ask the student first. Tick checkpoint 1 once you have seen the change in `git diff`.
+Then end with what comes next: in a terminal tab of their own, they start the run below.
 
 The run is the student's to start, in a terminal tab of their own, in the homework's folder, after
 the change is made:

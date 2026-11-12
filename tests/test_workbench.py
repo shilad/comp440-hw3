@@ -683,7 +683,7 @@ def test_a_start_message_for_a_step_that_does_not_exist_starts_nothing(tmp_path)
 
 def test_every_steps_settings_allow_every_steps_shell_commands_and_share_the_hook(tmp_path):
     """A continued session keeps the settings it was started with, so no step's commands ask
-    first in it. An Edit rule (3b's instructions.md) stays with its own step."""
+    first in it. An Edit rule (3b's instructions.md, 1a's my_loop.py) stays with its own step."""
     import shutil as sh
     h = homework(tmp_path)
     for name in ("steps.toml", "WRITEUP.md", "README.md", "instructions"):
@@ -698,6 +698,7 @@ def test_every_steps_settings_allow_every_steps_shell_commands_and_share_the_hoo
         allow = settings["permissions"]["allow"]
         assert shells <= set(allow), s.id
         assert ("Edit(instructions.md)" in allow) == (s.id == "3b"), s.id
+        assert ("Edit(my_loop.py)" in allow) == (s.id == "1a"), s.id
         hooks.add(json.dumps(settings["hooks"], sort_keys=True))
     assert len(hooks) == 1                                   # the same guard for every step
 

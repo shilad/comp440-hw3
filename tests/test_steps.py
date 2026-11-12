@@ -43,7 +43,7 @@ EXPECTED = {
     "0b": (0, "0b. Ask the model to assess a claim without tools", ["runs/part0/no-tools-*.json"], CHECK, 10),
     "0c": (0, "0c. Give it one search", ["runs/part0/one-search-*.json"], CHECK, 15),
     "0d": (0, "0d. Run the agent and read its trace", ["runs/part0/agent-*.json"], CHECK, 15),
-    "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK, 70),
+    "1a": (1, "1a. Write the loop", ["runs/part1/loop-check.txt"], LOOP_CHECK + ["Edit(my_loop.py)"], 70),
     "1b": (1, "1b. Be the agent", ["runs/part1/lookups.jsonl"], LOOKUP, 25),
     "1c": (1, "1c. Watch the agent work", ["runs/part1/before/report.txt"], EVALUATE + CHECK, 25),
     "1d": (1, "1d. Write the agent's instructions", ["runs/part1/after/report.txt"], EVALUATE + CHECK, 45),
@@ -104,8 +104,9 @@ TASKS = {
     "0d": ["Ask Claude to run the agent on the claim. Its run is saved in runs/part0/.",
            "In the results viewer, read the trace, one entry at a time."],
     "1a": ["In your editor or with Claude, read agent.py: the four tools, the evidence check and finish().",
-           "In your editor, write your loop in my_loop.py until it passes every rule of the check. "
-           "(Remember, Claude can help you!)"],
+           "Write your loop in my_loop.py, in your editor or by describing it to Claude, until it passes "
+           "every rule of the check. The structure and the ideas are yours; Claude can write the code you "
+           "describe. (Remember, Claude can help you!)"],
     "1b": ["By hand, make your first lookup: ask Claude to run it, with the tool and the words you choose. "
            "It is saved in "
            "runs/part1/lookups.jsonl.",
@@ -637,8 +638,9 @@ def test_the_learning_goals_are_the_same_in_readme_writeup_and_tutor(a):
 def test_the_tutor_text_is_shorter_than_before(a):
     """It was 3,965 words on Nov 10. The rules now say why they exist, and fewer of them are left.
     The limit was 3,000 until the rule for going on to another step in the same session, and the
-    sentence that the tool's result is not shown to the student (both Nov 11)."""
-    assert len(a.tutor.split()) < 3100
+    sentence that the tool's result is not shown to the student (both Nov 11). It was 3,100 until
+    the rule that Claude may write the code a student describes (Nov 11), which added 64 words."""
+    assert len(a.tutor.split()) < 3150
 
 
 def test_the_api_key_rules_are_kept(a):
@@ -694,24 +696,39 @@ def test_code_finder_sees_loop_code():
         assert not any(p.search(line) for p in CODE), line
 
 
-def test_no_step_may_edit_the_students_loop():
-    """my_loop.py is the student's code, which they type in their editor: no allow list, global or a
-    step's, lets Claude change it."""
+def test_only_1a_lets_claude_edit_the_students_loop():
+    """The instructor, Nov 11: "i want claude to allow the student to have it generate code, but the
+    structure and ideas should be from the student." Claude may write the loop the student describes
+    in 1a without asking first; no other step's allow list, and not the global one, names my_loop.py,
+    and the files with a finished loop stay closed."""
     data = raw()
-    rules = data.get("allow", []) + [r for s in data["step"] for r in s.get("allow", [])]
-    assert not [r for r in rules if "my_loop.py" in r and not r.startswith("Bash(")], rules
-    assert "reference_loop.py" in data["never_read"]
+    named = {s["id"]: [r for r in s.get("allow", []) if "my_loop.py" in r and not r.startswith("Bash(")]
+             for s in data["step"]}
+    assert named.pop("1a") == ["Edit(my_loop.py)"]
+    assert not any(named.values()), named
+    assert not [r for r in data.get("allow", []) if "my_loop.py" in r]
+    assert {"reference_loop.py", "tests/test_loop_check.py"} <= set(data["never_read"])
 
 
-def test_1a_helps_with_the_loop_but_never_writes_it(a):
-    """Goal 2: the student writes the loop and knows each part, with Claude's help ("Remember, Claude
-    can help you!"). Claude explains, reads their code, says what failed and why, and suggests a fix
-    for one part; it does not write the whole loop, paste a finished one or look for one."""
+def test_1a_writes_the_code_the_student_describes_and_no_more(a):
+    """Goal 2: the loop's structure and ideas are the student's, and they know each part. Claude
+    explains, reads their code and pastes the check; it writes code once the student has said what
+    it should do, step by step, writes that and no more, asks about gaps, and never looks for a
+    finished loop. A request with no idea in it gets one question."""
     brief = flat(a.step("1a").brief)
-    for must in ("When the check fails, say what went wrong in that run and why",
-                 "suggest how to fix that part, with a few lines of example code",
-                 "Do not write the whole loop for them, and never paste a finished loop",
-                 "do not edit my_loop.py yourself",
+    for must in ("the loop's structure and ideas are theirs, and that they know what each part of it does",
+                 "When the check fails, paste its output, say what the NOT YET sentence means in plain words",
+                 "The change to make is theirs to describe; write it once they have.",
+                 "Write code once they have described what it should do: which rule or part, and how it works "
+                 "step by step, in their own words",
+                 "Write what they described and no more, in my_loop.py or in the chat, as they ask.",
+                 "do not fill the gap with your own design, add a rule they did not describe, or quietly fix "
+                 "their idea.",
+                 "If their idea will not pass a rule, write it as described and let the check say so.",
+                 "say which rule's sentence on the page it does not meet, without the fix.",
+                 'A request with no idea in it ("write the loop for me", "write rule 4") gets one question: '
+                 "how should it work?",
+                 "After writing, say in one or two sentences what you wrote and where, then what comes next",
                  "never describe it from memory or guesswork",
                  # The instructor, Nov 11: "i don't want them to be able to use the reference loop."
                  "There is no way to keep the reference loop: the step is done only when the student's own "
@@ -725,9 +742,47 @@ def test_1a_helps_with_the_loop_but_never_writes_it(a):
     for gone in ("Never write, dictate, complete or correct a line of my_loop.py", "Hints that hand over the code"):
         assert gone not in brief, gone
     tutor = flat(a.tutor)
-    assert "do not write the whole loop for them or paste a finished one" in tutor
-    assert "not in the git history" in tutor
-    assert "cannot be opened from any session" in tutor
+    for must in ("takes its structure and ideas from them (goal 2), but you may write it.",
+                 "Write only what they have described, step by step, in their own words, and no more.",
+                 "never fill a gap with your own design, add a rule they did not describe, or quietly fix "
+                 "their idea.",
+                 'A request with no idea in it ("write the loop for me") gets one question: how should it work?',
+                 "Never look for a finished loop: not in reference_loop.py, not in the tests, not in the git "
+                 "history",
+                 "cannot be opened from any session"):
+        assert must in tutor, must
+
+
+# What the old rule said (until Nov 11): Claude did not write the loop and did not edit my_loop.py.
+FORBIDDING = ("write the whole loop", "do not edit my_loop.py", "never paste a finished loop",
+              "types the loop in their own editor", "suggest how to fix that part", "suggests how to fix",
+              "helps you write your loop", "one step where the student writes code")
+
+
+def test_no_text_still_forbids_claude_to_write_the_code_the_student_describes(a):
+    """The tutor's rules, every brief, the page's tasks and the student's pages agree with the new
+    rule."""
+    texts = [("tutor", a.tutor)] + [(s.id, s.brief) for s in a.steps]
+    texts += [(f"{s.id} tasks", " ".join(c.task for c in stepmod.checkpoints(s))) for s in a.steps]
+    texts += [(p.name, p.read_text(encoding="utf-8")) for p in [REPO / "README.md", REPO / "WRITEUP.md"]
+              + sorted((REPO / "instructions").glob("*.md"))]
+    found = [(where, old) for where, text in texts for old in FORBIDDING if old in flat(text)]
+    assert not found, found
+    page = flat((REPO / "instructions" / "part1.md").read_text(encoding="utf-8"))
+    assert "or by describing each part to Claude, which then writes the code you describe." in page
+    assert "It will not write a part you have not described" in page
+    readme = flat((REPO / "README.md").read_text(encoding="utf-8"))
+    assert "writes the code of your loop as you describe it, but the structure and the ideas must be yours." in readme
+
+
+def test_3b_writes_a_code_change_as_described_and_instructions_in_their_words(a):
+    brief = flat(a.step("3b").brief)
+    for must in ("In instructions.md, write exactly the words they give.",
+                 "A change to code (a tool in wiki.py, MAX_STEPS) follows your rule for the code the student "
+                 "makes: write what they have described, step by step, and nothing else.",
+                 'If what they describe is not exact ("make it stop later"), ask how they want it; do not fill '
+                 "it in."):
+        assert must in brief, must
 
 
 def test_the_strict_rules_about_claims_live_where_the_student_does_the_agents_job(a):
