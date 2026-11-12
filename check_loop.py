@@ -20,6 +20,9 @@ file is still there, so step 1a stays done on the homework page.
 
 There is no way to keep the reference loop instead: from step 1a on, the agent
 runs only on your own loop.
+
+A loop that passes finish() a token count (extra credit, step 3b) gets one more
+line, after the six, which checks that count. It must say ok too.
 """
 
 import argparse
@@ -293,7 +296,7 @@ def copy_value(value):
 
 
 def loop_variables(loop_file):
-    """tokens, steps, trace and read_so_far as run_agent() in my_loop.py has them while it
+    """steps, trace and read_so_far as run_agent() in my_loop.py has them while it
     waits for the model, read (never changed) from run_agent()'s own frame, wherever in the
     file the model was asked from. The check uses them only for what it cannot see from
     outside: how far a loop that does not stop yet has got."""
@@ -302,7 +305,7 @@ def loop_variables(loop_file):
         if frame.f_code.co_name == "run_agent" and frame.f_code.co_filename == loop_file:
             names = frame.f_locals
             return {name: copy_value(names[name])
-                    for name in ("tokens", "steps", "trace", "read_so_far") if name in names}
+                    for name in ("steps", "trace", "read_so_far") if name in names}
         frame = frame.f_back
     return {}
 
@@ -472,7 +475,7 @@ class Run:
                              f"had the {field} {short(result[field])}, not {label}")
 
 
-FINISH_KEYS = set(agent.finish("", None, [], "", [], {"input": 0, "output": 0}, 0))
+FINISH_KEYS = set(agent.finish("", None, [], "", [], 0))
 
 
 def is_finished(result):
@@ -583,25 +586,26 @@ def rule_1(runs):
             request_problem(other, k, request, system)
         if other is run:
             run.request(run.first_answer)
-            if not run.finished():  # a loop that does not stop yet: look at its tokens
-                for k in range(2, len(run.requests) + 1):
-                    tokens = run.variable(k, "tokens")
-                    if tokens != run.used(k - 1):
-                        used = run.used(k - 1)
-                        replies = ("the model's first reply" if k == 2 else
-                                   f"the model's first {count(k - 1)} replies")
-                        raise NotYet(run, f"{replies} used {used['input']:,} input and "
-                                     f"{used['output']:,} output tokens, and tokens held "
-                                     f"{short(tokens)} when your loop asked the model again")
-    # The tokens in every result the loop returned, in every made-up check.
+
+
+def reports_count(runs):
+    """Whether the loop passes finish() a token count (extra credit, step 3b) in any made-up
+    check. Only then is there a token line."""
+    return any(run.finished() and run.result.get("tokens") is not None for run in runs.values())
+
+
+def token_rule(runs):
+    """Count the tokens, for a loop that passes finish() a count: in every made-up check, the
+    count is what the model's replies used. (Only a loop that returns a result has a count to
+    look at, so there is no look inside run_agent() for the tokens, as rules 1 and 2 have.)"""
     for other in runs.values():
         if other.finished():
             n = len(other.requests)
-            if other.result["tokens"] != other.used(n):
+            if other.result.get("tokens") != other.used(n):
                 used = other.used(n)
                 replies = "its reply" if n == 1 else f"its {count(n)} replies"
                 raise NotYet(other, f"{other.said(n)}, and the result your loop returned had "
-                             f"tokens {short(other.result['tokens'])}, where {replies} used "
+                             f"tokens {short(other.result.get('tokens'))}, where {replies} used "
                              f"{used['input']:,} input and {used['output']:,} output tokens")
 
 
@@ -1078,7 +1082,8 @@ def load(path):
 
 
 def check(path=None):
-    """One entry per rule: None if it passes, or the sentence saying what happened."""
+    """One entry per rule, and one for the tokens if the loop counts them: None if it passes, or
+    the sentence saying what happened."""
     return [problem for problem, _ in examine(path)]
 
 
@@ -1108,7 +1113,10 @@ def examine(path=None):
                 if runs[key].ended == "did not stop":
                     seconds = AFTER_A_HANG   # so a loop that never stops is not waited for 12 times
     found = []
-    for rule in (rule_1, rule_2, rule_3, rule_4, rule_5, rule_6):
+    rules = [rule_1, rule_2, rule_3, rule_4, rule_5, rule_6]
+    if reports_count(runs):
+        rules.append(token_rule)
+    for rule in rules:
         try:
             rule(runs)
             found.append((None, ""))
@@ -1131,13 +1139,14 @@ def cut(output):
 
 
 def lines(problems):
-    """The six lines the check prints."""
+    """The lines the check prints: one per rule, and the token line for a loop that counts."""
+    titles = [f"{number}. {title}" for number, title in enumerate(RULES, 1)] + [agent.TOKEN_RULE]
     shown = []
-    for number, (title, problem) in enumerate(zip(RULES, problems), 1):
+    for title, problem in zip(titles, problems):
         if problem is None:
-            shown.append(f"ok         {number}. {title}")
+            shown.append(f"ok         {title}")
         else:
-            shown.append(f"NOT YET    {number}. {title}: {problem}"
+            shown.append(f"NOT YET    {title}: {problem}"
                          f"{'' if problem.endswith('.') else '.'}")
     return shown
 
@@ -1166,7 +1175,8 @@ def main(argv=None):
     # shown to help find the problem, and never saved.
     number, output = next((n, out) for n, (problem, out) in enumerate(found, 1) if problem)
     if output.strip():
-        print(f"\nWhat your loop printed during the made-up check for rule {number}:")
+        which = f"rule {number}" if number <= len(RULES) else "the token count"
+        print(f"\nWhat your loop printed during the made-up check for {which}:")
         print(cut(output))
     return 1
 

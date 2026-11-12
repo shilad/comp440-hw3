@@ -14,12 +14,11 @@ from agent import (ACCEPTED, DECLINED, INSTRUCTIONS, MAX_REJECTED, MAX_STEPS, MO
 
 def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     """Check one claim. Returns a dict with the verdict, the evidence, the
-    trace of every step, and the tokens used."""
+    trace of every step, and the number of lookups."""
     client = client or anthropic.Anthropic()
     system = INSTRUCTIONS.read_text()
     messages = [{"role": "user", "content": f"Claim: {claim}"}]
     trace, read_so_far = [], []
-    tokens = {"input": 0, "output": 0}
     steps = 0
     rejected = 0        # how many answers the loop has sent back
     warned = False      # has it been told it is out of steps?
@@ -28,18 +27,16 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
         response = client.messages.create(
             model=MODEL, max_tokens=16000, system=system, tools=TOOLS, messages=messages,
         )
-        tokens["input"] += response.usage.input_tokens
-        tokens["output"] += response.usage.output_tokens
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "refusal":
-            return finish(claim, None, [], DECLINED, trace, tokens, steps)
+            return finish(claim, None, [], DECLINED, trace, steps)
 
         calls = [block for block in response.content if block.type == "tool_use"]
         if not calls:
             # Claude stopped without calling a tool. Remind it once how to finish.
             if trace and trace[-1]["tool"] == "(reminder)":
-                return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)
+                return finish(claim, None, [], NO_ANSWER, trace, steps)
             trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})
             messages.append({"role": "user", "content": REMINDER})
             continue
@@ -53,17 +50,17 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
                 if problem is None:
                     trace.append({"tool": "answer", "input": call.input, "result": ACCEPTED})
                     return finish(claim, answer["verdict"], answer["evidence"],
-                                  answer["explanation"], trace, tokens, steps)
+                                  answer["explanation"], trace, steps)
                 result = REJECTED + problem
                 rejected += 1
                 if rejected >= MAX_REJECTED:
                     trace.append({"tool": "answer", "input": call.input, "result": result})
                     return finish(claim, None, [], REJECTED_TOO_OFTEN.format(n=rejected),
-                                  trace, tokens, steps)
+                                  trace, steps)
             elif steps >= max_steps:
                 if warned_before:
                     # It was told last turn that it was out of steps: stop here.
-                    return finish(claim, None, [], RAN_OUT, trace, tokens, steps)
+                    return finish(claim, None, [], RAN_OUT, trace, steps)
                 result = OUT_OF_STEPS.format(n=max_steps)
                 warned = True
             else:

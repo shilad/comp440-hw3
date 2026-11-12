@@ -66,8 +66,7 @@ The claim you check in Part 0:
 
 **Words in this step:** *The model* is Claude Haiku, the small LLM that every version in this homework
 calls with your key; it is not the Claude you are typing to. A *baseline* is a simpler method the agent is compared with. A *verdict* is one of *supported*,
-*refuted* or *doesn't say*. A *token* is the unit the API counts and charges by, about three quarters of
-a word.
+*refuted* or *doesn't say*.
 
 **Actions:**
 
@@ -84,7 +83,7 @@ uv run python check.py --method no-tools --out runs/part0 'The composer of "Pers
 ```
 
 It prints the verdict, the model's explanation (its reason, from memory alone), and a line with the
-lookups (none here), tokens, cost and time. The result is saved as `runs/part0/no-tools-<number>.json`.
+lookups (none here) and the time. The result is saved as `runs/part0/no-tools-<number>.json`.
 
 **Write-up:** Answer this question in `WRITEUP.md`, under 0b:
 
@@ -122,7 +121,7 @@ uv run python check.py --method one-search --out runs/part0 'The composer of "Pe
 ```
 
 Line 1 is the search and a short version of its results; line 2 is the page it read, shortened. Then
-come the verdict, the explanation, and the line of lookups, tokens, cost and time. The verdict is based
+come the verdict, the explanation, and the line of lookups and time. The verdict is based
 only on the page in line 2. The result is saved as `runs/part0/one-search-<number>.json`.
 
 **Write-up:** Answer these questions in `WRITEUP.md`, under 0c:
@@ -171,8 +170,8 @@ uv run python check.py --method agent --out runs/part0 'The composer of "Persian
 The first line names the loop: `Agent loop: the reference loop (reference_loop.py)`, a loop I wrote (you
 write your own in Part 1). Each numbered entry
 is one tool call (`search`, `read`, `wikidata` or `answer`): what it asked for, then a short version of
-what came back. Then come the verdict, the evidence, the explanation, and the line of lookups, tokens,
-cost and time. The entry numbers count answers too, but the Lookups count does not, so it can be smaller
+what came back. Then come the verdict, the evidence, the explanation, and the line of lookups and
+time. The entry numbers count answers too, but the Lookups count does not, so it can be smaller
 than the last entry's number; when a question asks for a number, give the entry's. The result is saved as
 `runs/part0/agent-<number>.json`.
 

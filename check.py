@@ -38,9 +38,12 @@ def show(result):
     for quote in result["evidence"]:
         print(f'  evidence: "{short(quote, 200)}"')
     print(f"Explanation: {result['explanation']}")
-    print(f"Lookups: {result['steps']}   tokens: {result['tokens']['input']} in, "
-          f"{result['tokens']['output']} out   cost: ${result['cost_usd']:.4f}   "
-          f"time: {result['seconds']:.1f}s")
+    # Tokens and cost only once your loop counts tokens (extra credit, step 3b).
+    money = ""
+    if agent.counts_tokens() and result.get("tokens"):
+        money = (f"tokens: {result['tokens']['input']} in, {result['tokens']['output']} out   "
+                 f"cost: ${result['cost_usd']:.4f}   ")
+    print(f"Lookups: {result['steps']}   {money}time: {result['seconds']:.1f}s")
 
 
 def main():

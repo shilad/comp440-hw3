@@ -31,7 +31,6 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     system = INSTRUCTIONS.read_text()
     messages = [{"role": "user", "content": f"Claim: {claim}"}]
     trace, read_so_far = [], []
-    tokens = {"input": 0, "output": 0}
     steps = 0          # lookups made so far
     rejected = 0       # answers the loop has sent back so far
 

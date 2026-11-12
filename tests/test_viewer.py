@@ -21,6 +21,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import agent  # noqa: E402
+import check_loop  # noqa: E402
 import evaluate  # noqa: E402
 from viewer import __main__ as standalone  # noqa: E402
 from viewer import app  # noqa: E402
@@ -112,6 +114,22 @@ def repo(tmp_path):
     return tmp_path
 
 
+def loop_record(folder, counts=True):
+    """runs/part1/loop-check.txt as check_loop.py writes it for a passing loop, with the token
+    line if the loop counts tokens (extra credit, step 3b)."""
+    six = [f"ok         {n}. {t}" for n, t in enumerate(check_loop.RULES, 1)]
+    record = folder / "runs" / "part1" / "loop-check.txt"
+    record.parent.mkdir(parents=True, exist_ok=True)
+    record.write_text("\n".join(["yours"] + six + ([f"ok         {agent.TOKEN_RULE}"] if counts else [])) + "\n")
+    return record
+
+
+@pytest.fixture
+def counting(repo, monkeypatch):
+    """This copy's loop counts tokens: the pages, and evaluate.py's report, show tokens and cost."""
+    monkeypatch.setattr(agent, "LOOP_CHECK", loop_record(repo))
+
+
 @pytest.fixture(autouse=True)
 def mounted():
     app.PREFIX = "/results"
@@ -142,7 +160,7 @@ def report_of(items, results):
 
 # ------------------------------------------------------------------ numbers
 
-def test_numbers_equal_evaluate_report(repo):
+def test_numbers_equal_evaluate_report(repo, counting):
     rows = full_rows()
     printed = report_of(HOVER, rows)
     run = R.get_run(repo, repo / "runs" / "part2", "runs/part2")
@@ -165,7 +183,7 @@ def test_numbers_equal_evaluate_report(repo):
     for m in ["no-tools", "one-search", "agent"]:
         line = next(x for x in lines if x.startswith(m) and "/" not in x)
         st = R.stats(run, m)
-        assert line.split()[1:] == [f"{st['steps']:.1f}", f"{st['tokens']:.0f}", f"{st['seconds']:.1f}",
+        assert line.split()[1:] == [f"{st['steps']:.1f}", f"{st['seconds']:.1f}", f"{st['tokens']:.0f}",
                                     f"{st['cost']:.4f}"]
     # Failed and no-verdict counts.
     every = [r for rs in rows.values() for r in rs]
@@ -208,7 +226,7 @@ def shown_ids(page):
     return re.findall(r'<tr id="row-([^"]+)"', page)
 
 
-def test_filters(repo):
+def test_filters(repo, counting):
     base = "/results/run?dir=runs/part2"
     page = get(repo, base)[2]
     assert shown_ids(page) == ["h1", "h2", "h3", "h4", "h5"]
@@ -366,7 +384,7 @@ def test_empty_states(tmp_path):
 
 # ------------------------------------------------------------------ two runs side by side
 
-def test_compare_two_runs(repo):
+def test_compare_two_runs(repo, counting):
     after = [result("agent", "h1", "supported", steps=3, cost=0.0010),       # same
              result("agent", "h2", "doesn't say", steps=4, cost=0.0012),     # refuted -> doesn't say, correct in both
              result("agent", "h3", "doesn't say", steps=6, cost=0.0020),     # correct -> wrong
@@ -393,6 +411,47 @@ def test_compare_two_runs(repo):
     # The cost table compares the same claims.
     page = text_of(get(repo, "/results/compare?a=runs/part2&b=runs/part3/after-eval")[2])
     assert "Dollars $0.0021 $0.0014 −$0.0007" in page  # B minus A of the numbers shown
+
+
+# ------------------------------------------------------------------ tokens and cost, extra credit
+
+def test_no_tokens_or_cost_until_the_loop_counts_them(repo):
+    """Parts 0 to 2 show no tokens or cost (the instructor, Nov 11: "have it gone entirely"), even
+    for results that hold them, such as the baselines' or Part 0's from before Nov 12."""
+    assert not R.RULES.counts_tokens(repo)
+    status, _, page = get(repo, "/results/run?dir=runs/part2")
+    words = text_of(page)
+    assert status == 200 and "Lookups and time" in words
+    for gone in ("Cost", "Dollars", "Tokens", "tokens", "$0.", "cost-high", "cost-low"):
+        assert gone not in words and gone not in page, gone
+    assert "Most lookups first" in words
+    assert shown_ids(get(repo, "/results/run?dir=runs/part2&sort=cost-high")[2]) == ["h1", "h2", "h3", "h4", "h5"]
+    words = text_of(get(repo, "/results/claim?dir=runs/part2&id=h1")[2])
+    assert "It made 2 lookups and took 12.5 seconds." in words and "tokens" not in words
+    write_jsonl(repo / "runs" / "part3" / "after" / "agent.jsonl", full_rows()["agent"][:4])
+    page = get(repo, "/results/compare?a=runs/part2&b=runs/part3/after")[2]
+    assert "Lookups and time per claim" in text_of(page)
+    assert "Dollars" not in page and "Tokens" not in page
+    # evaluate.py's report: lookups and seconds only.
+    printed = report_of(HOVER, full_rows())
+    assert "lookups   seconds" in printed and "tokens" not in printed and "cost" not in printed
+
+
+def test_once_the_loop_counts_tokens_every_run_shows_them(repo, counting):
+    """After step 3b's first task, the baselines' cost in runs/part2 shows too (3c compares it with
+    the agent's after the change); the agent's results there, saved before, say "not counted"."""
+    rows = full_rows()
+    for r in rows["agent"]:
+        del r["tokens"], r["cost_usd"]
+    write_jsonl(repo / "runs" / "part2" / "agent.jsonl", rows["agent"])
+    words = text_of(get(repo, "/results/run?dir=runs/part2")[2])
+    assert "Cost" in words and "Dollars" in words
+    run = R.get_run(repo, repo / "runs" / "part2", "runs/part2")
+    assert f"${R.stats(run, 'one-search')['cost']:.4f}" in words
+    assert f"agent 5 {R.stats(run, 'agent')['steps']:.1f} not counted" in words
+    printed = report_of(HOVER, rows)
+    agent_line = next(x for x in printed.splitlines() if x.startswith("agent") and "/" not in x)
+    assert agent_line.split()[-2:] == ["-", "-"]
 
 
 def test_compare_picker(repo):

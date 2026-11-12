@@ -189,6 +189,15 @@ def dollars(x: float, places: int = 4) -> str:
     return f"${x:.{places}f}"
 
 
+def money(run: R.Run) -> bool:
+    """Whether the pages show token and cost numbers: only once this copy's loop counts tokens
+    (extra credit, step 3b; agent.counts_tokens()). Then the baselines' are shown too."""
+    return R.RULES.counts_tokens(run.repo)
+
+
+NOT_COUNTED = "not counted"   # a result saved by a loop that did not count tokens
+
+
 def verdict_cell(row: dict | None, nn: str = "the dataset's label", long: bool = False) -> str:
     """A verdict with a mark for whether it matches the label, and the same in words: in full
     on a claim's page, "matches" or "does not match" in a table (whose legend says the rest)."""
@@ -442,6 +451,11 @@ FILTER_KEYS = ("q", "articles", "label", "used_all", "sort")
 SORTS = {"": "Order of the claims file", "cost-high": "Cost, highest first",
          "cost-low": "Cost, lowest first", "lookups-high": "Most lookups first",
          "lookups-low": "Fewest lookups first"}
+COST_SORTS = ("cost-high", "cost-low")   # offered only when the pages show cost
+
+
+def sorts(run: R.Run) -> dict:
+    return SORTS if money(run) else {k: v for k, v in SORTS.items() if k not in COST_SORTS}
 VERDICT_CHOICES = {"": "any verdict", "supported-or-refuted": "supported or refuted",
                    "supported": "supported", "refuted": "refuted", "doesn't say": "doesn't say",
                    "none": "no verdict"}
@@ -465,7 +479,7 @@ def filters_of(q: dict, run: R.Run) -> dict:
     for m in run.methods:
         f["r_" + m] = str(q.get("r_" + m, "")).strip()
         f["v_" + m] = str(q.get("v_" + m, "")).strip()
-    if f["sort"] not in SORTS:
+    if f["sort"] not in sorts(run):
         f["sort"] = ""
     return {k: v for k, v in f.items() if v}
 
@@ -517,8 +531,8 @@ def filtered(run: R.Run, f: dict) -> list[str]:
     sort = f.get("sort", "")
     if sort and m:
         field = "cost_usd" if sort.startswith("cost") else "steps"  # "steps" is agent.py's word for lookups
-        have = [i for i in ids if i in run.rows[m]]
-        missing = [i for i in ids if i not in run.rows[m]]
+        have = [i for i in ids if i in run.rows[m] and run.rows[m][i][field] is not None]
+        missing = [i for i in ids if i not in have]
         have.sort(key=lambda i: run.rows[m][i][field], reverse=sort.endswith("high"))
         ids = have + missing
     return ids
@@ -672,40 +686,62 @@ def accuracy_table(methods: list, sts: dict, groups: list, caption: str, b_sts: 
 
 
 def cost_section(run: R.Run) -> str:
+    """Average and total lookups and seconds, with tokens and dollars only when the pages show
+    cost: then the section is "Cost", and before that "Lookups and time"."""
     sts = {m: R.stats(run, m) for m in run.methods}
-    out = ['<section aria-labelledby="h-cost"><h2 id="h-cost">Cost</h2>',
+    show = money(run)
+
+    def counted(st, text):  # a version whose results hold no token count shows "not counted"
+        return text if st["counted"] else NOT_COUNTED
+
+    title = "Cost" if show else "Lookups and time"
+    out = [f'<section aria-labelledby="h-cost"><h2 id="h-cost">{title}</h2>',
            '<div class="scroll"><table class="grid nums"><caption>Average per claim</caption><thead><tr>'
            '<th scope="col">Version</th><th scope="col">Claims</th><th scope="col">Lookups</th>'
-           '<th scope="col">Tokens</th><th scope="col">Seconds</th><th scope="col">Dollars</th>'
-           '</tr></thead><tbody>']
+           + ('<th scope="col">Tokens</th>' if show else '') + '<th scope="col">Seconds</th>'
+           + ('<th scope="col">Dollars</th>' if show else '') + '</tr></thead><tbody>']
     for m in run.methods:
         st = sts[m]
         out.append(f'<tr><th scope="row">{e(R.method_name(m))}</th><td>{st["n"]:,}</td>'
-                   f'<td>{st["steps"]:.1f}</td><td>{st["tokens"]:,.0f}</td><td>{st["seconds"]:.1f}</td>'
-                   f'<td>{dollars(st["cost"])}</td></tr>')
+                   f'<td>{st["steps"]:.1f}</td>'
+                   + (f'<td>{counted(st, format(st["tokens"], ",.0f"))}</td>' if show else '')
+                   + f'<td>{st["seconds"]:.1f}</td>'
+                   + (f'<td>{counted(st, dollars(st["cost"]))}</td>' if show else '') + '</tr>')
     out.append('</tbody></table></div>')
     out.append('<div class="scroll"><table class="grid nums"><caption>Totals for the claims saved so far'
                '</caption><thead><tr><th scope="col">Version</th><th scope="col">Lookups</th>'
-               '<th scope="col">Tokens in</th><th scope="col">Tokens out</th>'
-               '<th scope="col">Seconds, added up</th><th scope="col">Dollars</th></tr></thead><tbody>')
+               + ('<th scope="col">Tokens in</th><th scope="col">Tokens out</th>' if show else '')
+               + '<th scope="col">Seconds, added up</th>'
+               + ('<th scope="col">Dollars</th>' if show else '') + '</tr></thead><tbody>')
     for m in run.methods:
         st = sts[m]
         out.append(f'<tr><th scope="row">{e(R.method_name(m))}</th><td>{st["total_steps"]:,}</td>'
-                   f'<td>{st["total_in"]:,}</td><td>{st["total_out"]:,}</td>'
-                   f'<td>{st["total_seconds"]:,.1f}</td><td>{dollars(st["total_cost"])}</td></tr>')
+                   + (f'<td>{counted(st, format(st["total_in"], ","))}</td>'
+                      f'<td>{counted(st, format(st["total_out"], ","))}</td>' if show else '')
+                   + f'<td>{st["total_seconds"]:,.1f}</td>'
+                   + (f'<td>{counted(st, dollars(st["total_cost"]))}</td>' if show else '') + '</tr>')
     if len(run.methods) > 1:
+        # All versions together, but tokens and dollars only if every version counted them.
+        every = all(s["counted"] for s in sts.values())
         out.append(f'<tr class="all"><th scope="row">All versions</th>'
                    f'<td>{sum(s["total_steps"] for s in sts.values()):,}</td>'
-                   f'<td>{sum(s["total_in"] for s in sts.values()):,}</td>'
-                   f'<td>{sum(s["total_out"] for s in sts.values()):,}</td>'
-                   f'<td>{sum(s["total_seconds"] for s in sts.values()):,.1f}</td>'
-                   f'<td>{dollars(sum(s["total_cost"] for s in sts.values()))}</td></tr>')
+                   + ((f'<td>{sum(s["total_in"] for s in sts.values()):,}</td>'
+                       f'<td>{sum(s["total_out"] for s in sts.values()):,}</td>' if every else
+                       f'<td>{NOT_COUNTED}</td><td>{NOT_COUNTED}</td>') if show else '')
+                   + f'<td>{sum(s["total_seconds"] for s in sts.values()):,.1f}</td>'
+                   + ((f'<td>{dollars(sum(s["total_cost"] for s in sts.values()))}</td>' if every else
+                       f'<td>{NOT_COUNTED}</td>') if show else '') + '</tr>')
     out.append('</tbody></table></div>')
-    out.append(more("How these numbers are counted", 'A lookup is one call to <code>search</code>, '
-                    '<code>read</code> or <code>wikidata</code>. The final answer is not a lookup. Tokens are '
-                    'input and output together. Seconds are each claim\'s own time, added up. Claims run a few '
-                    'at a time, so the whole run took less time than that. Dollars come from the tokens, at the '
-                    'prices in <code>agent.py</code>.'))
+    how = ('A lookup is one call to <code>search</code>, <code>read</code> or <code>wikidata</code>. The '
+           'final answer is not a lookup. ')
+    if show:
+        how += ('Tokens are input and output together. "Not counted" means the results were saved by a loop '
+                'that did not count tokens yet. ')
+    how += ("Seconds are each claim's own time, added up. Claims run a few at a time, so the whole run took "
+            "less time than that.")
+    if show:
+        how += ' Dollars come from the tokens, at the prices in <code>agent.py</code>.'
+    out.append(more("How these numbers are counted", how))
     if "agent" in sts:
         n = sts["agent"]["all_steps"]
         out.append(f'<p class="small">The agent used all {run.limit} lookups on '
@@ -738,7 +774,7 @@ def claims_section(run: R.Run, f: dict) -> str:
            select("articles", "The number of articles", {"": "any number",
                   **{h: (h if h != "none" else "not given") for h in numbers}}, f.get("articles", "")),
            select("label", label_name, {"": "any", **{x: x for x in labels}}, f.get("label", "")),
-           select("sort", "Order", SORTS if m_focus else {"": SORTS[""]}, f.get("sort", "")),
+           select("sort", "Order", sorts(run) if m_focus else {"": SORTS[""]}, f.get("sort", "")),
            '</div><div class="row">']
     for m in run.methods:
         out.append(f'<fieldset class="method"><legend>The {e(R.method_name(m))}</legend>'
@@ -762,9 +798,10 @@ def claims_section(run: R.Run, f: dict) -> str:
                '<th scope="col" class="num">Row</th><th scope="col">Claim</th>'
                f'<th scope="col">{label_name}</th><th scope="col" class="num">Number of articles</th>')
     out += [f'<th scope="col">The {e(R.method_name(m))}</th>' for m in run.methods]
+    show = money(run)
     if m_focus:
         out.append(f'<th scope="col" class="num">Lookups{sort_note}</th>'
-                   f'<th scope="col" class="num">Cost{sort_note}</th>')
+                   + (f'<th scope="col" class="num">Cost{sort_note}</th>' if show else ''))
     out.append('</tr></thead><tbody>')
     for n, i in enumerate(ids, 1):
         item = run.items[i]
@@ -776,8 +813,9 @@ def claims_section(run: R.Run, f: dict) -> str:
             out.append(f'<td class="nowrap">{verdict_cell(run.rows[m].get(i), nn)}</td>')
         if m_focus:
             row = run.rows[m_focus].get(i)
+            cost = "" if not row else (NOT_COUNTED if row["cost_usd"] is None else dollars(row["cost_usd"]))
             out.append(f'<td class="num">{row["steps"] if row else ""}</td>'
-                       f'<td class="num">{dollars(row["cost_usd"]) if row else ""}</td>')
+                       + (f'<td class="num">{cost}</td>' if show else ''))
         out.append('</tr>')
     out.append('</tbody></table></div></section>')
     return "".join(out)
@@ -815,7 +853,7 @@ def claim_page(repo: Path, q: dict) -> str:
         if (m, i) in run.relabelled:
             note = ('<p class="note">The label in <code>data/</code> has changed since this run. The run '
                     f'saved this result as {"matching" if row["correct"] else "not matching"}.</p>')
-        cols.append(result_card(m, row, note, anchor_for=m, nn=noun([item])))
+        cols.append(result_card(m, row, note, anchor_for=m, nn=noun([item]), show_cost=money(run)))
     out.append(f'<div class="cards n{len(cols)}">{"".join(cols)}</div>')
     for m in reversed(run.methods):  # the agent first: its trace is the long one
         row = run.rows[m].get(i)
@@ -875,7 +913,8 @@ def articles_html(item: dict, reads: list) -> str:
 
 
 def result_card(method: str, row: dict | None, note: str = "", anchor_for: str = "",
-                title: str | None = None, mark: bool = True, nn: str = "the dataset's label") -> str:
+                title: str | None = None, mark: bool = True, nn: str = "the dataset's label",
+                show_cost: bool = False) -> str:
     title = f'<h2 class="card-title">{title or "The " + e(R.method_name(method))}</h2>'
     if row is None:
         return f'<article class="card">{title}<p class="empty">No result for this claim yet.</p></article>'
@@ -897,9 +936,13 @@ def result_card(method: str, row: dict | None, note: str = "", anchor_for: str =
                        f'<p class="small">{quote_where(row, place, n, anchor_for)}</p></li>')
         out.append('</ol>')
     t = row["tokens"]
-    out.append(f'<p class="numbers-line">It made {plural(row["steps"], "lookup")}, used {t["input"]:,} tokens in '
-               f'and {t["output"]:,} tokens out, cost {dollars(row["cost_usd"])} and took '
-               f'{row["seconds"]:.1f} seconds.</p>')
+    if t is not None and show_cost:
+        out.append(f'<p class="numbers-line">It made {plural(row["steps"], "lookup")}, used {t["input"]:,} tokens '
+                   f'in and {t["output"]:,} tokens out, cost {dollars(row["cost_usd"])} and took '
+                   f'{row["seconds"]:.1f} seconds.</p>')
+    else:
+        out.append(f'<p class="numbers-line">It made {plural(row["steps"], "lookup")} and took '
+                   f'{row["seconds"]:.1f} seconds.</p>')
     if row["trace"]:
         out.append(f'<p class="small">{a("#trace-" + anchor_for, "Its trace, one entry at a time")}</p>')
     out.append('</article>')
@@ -1061,12 +1104,14 @@ def check_page(repo: Path, q: dict) -> str:
         out.append(claim_head(item, True, [("", row)] if method == "agent" else []))
         out.append(f'<p class="small">The label comes from <code>{e(name)}</code>.</p>')
         out.append(more("How matches are counted", matched_means([item])))
-        card = result_card(method, row, anchor_for=method, nn=noun([item]))
+        card = result_card(method, row, anchor_for=method, nn=noun([item]),
+                           show_cost=R.RULES.counts_tokens(repo))
     else:
         out.append(f'<h1 class="claim">{e(row.get("claim", ""))}</h1>')
         out.append('<p class="small">This claim is in no file in <code>data/</code>, so there is no label '
                    'to compare the verdict with.</p>')
-        card = result_card(method, row, anchor_for=method, mark=False)
+        card = result_card(method, row, anchor_for=method, mark=False,
+                           show_cost=R.RULES.counts_tokens(repo))
     out.append(f'<div class="cards n1">{card}</div>')
     if row["trace"]:
         out.append(trace_section(method, row, full, toggle=link("/check", file=rel, full="" if full else "1")))
@@ -1154,8 +1199,10 @@ def compare_page(repo: Path, q: dict) -> str:
                                   f"How many of the {e(R.method_name(m))}'s verdicts matched {noun(items)}, "
                                   "by the number of articles a claim needs", {m: sb}))
     out.append('</section>')
-    # cost
-    out.append('<section aria-labelledby="h-ccost"><h2 id="h-ccost">Cost per claim</h2>'
+    # cost: tokens and dollars only when the pages show cost
+    show = money(A)
+    out.append(f'<section aria-labelledby="h-ccost"><h2 id="h-ccost">{"Cost" if show else "Lookups and time"} '
+               'per claim</h2>'
                '<div class="scroll"><table class="grid nums"><caption>Averages over the claims both runs have'
                '</caption><thead><tr><th scope="col">Version</th><th scope="col">Per claim</th><th scope="col">A</th>'
                '<th scope="col">B</th><th scope="col">B minus A</th></tr></thead><tbody>')
@@ -1163,8 +1210,17 @@ def compare_page(repo: Path, q: dict) -> str:
         sa, sb = R.stats(A, m, common[m]), R.stats(B, m, common[m])
         rows = [("Lookups", "steps", "{:.1f}", 1), ("Tokens", "tokens", "{:,.0f}", 0),
                 ("Seconds", "seconds", "{:.1f}", 1), ("Dollars", "cost", "${:.4f}", 4)]
+        if not show:
+            rows = [r for r in rows if r[1] in ("steps", "seconds")]
         for k, (label, key, fmt, places) in enumerate(rows):
-            head = f'<th scope="rowgroup" rowspan="4">The {e(R.method_name(m))}</th>' if k == 0 else ""
+            head = (f'<th scope="rowgroup" rowspan="{len(rows)}">The {e(R.method_name(m))}</th>'
+                    if k == 0 else "")
+            if key in ("tokens", "cost") and not (sa["counted"] and sb["counted"]):
+                shown_a = fmt.format(sa[key]) if sa["counted"] else NOT_COUNTED
+                shown_b = fmt.format(sb[key]) if sb["counted"] else NOT_COUNTED
+                out.append(f'<tr class="{"first" if k == 0 else ""}">{head}<td>{label}</td><td>{shown_a}</td>'
+                           f'<td>{shown_b}</td><td></td></tr>')
+                continue
             # The difference of the two numbers as shown, so that the row adds up on the page.
             d = round(round(sb[key], places) - round(sa[key], places), places)
             sign = "+" if d > 0 else ("−" if d < 0 else "")
@@ -1299,7 +1355,7 @@ def compare_claim(A: R.Run, B: R.Run, q: dict) -> str:
         row = run.rows[m].get(i)
         who = f"{side.lower()}-{m}"
         card = result_card(m, row, anchor_for=who, title=f"{side}: <code>{e(run.rel)}</code>",
-                           nn=noun([item]))
+                           nn=noun([item]), show_cost=money(run))
         trace = ""
         if row and row["trace"]:
             trace = trace_section(who, row, full, heading="h3", title=f"{side}'s trace", toggle=link(

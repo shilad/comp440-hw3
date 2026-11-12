@@ -196,8 +196,7 @@ def test_no_placeholder_is_left(name):
 # The six rules, word for word as the page gives them (the check prints their titles).
 LOOP_RULES = [
     "1. **Ask the model.** Each turn, send the model the system text, the tools and the whole conversation so "
-    "far. Add the tokens the reply used to `tokens`, and add the reply to the conversation as the assistant's "
-    "turn.",
+    "far, and add the reply to the conversation as the assistant's turn.",
     "2. **Run its lookups.** For each lookup the reply asks for, call `lookup(name, input)`, add 1 to `steps`, "
     "and add an entry to `trace`. Keep what `read` and `wikidata` return in `read_so_far`; do not keep what "
     "`search` returns.",

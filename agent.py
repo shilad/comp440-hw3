@@ -27,7 +27,7 @@ INSTRUCTIONS = Path(__file__).parent / "instructions.md"
 VERDICTS = ["supported", "refuted", "doesn't say"]
 
 # Price per million tokens for MODEL (prompts under 100K tokens), used only to
-# report cost. Input, output.
+# report cost, once your loop counts tokens (extra credit, step 3b). Input, output.
 PRICE = (0.10, 0.50)
 
 # ---------- the tools Claude can ask for ----------
@@ -148,22 +148,30 @@ NO_ANSWER = "The agent stopped without answering."
 DECLINED = "The model declined to check this claim."
 
 
-def finish(claim, verdict, evidence, explanation, trace, tokens, steps):
+def finish(claim, verdict, evidence, explanation, trace, steps, tokens=None):
     """What a loop returns when it stops: the verdict, the evidence, the
-    explanation, the trace, the number of lookups, and the tokens used and
-    what they cost."""
-    cost = (tokens["input"] * PRICE[0] + tokens["output"] * PRICE[1]) / 1_000_000
-    return {
+    explanation, the trace and the number of lookups. A loop that counts the
+    tokens the model's replies used (extra credit, step 3b) passes them last,
+    as {"input": ..., "output": ...}; then the result also holds them and what
+    they cost."""
+    if isinstance(steps, dict):  # a loop written before Nov 12 passed tokens, then steps
+        steps, tokens = tokens, steps
+    result = {
         "claim": claim, "verdict": verdict, "evidence": evidence,
         "explanation": explanation, "trace": trace,
         "steps": steps,
-        "tokens": tokens, "cost_usd": round(cost, 6),
     }
+    if tokens is not None:
+        cost = (tokens["input"] * PRICE[0] + tokens["output"] * PRICE[1]) / 1_000_000
+        result.update(tokens=tokens, cost_usd=round(cost, 6))
+    return result
 
 
 # ---------- which loop runs ----------
 
 LOOP_CHECK = Path(__file__).parent / "runs" / "part1" / "loop-check.txt"
+# The line check_loop.py prints, after its six, for a loop that passes finish() a token count.
+TOKEN_RULE = "Count the tokens (extra credit)"
 
 
 NOT_PASSED = ("The agent runs only on your own loop from step 1a on, and the loop in my_loop.py has not "
@@ -188,6 +196,17 @@ def which_loop():
     except (OSError, UnicodeDecodeError):  # a file that cannot be read
         return "not passed"
     return "yours" if lines and lines[0] == "yours" else "not passed"
+
+
+def counts_tokens(path=None):
+    """Whether this copy's loop counts tokens: runs/part1/loop-check.txt says the loop in
+    my_loop.py passes, with the token line ok. Token and cost numbers are shown (by check.py,
+    evaluate.py and the results viewer) only then, for every run, the baselines' too."""
+    try:
+        lines = Path(path or LOOP_CHECK).read_text().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    return bool(lines) and lines[0] == "yours" and f"ok         {TOKEN_RULE}" in lines
 
 
 def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):

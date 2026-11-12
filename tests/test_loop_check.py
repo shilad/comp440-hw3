@@ -94,6 +94,7 @@ def test_the_reference_loop_passes_and_is_saved_as_yours(tmp_path, monkeypatch, 
         + ["", check_loop.PASSED]
     assert saved.read_text().splitlines() == ["yours"] + printed
     assert agent.which_loop() == "yours"
+    assert not agent.counts_tokens()      # no token line: tokens and cost stay hidden
 
 
 def test_there_is_no_way_to_keep_the_reference_loop(saved, capsys):
@@ -236,7 +237,6 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     system = INSTRUCTIONS.read_text()
     messages = [{"role": "user", "content": f"Claim: {claim}"}]
     trace, read_so_far = [], []
-    tokens = {"input": 0, "output": 0}
     steps = 0
     rejected = 0
     told_limit = False
@@ -245,13 +245,11 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     def ask():
         reply = client.messages.create(model=MODEL, max_tokens=16000, system=system,
                                        tools=TOOLS, messages=messages)
-        tokens["input"] += reply.usage.input_tokens
-        tokens["output"] += reply.usage.output_tokens
         messages.append({"role": "assistant", "content": reply.content})
         return reply
 
     def no_verdict(why):
-        return finish(claim, None, [], why, trace, tokens, steps)
+        return finish(claim, None, [], why, trace, steps)
 
     while True:
         reply = ask()
@@ -276,7 +274,7 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
                 if problem is None:
                     trace.append({"tool": "answer", "input": call.input, "result": ACCEPTED})
                     return finish(claim, answer["verdict"], answer["evidence"],
-                                  answer["explanation"], trace, tokens, steps)
+                                  answer["explanation"], trace, steps)
                 rejected += 1
                 trace.append({"tool": "answer", "input": call.input, "result": REJECTED + problem})
                 if rejected >= MAX_REJECTED:
@@ -312,7 +310,6 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     system = INSTRUCTIONS.read_text()
     messages = [{"role": "user", "content": f"Claim: {claim}"}]
     trace, read_so_far = [], []
-    tokens = {"input": 0, "output": 0}
     steps = 0
     rejected = 0
     warned_on = None
@@ -321,18 +318,15 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     for turn in range(100):
         response = client.messages.create(model=MODEL, max_tokens=16000, system=system,
                                           tools=TOOLS, messages=messages)
-        for key, used in (("input", response.usage.input_tokens),
-                          ("output", response.usage.output_tokens)):
-            tokens[key] = tokens[key] + used
         messages.append({"role": "assistant",
                          "content": [block.model_dump() for block in response.content]})
         calls = [block for block in response.content if block.type == "tool_use"]
         if response.stop_reason == "refusal":
-            return finish(claim, None, [], DECLINED, trace, tokens, steps)
+            return finish(claim, None, [], DECLINED, trace, steps)
         if not calls:
             quiet += 1
             if quiet == 2:
-                return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)
+                return finish(claim, None, [], NO_ANSWER, trace, steps)
             trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})
             messages.append({"role": "user", "content": REMINDER})
             continue
@@ -345,12 +339,12 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
                 if not problem:
                     trace.append({"tool": "answer", "input": answer, "result": ACCEPTED})
                     return finish(claim, answer["verdict"], answer["evidence"],
-                                  answer["explanation"], trace, tokens, steps)
+                                  answer["explanation"], trace, steps)
                 rejected = rejected + 1
                 trace.append({"tool": "answer", "input": answer, "result": REJECTED + problem})
                 if rejected == MAX_REJECTED:
                     return finish(claim, None, [], REJECTED_TOO_OFTEN.format(n=rejected),
-                                  trace, tokens, steps)
+                                  trace, steps)
                 sent[call.id] = REJECTED + problem
             elif steps < max_steps:
                 found = lookup(call.name, call.input)
@@ -360,7 +354,7 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
                     read_so_far.append(found)
                 sent[call.id] = found
             elif warned_on is not None and warned_on < turn:
-                return finish(claim, None, [], RAN_OUT, trace, tokens, steps)
+                return finish(claim, None, [], RAN_OUT, trace, steps)
             else:
                 warned_on = turn
                 sent[call.id] = OUT_OF_STEPS.format(n=max_steps)
@@ -368,7 +362,7 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
         messages.append({"role": "user", "content": [
             {"type": "tool_result", "tool_use_id": call_id, "content": result}
             for call_id, result in sent.items()]})
-    return finish(claim, None, [], RAN_OUT, trace, tokens, steps)
+    return finish(claim, None, [], RAN_OUT, trace, steps)
 '''
 
 
@@ -397,7 +391,6 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     system = INSTRUCTIONS.read_text()
     messages = [{"role": "user", "content": f"Claim: {claim}"}]
     trace, read_so_far = [], []
-    tokens = {"input": 0, "output": 0}
     steps = 0
     rejected = 0
     warned = False
@@ -405,15 +398,13 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
 
     while True:
         reply = ask(client, system, messages)
-        tokens["input"] += reply.usage.input_tokens
-        tokens["output"] += reply.usage.output_tokens
         messages.append({"role": "assistant", "content": reply.content})
         if reply.stop_reason == "refusal":
-            return finish(claim, None, [], DECLINED, trace, tokens, steps)
+            return finish(claim, None, [], DECLINED, trace, steps)
         calls = [block for block in reply.content if block.type == "tool_use"]
         if not calls:
             if quiet:
-                return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)
+                return finish(claim, None, [], NO_ANSWER, trace, steps)
             quiet = True
             trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})
             messages.append({"role": "user", "content": REMINDER})
@@ -427,16 +418,16 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
                 if problem is None:
                     trace.append({"tool": "answer", "input": call.input, "result": ACCEPTED})
                     return finish(claim, answer["verdict"], answer["evidence"],
-                                  answer["explanation"], trace, tokens, steps)
+                                  answer["explanation"], trace, steps)
                 rejected += 1
                 result = REJECTED + problem
                 trace.append({"tool": "answer", "input": call.input, "result": result})
                 if rejected >= MAX_REJECTED:
                     return finish(claim, None, [], REJECTED_TOO_OFTEN.format(n=rejected),
-                                  trace, tokens, steps)
+                                  trace, steps)
             elif steps >= max_steps:
                 if warned_last_turn:
-                    return finish(claim, None, [], RAN_OUT, trace, tokens, steps)
+                    return finish(claim, None, [], RAN_OUT, trace, steps)
                 warned = True
                 result = OUT_OF_STEPS.format(n=max_steps)
                 trace.append({"tool": call.name, "input": call.input, "result": result})
@@ -477,7 +468,7 @@ def renamed(source, *names):
 
 def test_a_complete_loop_with_other_names_for_the_set_up_variables_passes(tmp_path):
     # The check looks inside run_agent() only for a loop that does not stop yet.
-    source = renamed(REFERENCE, "tokens", "steps", "trace", "read_so_far")
+    source = renamed(REFERENCE, "steps", "trace", "read_so_far")
     assert "my_steps += 1" in source and "max_steps" in source
     assert check_loop.check(a_loop(tmp_path, source)) == [None] * 6
 
@@ -492,8 +483,6 @@ def test_an_error_about_the_client_names_the_scripted_model(tmp_path):
 FIRST_THREE = REFERENCE[:REFERENCE.index("    while True:")] + '''    while True:
         response = client.messages.create(model=MODEL, max_tokens=16000, system=system,
                                           tools=TOOLS, messages=messages)
-        tokens["input"] += response.usage.input_tokens
-        tokens["output"] += response.usage.output_tokens
         messages.append({"role": "assistant", "content": response.content})
         results = []
         for call in [block for block in response.content if block.type == "tool_use"]:
@@ -524,12 +513,8 @@ def test_rules_1_to_3_can_pass_before_the_loop_can_stop(tmp_path):
     ]
 
 
-# A half-written loop does not stop, so rules 1 and 2 look inside run_agent() for it.
+# A half-written loop does not stop, so rule 2 looks inside run_agent() for it.
 HALF_BROKEN = {
-    "no tokens": (1, [('        tokens["input"] += response.usage.input_tokens\n'
-                       '        tokens["output"] += response.usage.output_tokens\n', "")],
-                  "the model's first reply used 1,211 input and 37 output tokens, and tokens "
-                  "held {'input': 0, 'output': 0} when your loop asked the model again"),
     "steps not counted": (2, [("            steps += 1\n", "")],
                           "after the model's first reply, your loop had run one lookup, and "
                           "steps held 0 when it asked the model again"),
@@ -537,7 +522,6 @@ HALF_BROKEN = {
                     "the model's first reply asked for a search, and what the search returned "
                     "was in read_so_far when your loop asked the model again"),
     "steps renamed": (2, [], check_loop.NOT_FOUND.format(name="steps")),
-    "tokens renamed": (1, [], check_loop.NOT_FOUND.format(name="tokens")),
 }
 
 
@@ -559,14 +543,9 @@ def test_a_half_written_loop_is_checked_from_inside(tmp_path, name):
 # ---------- one broken loop per rule, and what each line says ----------
 
 EXPLANATION_LINE = 1 + REFERENCE[:REFERENCE.index('answer["explanation"]')].count("\n")
-TOKENS = ('        tokens["input"] += response.usage.input_tokens\n'
-          '        tokens["output"] += response.usage.output_tokens\n')
 REFUSAL = ('        if response.stop_reason == "refusal":\n'
-           '            return finish(claim, None, [], DECLINED, trace, tokens, steps)\n')
+           '            return finish(claim, None, [], DECLINED, trace, steps)\n')
 BROKEN = {
-    "no tokens": (1, [(TOKENS, "")],
-                  ["the result your loop returned had tokens {'input': 0, 'output': 0}",
-                   "where its three replies used 4,266 input and 132 output tokens"]),
     "no assistant turn": (1, [('        messages.append({"role": "assistant", '
                                '"content": response.content})\n', "")],
                           ["asked for a search", "did not have that reply in the conversation "
@@ -584,9 +563,6 @@ BROKEN = {
                     ["named the model 'claude-opus-5-5'"]),
     "only the newest turn": (1, [("messages=messages,", "messages=messages[-2:],")],
                              ["did not hold the whole conversation so far"]),
-    "refusal tokens not counted": (1, [(TOKENS + "        messages.append", "        messages.append"),
-                                       (REFUSAL, REFUSAL + TOKENS)],
-                                   ['was a refusal (stop_reason "refusal")', "had tokens"]),
     "steps not counted": (2, [("                steps += 1\n", "")],
                           ["the model asked for four lookups before its answer, and the result "
                            "your loop returned had steps 0"]),
@@ -693,7 +669,7 @@ BROKEN = {
                                   "lookups, max_steps was 2, and for that search it sent back "
                                   "OUT_OF_STEPS again"]),
     "no reminder": (6, [('            trace.append({"tool": "(reminder)"',
-                         '            return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)\n'
+                         '            return finish(claim, None, [], NO_ANSWER, trace, steps)\n'
                          '            trace.append({"tool": "(reminder)"')],
                     ["had text and no tool call", "your loop returned a result instead of "
                      "asking the model again with REMINDER"]),
@@ -718,7 +694,7 @@ BROKEN = {
          "request your loop sent held no result with the read call's id"]),
     "reminds forever": (6, [('            if trace and trace[-1]["tool"] == "(reminder)":\n'
                              '                return finish(claim, None, [], NO_ANSWER, trace, '
-                             'tokens, steps)\n', "")],
+                             'steps)\n', "")],
                         ["asked the model a third time instead of stopping"]),
     "refusal not stopped": (6, [(REFUSAL, "")],
                             ['was a refusal (stop_reason "refusal")',
@@ -755,7 +731,6 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     system = INSTRUCTIONS.read_text()
     messages = [{"role": "user", "content": f"Claim: {claim}"}]
     trace, read_so_far = [], []
-    tokens = {"input": 0, "output": 0}
     steps = 0
     rejected = 0
 
@@ -764,15 +739,13 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     while True:
         reply = client.messages.create(model=MODEL, max_tokens=16000, system=system,
                                        tools=TOOLS, messages=messages)
-        tokens["input"] += reply.usage.input_tokens
-        tokens["output"] += reply.usage.output_tokens
         messages.append({"role": "assistant", "content": reply.content})
         if reply.stop_reason == "refusal":
-            return finish(claim, None, [], DECLINED, trace, tokens, steps)
+            return finish(claim, None, [], DECLINED, trace, steps)
         tool_calls = [block for block in reply.content if block.type == "tool_use"]
         if len(tool_calls) == 0:
             if reminded:
-                return finish(claim, None, [], NO_ANSWER, trace, tokens, steps)
+                return finish(claim, None, [], NO_ANSWER, trace, steps)
             reminded = True
             trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})
             messages.append({"role": "user", "content": REMINDER})
@@ -785,18 +758,18 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
                 if problem is None:
                     trace.append({"tool": call.name, "input": call.input, "result": ACCEPTED})
                     return finish(claim, answer["verdict"], answer["evidence"],
-                                  answer["explanation"], trace, tokens, steps)
+                                  answer["explanation"], trace, steps)
                 rejected += 1
                 trace.append({"tool": call.name, "input": call.input, "result": REJECTED + problem})
                 if rejected >= MAX_REJECTED:
                     return finish(claim, None, [], REJECTED_TOO_OFTEN.format(n=rejected),
-                                  trace, tokens, steps)
+                                  trace, steps)
                 results.append({"type": "tool_result", "tool_use_id": call.id,
                                 "content": REJECTED + problem})
                 continue
             if steps >= max_steps:
                 if warned:
-                    return finish(claim, None, [], RAN_OUT, trace, tokens, steps)
+                    return finish(claim, None, [], RAN_OUT, trace, steps)
                 warned = True
                 out = OUT_OF_STEPS.format(n=max_steps)
                 trace.append({"tool": call.name, "input": call.input, "result": out})
@@ -838,6 +811,99 @@ def test_every_broken_rule_is_covered():
     assert {rule for rule, _, _ in BROKEN.values()} == set(range(1, 7))
 
 
+# ---------- the token line: the extra credit in step 3b ----------
+
+# The instructor, Nov 11: "have it gone entirely. for the extra credit we can have the student go
+# back and add it?" The reference loop with the count added as step 3b asks: a tokens dict, each
+# reply's usage added to it, and tokens passed to finish() as its last argument.
+TOKENS = ('        tokens["input"] += response.usage.input_tokens\n'
+          '        tokens["output"] += response.usage.output_tokens\n')
+TURN = '        messages.append({"role": "assistant", "content": response.content})\n'
+COUNTING = broken(("    steps = 0\n", '    tokens = {"input": 0, "output": 0}\n    steps = 0\n'),
+                  (TURN, TOKENS + TURN)).replace("trace, steps)", "trace, steps, tokens)")
+TOKEN_LINE = f"ok         {agent.TOKEN_RULE}"
+
+
+def counting(*edits):
+    source = COUNTING
+    for old, new in edits:
+        assert source.count(old) == 1, old
+        source = source.replace(old, new)
+    return source
+
+
+def test_a_loop_that_counts_tokens_gets_the_token_line_and_turns_on_cost(tmp_path, monkeypatch, saved,
+                                                                       capsys):
+    assert COUNTING.count("trace, steps, tokens)") == 5
+    a_loop(tmp_path, COUNTING, monkeypatch)
+    assert check_loop.main([]) == 0
+    printed = capsys.readouterr().out.splitlines()
+    assert printed == [f"ok         {n}. {title}" for n, title in enumerate(check_loop.RULES, 1)] \
+        + [TOKEN_LINE, "", check_loop.PASSED]
+    assert saved.read_text().splitlines() == ["yours"] + printed
+    assert agent.which_loop() == "yours" and agent.counts_tokens()
+    # Without the count again, the loop still passes, and tokens and cost are hidden again.
+    a_loop(tmp_path, REFERENCE, monkeypatch)
+    assert check_loop.main([]) == 0 and not agent.counts_tokens()
+
+
+def test_a_loop_written_with_the_old_order_of_finish_still_counts(tmp_path):
+    """Before Nov 12, finish() took tokens, then steps. A loop written then still passes."""
+    old = COUNTING.replace("trace, steps, tokens)", "trace, tokens, steps)")
+    assert check_loop.check(a_loop(tmp_path, old)) == [None] * 7
+    assert agent.finish("c", None, [], "x", [], {"input": 2, "output": 1}, 3)["steps"] == 3
+
+
+TOKEN_BROKEN = {
+    "no tokens": ([(TOKENS, "")],
+                  ["the result your loop returned had tokens {'input': 0, 'output': 0}",
+                   "where its three replies used 4,266 input and 132 output tokens"]),
+    "output not counted": ([('        tokens["output"] += response.usage.output_tokens\n', "")],
+                           ["had tokens {'input': 4266, 'output': 0}"]),
+    "refusal tokens not counted": ([(TOKENS + TURN, TURN), (REFUSAL.replace("steps)", "steps, tokens)"),
+                                                            REFUSAL.replace("steps)", "steps, tokens)") + TOKENS)],
+                                   ['was a refusal (stop_reason "refusal")', "had tokens"]),
+    "one result without them": ([("DECLINED, trace, steps, tokens)", "DECLINED, trace, steps)")],
+                                ['was a refusal (stop_reason "refusal")', "had tokens None"]),
+}
+
+
+@pytest.mark.parametrize("name", TOKEN_BROKEN)
+def test_a_wrong_count_fails_the_token_line_and_nothing_else(tmp_path, monkeypatch, saved, capsys, name):
+    edits, phrases = TOKEN_BROKEN[name]
+    path = a_loop(tmp_path, counting(*edits), monkeypatch)
+    printed = shown(path)
+    assert printed[:6] == [f"ok         {n}. {title}" for n, title in enumerate(check_loop.RULES, 1)]
+    assert printed[6].startswith(f"NOT YET    {agent.TOKEN_RULE}: ")
+    for phrase in phrases:
+        assert phrase in printed[6], printed[6]
+    assert len(printed) == 7
+    # A wrong count fails the check: the agent stops, and tokens and cost stay hidden.
+    saved.parent.mkdir(parents=True)
+    saved.write_text("yours\n")
+    assert check_loop.main([]) == 1
+    assert agent.which_loop() == "not passed" and not agent.counts_tokens()
+
+
+def test_counts_tokens_follows_the_file(saved):
+    six = [f"ok         {n}. {title}" for n, title in enumerate(check_loop.RULES, 1)]
+    assert not agent.counts_tokens()                     # no file
+    saved.parent.mkdir(parents=True)
+    for lines, counts in ((["yours"] + six + [TOKEN_LINE], True), (["yours"] + six, False),
+                          (["not passing", check_loop.FELL_BACK] + six + [TOKEN_LINE], False),
+                          (["yours", f"NOT YET    {agent.TOKEN_RULE}: x."], False)):
+        saved.write_text("\n".join(lines) + "\n")
+        assert agent.counts_tokens() is counts, lines
+
+
+def test_finish_holds_tokens_and_cost_only_when_given_them():
+    plain = agent.finish("c", "supported", ["q"], "x", [], 2)
+    assert set(plain) == {"claim", "verdict", "evidence", "explanation", "trace", "steps"}
+    counted = agent.finish("c", "supported", ["q"], "x", [], 2, {"input": 1000, "output": 100})
+    assert counted["tokens"] == {"input": 1000, "output": 100}
+    assert counted["cost_usd"] == round((1000 * agent.PRICE[0] + 100 * agent.PRICE[1]) / 1_000_000, 6)
+
+
 # ---------- an error, a loop that never stops, and a file that will not load ----------
 
 def test_an_error_is_reported_with_its_line(tmp_path):
@@ -855,7 +921,8 @@ def test_an_error_is_reported_with_its_line(tmp_path):
 def test_a_loop_that_never_stops_is_reported(tmp_path, monkeypatch):
     monkeypatch.setattr(check_loop, "TIME_LIMIT", 0.3)
     monkeypatch.setattr(check_loop, "AFTER_A_HANG", 0.1)
-    source = broken((TOKENS, TOKENS + "        while True:\n            pass\n"))
+    turn = '        messages.append({"role": "assistant", "content": response.content})\n'
+    source = broken((turn, turn + "        while True:\n            pass\n"))
     first = 1 + source[:source.index("        while True:\n            pass")].count("\n")
     for problem in check_loop.check(a_loop(tmp_path, source)):
         assert "and your loop did not stop: it was still running line" in problem, problem
@@ -909,7 +976,7 @@ def fake_loops(monkeypatch):
         def run_agent(claim, client=None, max_steps=None, lookup=None, name=name):
             calls.append((name, claim, client, max_steps, lookup))
             return {"claim": claim, "verdict": "supported", "evidence": [], "explanation": "x",
-                    "trace": [], "steps": 0, "tokens": {"input": 1, "output": 1}, "cost_usd": 0}
+                    "trace": [], "steps": 0}
         monkeypatch.setitem(sys.modules, name, SimpleNamespace(run_agent=run_agent))
     return calls
 

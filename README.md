@@ -97,8 +97,8 @@ If you are curious, here are additional details.
   you ask, and pastes a program's output into `WRITEUP.md` where a question asks for it. In step 1a it
   writes the code of your loop as you describe it, but the structure and the ideas must be yours.
 - The results viewer, **Results** at the top of the homework page, is where you read your runs: each
-  run's accuracy and cost, each claim's verdicts from all three versions, the agent's trace one entry at
-  a time, and two runs side by side.
+  run's accuracy, lookups and time, each claim's verdicts from all three versions, the agent's trace one
+  entry at a time, and two runs side by side.
 - When every step of a part is ticked, the page saves your conversations with Claude in `TRANSCRIPT.md`,
   commits your work as `Part N done`, and pushes it to your fork. The commit holds everything git does
   not ignore: your answers, `instructions.md`, your claims, `runs/`, `TRANSCRIPT.md`, and `record/`, the
@@ -120,8 +120,8 @@ If you are curious, here are additional details.
 
 I expect this homework to take about 5 hours in all, in three sittings: about an hour for Part 0, about
 3 hours for Part 1, and about an hour for Part 2. On top of that, the full run in
-Part 1 takes about 10 minutes while you do other things. Part 3, which is extra credit, takes a little
-over an hour more, and its run about 6 minutes.
+Part 1 takes about 10 minutes while you do other things. Part 3, which is extra credit, takes about an
+hour and 20 minutes more, and its run about 6 minutes.
 
 ## Words this homework uses
 
@@ -147,7 +147,6 @@ over an hour more, and its run about 6 minutes.
   `data/dev.jsonl` for trying things out in Part 1, and 100 **evaluation claims** in `data/eval.jsonl` for
   the full run and Parts 2 and 3.
 - A **run** is one use of `evaluate.py`, saved in a folder under `runs/`.
-- A **token** is the unit the Claude API counts text in and charges by, about three quarters of a word.
 
 ## Submitting
 

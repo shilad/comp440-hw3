@@ -52,14 +52,15 @@ EXPECTED = {
     "2b": (2, "2b. Check the evidence yourself", [], LOOKUP, 35),
     "3a": (3, "3a. Sort the failures", [], [], 32),
     "3b": (3, "3b. Make one change", ["runs/part3/after/report.txt"],
-           EVALUATE + CHECK + ["Edit(instructions.md)"], 18),
+           EVALUATE + CHECK + ["Bash(uv run python check_loop.py)", "Edit(instructions.md)"], 28),
     "3c": (3, "3c. Write it up", [], [], 20),
 }
 # Minutes per part (the instructor's "split the difference", morning of Nov 11). Parts 0 to 2,
 # the required work, made about 5 hours and 45 minutes; the old step 0b, picking topics and
 # claims, took 40 of them. Without it (the instructor, afternoon of Nov 11: "drop 0b") they make
 # 305 minutes, about 5 hours.
-PART_MINUTES = {0: 60, 1: 185, 2: 60, 3: 70}
+# Step 3b went from 18 to 28 minutes for its first task, token counting (Nov 11).
+PART_MINUTES = {0: 60, 1: 185, 2: 60, 3: 80}
 
 # Each step's summary, word for word from the instructor's outline (Nov 11).
 SUMMARIES = {
@@ -128,7 +129,9 @@ TASKS = {
            "that shows it, and say whether the dataset's label is right.",
            "Ask Claude to label the same claims. It gives its labels without seeing yours.",
            "Put Claude's labels in the last column of your table: ask Claude to, or type them in your editor."],
-    "3b": ["Make one change, in your editor or by asking Claude.",
+    "3b": ["Make your loop count tokens, in your editor or by describing it to Claude, then ask Claude to "
+           "run the check until its last line says ok.",
+           "Make one change, in your editor or by asking Claude.",
            "In a terminal tab of your own, start the agent's run on your evaluation claims, and let it finish.",
            "In the results viewer, compare the two runs."],
     "3c": [],
@@ -136,7 +139,7 @@ TASKS = {
 
 # Tasks only the student can see done (`tick = false`): the page shows them with no tick, the way it
 # shows the /exit task, and no brief ticks them or asks the student to report them. Step: task numbers.
-NO_TICK = {"0d": [2], "1a": [1], "1b": [2], "1c": [2], "1d": [3], "2a": [2], "2b": [1], "3b": [3]}
+NO_TICK = {"0d": [2], "1a": [1], "1b": [2], "1c": [2], "1d": [3], "2a": [2], "2b": [1], "3b": [4]}
 
 # Where a task happens, in the words the tasks use. The verdict in 1b is decided in the student's
 # head, so it names no place; its answer is typed under the questions, which the page introduces.
@@ -272,6 +275,51 @@ def test_minutes_per_part(a):
     per = {n: sum(s.minutes for s in a.steps if s.part == n) for n in PARTS}
     assert per == PART_MINUTES
     assert sum(per[n] for n in (0, 1, 2)) == 305, "the required work is about 5 hours"
+
+
+# The instructor, Nov 11, on counting tokens: "have it gone entirely. for the extra credit we can
+# have the student go back and add it?" What Parts 0 to 2 said about tokens and their cost.
+TOKEN_WORDS = ("tokens, cost and time", "lookups, tokens, seconds and cost", ".usage",
+               "Add the tokens the reply used", "trace, tokens, steps", "A *token* is", "A **token** is",
+               "a token (the unit")
+
+
+def test_parts_0_to_2_say_nothing_about_tokens(a):
+    pages = {name: (REPO / "instructions" / name).read_text(encoding="utf-8")
+             for name in ("part0.md", "part1.md", "part2.md")}
+    pages["README.md"] = (REPO / "README.md").read_text(encoding="utf-8")
+    pages["tutor"] = a.tutor
+    pages.update({s.id: s.brief + " ".join(c.task for c in stepmod.checkpoints(s))
+                  for s in a.steps if s.part < 3})
+    found = [(where, w) for where, text in pages.items() for w in TOKEN_WORDS if w in flat(text)]
+    assert not found, found
+    # What a run spends on the student's key is still said.
+    assert "about 28 cents" in flat(a.tutor) and "costs about 35 cents" in flat(pages["README.md"])
+    assert "The loop counts no tokens: no rule asks for it, and the check does not look for it." in \
+        flat(a.step("1a").brief)
+
+
+def test_3b_starts_with_token_counting(a):
+    s = a.step("3b")
+    brief = flat(s.brief)
+    for must in ("The first task is to make the loop count tokens",
+                 "Explain .usage and finish() as often as they ask",
+                 "the code follows your rule for the code the student makes",
+                 '"Count the tokens (extra credit)"', "Tick checkpoint 1 once that line says ok.",
+                 "Tick checkpoint 2 once you have seen the change in `git diff`."):
+        assert must in brief, must
+    page = flat((REPO / "instructions" / "part3.md").read_text(encoding="utf-8"))
+    for must in ("**Words in this step:** A *token* is the unit the Claude API counts text in and charges by",
+                 "add `tokens = {\"input\": 0, \"output\": 0}` to the set-up lines.",
+                 "Pass `tokens` to every `finish(...)` as its last argument.",
+                 'Its last line, "Count the tokens (extra credit)", must say `ok`',
+                 "It should take about an hour and 20 minutes.",
+                 'The agent\'s cost per claim is under "Cost" for `runs/part3/after` in the results viewer, and '
+                 'the one-search baseline\'s is under "Cost" for `runs/part2`.'):
+        assert must in page, must
+    # The 3c question is word for word as it was.
+    assert ("What does the agent's loop add over one search, what does it cost, and when would you not use an "
+            "agent for a job like this? Use your numbers from Part 2 and Part 3.") in page
 
 
 def test_the_old_cost_step_and_the_id_2c_are_gone():

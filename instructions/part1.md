@@ -38,8 +38,7 @@ key and no network, takes a few seconds, and costs nothing.
 **The six rules:**
 
 1. **Ask the model.** Each turn, send the model the system text, the tools and the whole conversation so
-   far. Add the tokens the reply used to `tokens`, and add the reply to the conversation as the assistant's
-   turn.
+   far, and add the reply to the conversation as the assistant's turn.
 2. **Run its lookups.** For each lookup the reply asks for, call `lookup(name, input)`, add 1 to `steps`,
    and add an entry to `trace`. Keep what `read` and `wikidata` return in `read_so_far`; do not keep what
    `search` returns.
@@ -60,10 +59,9 @@ key and no network, takes a few seconds, and costs nothing.
 
 - The call is `client.messages.create(model=MODEL, max_tokens=16000, system=system, tools=TOOLS,
   messages=messages)`.
-- The reply has `.content` (a list of blocks), `.stop_reason` and `.usage` (`.input_tokens`,
-  `.output_tokens`). A tool call is a block with `.type == "tool_use"`, `.name`, `.input` and `.id`. It
-  is an object, not a dictionary, so read its parts with a dot, as in `call.name`. One reply can hold
-  several tool calls, and each needs a result.
+- The reply has `.content` (a list of blocks) and `.stop_reason`. A tool call is a block with
+  `.type == "tool_use"`, `.name`, `.input` and `.id`. It is an object, not a dictionary, so read its
+  parts with a dot, as in `call.name`. One reply can hold several tool calls, and each needs a result.
 - A turn of the conversation is a dictionary with a `"role"` (`"user"` or `"assistant"`) and a
   `"content"`, a string or a list, like the first one in `my_loop.py`. The assistant's content is the
   reply's `.content`, as it came back.
@@ -81,8 +79,8 @@ key and no network, takes a few seconds, and costs nothing.
   these entries, so a loop that records only lookups shows wrong traces. The one exception is a lookup
   asked for after `OUT_OF_STEPS` was sent: the loop stops there, and that lookup needs no entry.
 - Clean the answer first: `answer = clean_answer(call.input)`.
-- `finish(claim, verdict, evidence, explanation, trace, tokens, steps)` makes what the loop returns.
-  "Stop with no verdict" means `return finish(claim, None, [], why, trace, tokens, steps)`, where `why` is
+- `finish(claim, verdict, evidence, explanation, trace, steps)` makes what the loop returns.
+  "Stop with no verdict" means `return finish(claim, None, [], why, trace, steps)`, where `why` is
   `REJECTED_TOO_OFTEN.format(n=rejected)`, `RAN_OUT`, `NO_ANSWER` or `DECLINED`. Stopping always means
   `return`: a `break` leaves only the innermost loop.
 - `REJECTED`, `OUT_OF_STEPS`, `REMINDER` and the other sentences are in `agent.py`. `OUT_OF_STEPS` and
@@ -224,7 +222,7 @@ uv run python evaluate.py data/dev.jsonl --methods agent --out runs/part1/before
 ```
 
 The first table shows how many claims matched the dataset's label, by number of articles and by label;
-the second, the average lookups, tokens, seconds and cost per claim. The run is saved in
+the second, the average lookups and seconds per claim. The run is saved in
 `runs/part1/before`, "before" your instructions of 1d. On a claim's page, each quote under "Quoted
 evidence" says "Found in entry N of the trace (read), highlighted below": click "entry N" to see it.
 

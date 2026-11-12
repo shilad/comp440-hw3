@@ -111,8 +111,7 @@ def run_one(method, item):
     except Exception as error:  # a failed claim shouldn't stop the whole run
         print(f"{method}: {item['id']} failed and was not saved: {error}")
         result = {"verdict": None, "evidence": [], "explanation": f"error: {error}",
-                  "error": True,
-                  "trace": [], "steps": 0, "tokens": {"input": 0, "output": 0}, "cost_usd": 0}
+                  "error": True, "trace": [], "steps": 0}
     result.update(id=item["id"], method=method, seconds=round(time.time() - start, 2),
                   correct=is_correct(item, result["verdict"]))
     if method == "agent":
@@ -174,14 +173,23 @@ def report(items, results_by_method, out_dir=None):
             say(row)
 
     say("\nAverage per claim:\n")
-    say(f"{'':22}{'lookups':>10}{'tokens':>10}{'seconds':>10}{'cost':>10}")
+    # Tokens and cost only once your loop counts tokens (extra credit, step 3b), and then only
+    # for the results that hold a count: "-" for an agent run before that.
+    money = agent.counts_tokens()
+    say(f"{'':22}{'lookups':>10}{'seconds':>10}" + (f"{'tokens':>10}{'cost':>10}" if money else ""))
     for method in methods:
         rows = results_by_method[method]
         n = len(rows) or 1
-        tokens = sum(r["tokens"]["input"] + r["tokens"]["output"] for r in rows) / n
-        say(f"{method:22}{sum(r['steps'] for r in rows) / n:>10.1f}{tokens:>10.0f}"
-            f"{sum(r['seconds'] for r in rows) / n:>10.1f}"
-            f"{sum(r['cost_usd'] for r in rows) / n:>10.4f}")
+        line = (f"{method:22}{sum(r['steps'] for r in rows) / n:>10.1f}"
+                f"{sum(r['seconds'] for r in rows) / n:>10.1f}")
+        counted = [r for r in rows if r.get("tokens")]
+        if money and counted:
+            k = len(counted)
+            tokens = sum(r["tokens"]["input"] + r["tokens"]["output"] for r in counted) / k
+            line += f"{tokens:>10.0f}{sum(r['cost_usd'] for r in counted) / k:>10.4f}"
+        elif money:
+            line += f"{'-':>10}{'-':>10}"
+        say(line)
     every_run = [r for rows in results_by_method.values() for r in rows]
     failed = sum("error" in r for r in every_run)
     no_verdict = sum(r["verdict"] is None for r in every_run) - failed

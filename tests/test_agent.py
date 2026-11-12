@@ -66,7 +66,7 @@ def test_answer_with_real_evidence_is_accepted():
     result = reference_loop.run_agent("claim", client=claude, lookup=fake_lookup)
     assert result["verdict"] == "supported"
     assert result["steps"] == 3
-    assert result["tokens"] == {"input": 400, "output": 40}
+    assert "tokens" not in result and "cost_usd" not in result     # the loop counts no tokens
     # Each tool result went back with the id of the call it answers.
     # (The list is shared, so the last entry is Claude's answer; the one before is ours.)
     last_user = claude.sent[-1]["messages"][-2]

@@ -178,7 +178,7 @@ def tool_result(i, text):
 FAKE_KEY = "sk-" + "ant-" + "not-a-real-key"    # what a key looks like, in pieces
 
 CHECK_OUTPUT = ("Claim: The director was born in Illinois.\nMethod: no-tools\n\nVerdict: supported\n"
-                "Explanation: It remembers so.\nLookups: 0   tokens: 300 in, 40 out\n\n"
+                "Explanation: It remembers so.\nLookups: 0   time: 2.1s\n\n"
                 "Saved to runs/part0/no-tools-1.json")
 CHAINED = ('python3 .workbench/page.py 0b expected "supported" && uv run python check.py --method no-tools '
            '--out runs/part0 "The director was born in Illinois."')

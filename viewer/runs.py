@@ -75,6 +75,18 @@ class Rules:
                 pass
         return _group_of(item)
 
+    def counts_tokens(self, repo):
+        """agent.counts_tokens() for this repository's loop record: whether the pages show
+        token and cost numbers. Until the loop counts tokens (extra credit, step 3b), they don't."""
+        path = Path(repo) / "runs" / "part1" / "loop-check.txt"
+        mod = self.get()
+        if mod is not None:
+            try:
+                return bool(mod.agent.counts_tokens(path))
+            except Exception:  # noqa: BLE001
+                pass
+        return _counts_tokens(path)
+
     def max_steps(self):
         mod = self.get()
         try:
@@ -131,6 +143,14 @@ def _is_correct(item, verdict):  # a copy of evaluate.is_correct, used only if i
     if item["source"] == "fever":
         return verdict == FEVER[item["label"]]
     return verdict == item["label"]
+
+
+def _counts_tokens(path):  # a copy of agent.counts_tokens
+    try:
+        lines = Path(path).read_text().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    return bool(lines) and lines[0] == "yours" and "ok         Count the tokens (extra credit)" in lines
 
 
 def _group_of(item):  # a copy of evaluate.group_of
@@ -301,7 +321,8 @@ def tidy(row: dict) -> dict:
     if isinstance(evidence, str):
         evidence = [evidence]
     evidence = [str(q) for q in evidence if str(q).strip()]
-    tokens = row.get("tokens") if isinstance(row.get("tokens"), dict) else {}
+    # A loop that does not count tokens (all of Parts 0 to 2) saves none: then both are None.
+    tokens = row.get("tokens") if isinstance(row.get("tokens"), dict) else None
     trace = row.get("trace") if isinstance(row.get("trace"), list) else []
     calls = []
     for step in trace:
@@ -319,8 +340,9 @@ def tidy(row: dict) -> dict:
         explanation=str(row.get("explanation") or ""),
         trace=calls,
         steps=_num(row.get("steps"), int),
-        tokens={"input": _num(tokens.get("input"), int), "output": _num(tokens.get("output"), int)},
-        cost_usd=_num(row.get("cost_usd")),
+        tokens=None if tokens is None else {"input": _num(tokens.get("input"), int),
+                                            "output": _num(tokens.get("output"), int)},
+        cost_usd=None if tokens is None else _num(row.get("cost_usd")),
         seconds=_num(row.get("seconds")),
         failed="error" in row,
     )
@@ -468,7 +490,7 @@ class Run:
     """One evaluation folder: one results file per method."""
 
     def __init__(self, repo: Path, path: Path, rel: str, claims: Claims):
-        self.path, self.rel = path, rel
+        self.path, self.rel, self.repo = path, rel, repo
         self.rows: dict[str, dict] = {}
         self.bad: dict[str, int] = {}
         self.mtime = 0.0
@@ -653,6 +675,8 @@ def stats(run: Run, method: str, ids=None) -> dict:
             pick = [i for i in ids if run.items[i].get("source") == "hover" and run.items[i].get("label") == label]
             labels[name] = [sum(bool(rows_by_id[i]["correct"]) for i in pick), len(pick)]
     d = n or 1
+    counted = [r for r in rows if r["tokens"] is not None]   # the results that hold a token count
+    c = len(counted) or 1
     failed = sum(r["failed"] for r in rows)
     max_steps = run.limit
     return {
@@ -661,13 +685,14 @@ def stats(run: Run, method: str, ids=None) -> dict:
         "groups": groups,
         "labels": labels,
         "steps": sum(r["steps"] for r in rows) / d,
-        "tokens": sum(r["tokens"]["input"] + r["tokens"]["output"] for r in rows) / d,
+        "counted": len(counted),
+        "tokens": sum(r["tokens"]["input"] + r["tokens"]["output"] for r in counted) / c,
         "seconds": sum(r["seconds"] for r in rows) / d,
-        "cost": sum(r["cost_usd"] for r in rows) / d,
-        "total_in": sum(r["tokens"]["input"] for r in rows),
-        "total_out": sum(r["tokens"]["output"] for r in rows),
+        "cost": sum(r["cost_usd"] for r in counted) / c,
+        "total_in": sum(r["tokens"]["input"] for r in counted),
+        "total_out": sum(r["tokens"]["output"] for r in counted),
         "total_seconds": sum(r["seconds"] for r in rows),
-        "total_cost": sum(r["cost_usd"] for r in rows),
+        "total_cost": sum(r["cost_usd"] for r in counted),
         "total_steps": sum(r["steps"] for r in rows),
         "failed": failed,
         "no_verdict": sum(r["verdict"] is None for r in rows) - failed,

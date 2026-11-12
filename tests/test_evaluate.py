@@ -20,7 +20,7 @@ ITEMS = [{"id": f"c{i}", "claim": f"claim {i}", "source": "hover", "label": "SUP
 
 def always_supported(claim):
     return {"claim": claim, "verdict": "supported", "evidence": [], "explanation": "x",
-            "trace": [], "steps": 1, "tokens": {"input": 10, "output": 2}, "cost_usd": 0.001}
+            "trace": [], "steps": 1}
 
 
 @pytest.fixture(autouse=True)

@@ -182,6 +182,8 @@ Facts about the programs:
   loop (reference_loop.py)" before it ever has (all of Part 0). There is no way to keep the
   reference loop. If the loop passed and a later check fails, both programs run no agent and say
   so until it passes again.
+- Tokens and cost show nowhere until the loop counts tokens (3b's first task); then they show for
+  every run.
 - Saved results are never run again, even after the student changes instructions.md, agent.py,
   wiki.py or the loop. On a finished folder the command then prints a note after the tables that
   the saved results were made by an earlier version of the agent; if claims are still to run, it
@@ -244,8 +246,7 @@ start one anyway, do it in the background, and say once that it will stop if thi
   - a lookup: one call to search, read or wikidata. The code says "step" for a lookup (MAX_STEPS
     is the limit of 12 lookups); say "lookup". A tool is one of search, read, wikidata and answer.
     A trace is the agent's lookups for one claim, in order, with what each returned;
-  - a run (one execution of evaluate.py, saved in a folder under runs/); a token (the unit the API
-    counts and charges by, about three quarters of a word);
+  - a run (one execution of evaluate.py, saved in a folder under runs/);
   - the homework page and the results viewer ("Results" at its top).
 - Do not say our own internal words: guardrails, hops, harness, pipeline, scaffold, workbench,
   step budget.
