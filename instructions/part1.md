@@ -34,9 +34,12 @@ only in Part 0; do not open it before your loop passes the check.
 
 **Background:** The model cannot look anything up by itself, and it remembers nothing between calls:
 each time it is asked, it sees only what it is sent. All it can do is reply. A reply can ask for one or
-more lookups (`search`, `read`, `wikidata`), give an `answer`, or ask for nothing. The loop is the
-program around the model that makes it an agent. It asks the model, does what the reply asks for, tells
-the model what happened, and asks again, until it has an answer it can accept or a reason to give up.
+more lookups (`search`, `read`, `wikidata`), give an `answer`, or ask for nothing.
+
+Your loop should repeatedly call the model with the message history so far, and ask for its next step.
+It should make the lookups that step asks for, and add what they return to the history. It should check
+whether the model has given an answer that can be accepted yet. It should also pay attention to its
+limits: a claim that runs out of lookups, or of tries at an answer, may end undecided.
 
 Two limits are set for you: the agent makes at most 12 lookups for a claim, and at most 3 of its answers
 may fail the evidence check. The evidence check looks at an answer and says what is wrong with it, or

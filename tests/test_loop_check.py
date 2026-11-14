@@ -183,7 +183,7 @@ def test_no_rule_is_stated_when_every_rule_passes(tmp_path, monkeypatch, capsys)
 def test_the_skeleton_names_no_rule_and_gives_nothing_more():
     """The page does not list the rules: the student meets each one when the check states it."""
     source = (ROOT / "my_loop.py").read_text()
-    assert "# The check's six lines name the rules your loop must follow" in source
+    assert "# Your loop should repeatedly call the model with the message history so far" in source
     for title in check_loop.RULES:
         assert title not in source
     assert 'raise NotImplementedError("The loop is not written yet: see step 1a.")' in source

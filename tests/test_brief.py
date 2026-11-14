@@ -209,6 +209,34 @@ def section_1a():
     return one_line(sections((ROOT / "instructions/part1.md").read_text(encoding="utf-8"))["1a. Design the loop"])
 
 
+# The instructor's description of the loop (Nov 13: "could we have a prose description instead?"),
+# lightly clarified. It is in 1a's Background, above the line in my_loop.py, in the README, and in
+# 1a's brief, word for word.
+LOOP_DESCRIPTION = (
+    "Your loop should repeatedly call the model with the message history so far, and ask for its next "
+    "step. It should make the lookups that step asks for, and add what they return to the history. It "
+    "should check whether the model has given an answer that can be accepted yet. It should also pay "
+    "attention to its limits: a claim that runs out of lookups, or of tries at an answer, may end undecided.")
+
+
+def test_the_loop_is_described_the_same_way_in_four_places():
+    page = section_1a()
+    assert LOOP_DESCRIPTION in page[page.index("**Background:**"):page.index("**Writing your outline:**")]
+    readme = one_line((ROOT / "README.md").read_text(encoding="utf-8"))
+    assert "In Part 1 you design the loop around the model, the program that makes it an agent. " \
+        + LOOP_DESCRIPTION in readme
+    source = (ROOT / "my_loop.py").read_text(encoding="utf-8")
+    above = source[:source.index("    # ---- your loop goes below this line (step 1a) ----")]
+    comment = [line.strip()[2:] for line in above.splitlines()[-5:]]
+    assert one_line("\n".join(comment)) == LOOP_DESCRIPTION
+    steps = one_line((ROOT / "steps.toml").read_text(encoding="utf-8"))
+    assert '("' + LOOP_DESCRIPTION + '")' in steps
+    # "cannot be decided" was the first wording: at 12 lookups the model is warned and may still
+    # answer, so a claim that runs out of lookups can still be decided.
+    for text in (page, readme, source, steps):
+        assert "cannot be decided" not in text
+
+
 def test_1a_gives_a_background_and_not_the_rules():
     """1a (Nov 13): the page gives a background, not the rules, and the student meets each rule
     when the check states it under its first NOT YET line."""

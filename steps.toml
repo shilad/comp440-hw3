@@ -606,8 +606,13 @@ the function, its set-up lines, and a line that raises NotImplementedError where
 ## The rules, and how the student meets them
 
 The page does not show the student the rules. It gives a short background: what the model can and
-cannot do, what the loop is for, the two limits (12 lookups, 3 failed answers) with nothing about
-what happens at them, and what the evidence check is. The student designs from that. They
+cannot do; the instructor's description of the loop ("Your loop should repeatedly call the model
+with the message history so far, and ask for its next step. It should make the lookups that step
+asks for, and add what they return to the history. It should check whether the model has given an
+answer that can be accepted yet. It should also pay attention to its limits: a claim that runs out
+of lookups, or of tries at an answer, may end undecided."), which is also a comment above the line
+in my_loop.py; the two limits (12 lookups, 3 failed answers) with nothing about what the loop does
+at them; and what the evidence check is. The student designs from that. They
 meet each rule when the check states it, in plain words, under its first NOT YET line, or when your
 coaching ladder reaches the step where it names the rule. Do not recite a rule they have not met,
 and do not list the rules. You need them to translate and to coach, so here they are in full:

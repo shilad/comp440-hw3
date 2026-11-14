@@ -26,9 +26,6 @@ from agent import (ACCEPTED, DECLINED, INSTRUCTIONS, MAX_REJECTED, MAX_STEPS, MO
                    TOOLS, answer_problem, clean_answer, finish, run_tool)
 from loop_parts import Conversation
 
-# The check's six lines name the rules your loop must follow, and under the first NOT YET line
-# it states that rule in plain words.
-
 
 def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     """Check one claim. Returns what talk.accept() or talk.stop() returns."""
@@ -40,5 +37,10 @@ def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
     steps = 0          # lookups made so far
     rejected = 0       # answers sent back so far
 
+    # Your loop should repeatedly call the model with the message history so far, and ask for
+    # its next step. It should make the lookups that step asks for, and add what they return to
+    # the history. It should check whether the model has given an answer that can be accepted
+    # yet. It should also pay attention to its limits: a claim that runs out of lookups, or of
+    # tries at an answer, may end undecided.
     # ---- your loop goes below this line (step 1a) ----
     raise NotImplementedError("The loop is not written yet: see step 1a.")
