@@ -47,7 +47,7 @@ ALL_STEPS = [step for _, _, steps in PARTS.values() for step in steps]
 LABELS = [
     ("**Words in this step:**", False),
     ("**Actions:**", True),
-    ("**Writing your outline:**", False),          # 1a, the workshop prototype (Nov 13)
+    ("**Writing your outline:**", False),          # 1a only
     ("**Interpreting output:**", False),
     ("**Write-up:**", True),
     ("**Troubleshooting:**", False),
@@ -210,7 +210,7 @@ def section_1a():
 
 
 def test_1a_gives_a_background_and_not_the_rules():
-    """The brief prototype (Nov 13): the page gives a background, and the student meets each rule
+    """1a (Nov 13): the page gives a background, not the rules, and the student meets each rule
     when the check states it under its first NOT YET line."""
     page = section_1a()
     assert "**Background:** The model cannot look anything up by itself" in page
@@ -356,12 +356,12 @@ def test_nothing_students_read_sends_them_to_the_claim_finder(name):
 # ---- what each part holds -----------------------------------------------------------------------
 
 # The page shows a step's opening (its summary, and in Part 0 and 1b the claim it checks) and then each
-# labeled part as a line that opens with a click. Actions, Write-up and, in 1a, The six rules hold only
-# what the student does and answers, as lists, so that a student who opens them finds the steps and
-# not an explanation; explanations go under the other labels.
-# "Background" (1a, the brief prototype, Nov 13) is explanation, like "Words in this step".
+# labeled part as a line that opens with a click. Actions, Write-up and, in 1a, Writing your outline
+# hold only what the student does and answers, as lists, so that a student who opens them finds the
+# steps and not an explanation; explanations go under the other labels.
+# "Background" (1a) is explanation, like "Words in this step".
 FOLDED = ["Words in this step", "Interpreting output", "Troubleshooting", "Hint", "Background"]
-OPEN_LABELS = ["Actions", "Write-up", "The six rules", "Writing your outline"]   # the last: the 1a prototype (Nov 13)
+OPEN_LABELS = ["Actions", "Write-up", "Writing your outline"]
 
 
 def parts(section):

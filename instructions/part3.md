@@ -58,18 +58,21 @@ In this step you make one change aimed at your most common failure. You find out
 failure on your evaluation claims.
 
 **Words in this step:** A *token* is the unit the Claude API counts text in and charges by, about
-three quarters of a word.
+three quarters of a word. Each reply from the model says how many tokens it used.
 
 **Actions:**
 
 1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
    have open, or start a new session with its command (type `/exit` first if another session is
    open in that terminal).
-2. First, make your loop count tokens, so that the run after your change shows what it cost. In
-   `my_loop.py`, add `tokens = {"input": 0, "output": 0}` to the set-up lines. After each call to the
-   model, add the reply's `.usage.input_tokens` to `tokens["input"]` and its `.usage.output_tokens` to
-   `tokens["output"]`. Pass `tokens` to every `finish(...)` as its last argument. Do this in your
-   editor, or describe it to Claude.
+2. First, make your loop count tokens, so that the run after your change shows what it cost. In your
+   editor, add it to your outline in `WRITEUP.md`, under 1a: the loop remembers how many tokens the
+   model's replies have used, input and output (none yet); each time a reply comes back, it adds that
+   reply's tokens; and every time the loop stops, it passes the count on. Then ask Claude to translate
+   your outline again. If you wrote the Python yourself, keep the count as
+   `tokens = {"input": 0, "output": 0}`, add each reply's `.usage.input_tokens` and
+   `.usage.output_tokens` to it, and pass `tokens` last in every `talk.accept(...)` and
+   `talk.stop(...)` (or every `finish(...)`, in a loop without the parts).
 3. Ask Claude to run the check. Its last line, "Count the tokens (extra credit)", must say `ok`, like
    the six rules above it.
 4. Decide on **one** change aimed at your most common failure from 3a (see the Hint).
@@ -97,10 +100,11 @@ give the same answer every time, so a difference of a few claims between the two
 
 **Troubleshooting:**
 
-- The check has no line "Count the tokens (extra credit)": your loop passes no count to `finish()` yet.
-  Pass `tokens` as the last argument of every `finish(...)`.
-- That line says `NOT YET`: the count your loop passed to `finish()` is not what the model's replies
-  used, and its sentence says where. Until it says `ok`, no agent run starts.
+- The check has no line "Count the tokens (extra credit)": your loop passes no count on yet. Make sure
+  your outline says that every time the loop stops, it passes the count on, and ask Claude to translate
+  it again.
+- That line says `NOT YET`: the count your loop passed on is not what the model's replies used, and its
+  sentence says where. Until it says `ok`, no agent run starts.
 - The run stops partway. Run the same command again; it keeps every claim it already finished.
 - The run says its folder has saved results from an earlier version of your agent: you changed
   `instructions.md`, `agent.py`, `wiki.py` or your loop since it started. To start over with the agent
@@ -108,9 +112,9 @@ give the same answer every time, so a difference of a few claims between the two
   `uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after --fresh`.
 
 **Hint:** The change can be to `instructions.md`, to a tool (for example, what `search` returns, in
-`wiki.py`), or to the limit of 12 lookups (in `agent.py`). Apart from the token count, leave your loop,
-`my_loop.py`, as it passed the check: once a line of the check says `NOT YET`, no agent run starts until
-your loop passes again. Claude will not propose a change, because the choice is yours.
+`wiki.py`), or to the limit of 12 lookups (in `agent.py`). Apart from the token count, leave your outline
+and your loop as they passed the check: once a line of the check says `NOT YET`, no agent run starts
+until your loop passes again. Claude will not propose a change, because the choice is yours.
 
 ## 3c. Write it up
 

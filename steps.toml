@@ -1276,11 +1276,11 @@ section = "3b. Make one change"
 minutes = 28
 slots = ["3b.*"]
 files = ["runs/part3/after/report.txt"]
-allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Bash(uv run python check_loop.py)", "Edit(instructions.md)"]
+allow = ["Bash(uv run python evaluate.py:*)", "Bash(uv run python check.py:*)", "Bash(uv run python check_loop.py)", "Edit(instructions.md)", "Edit(my_loop.py)"]
 run_yourself = { command = "uv run python evaluate.py data/eval.jsonl --methods agent --out runs/part3/after", note = "About 6 minutes and about 21 cents on your key. Start it only after you have made your change. Leave that tab open, your laptop awake and your change alone until it ends with two tables." }
 summary = "In this step you make one change aimed at your most common failure. You find out whether it fixes that failure on your evaluation claims."
 checkpoints = [
-  { text = "Your loop counts tokens, and the check passes it", task = "Make your loop count tokens, in your editor or by describing it to Claude, then ask Claude to run the check until its last line says ok." },
+  { text = "Your loop counts tokens, and the check passes it", task = "Make your loop count tokens: add it to your outline and ask Claude to translate it again (or add it to Python you wrote yourself), then ask Claude to run the check until its last line says ok." },
   { text = "You have made one change", task = "Make one change, in your editor or by asking Claude." },
   { text = "The agent's run on your evaluation claims, with your change, is finished", task = "In a terminal tab of your own, start the agent's run on your evaluation claims, and let it finish.", files = ["runs/part3/after/report.txt"] },
   { text = "You have compared the two runs in the results viewer", task = "In the results viewer, compare the two runs.", tick = false },
@@ -1289,18 +1289,29 @@ checkpoints = [
 brief = '''
 The first task is to make the loop count tokens, so that the run after the change shows its cost:
 until the loop counts them, no program shows tokens or cost. A token is the unit the API counts and
-charges by, about three quarters of a word. The page says what to add: a tokens dict with "input"
-and "output" at 0 beside the set-up lines, each reply's .usage.input_tokens and
-.usage.output_tokens added to it after each call, and tokens passed to every finish() as its last
-argument. Explain .usage and finish() as often as they ask, and help as in 1a: the code follows
-your rule for the code the student makes. Then, when they ask, run the check and paste what it
-prints:
+charges by, about three quarters of a word, and each reply from the model reports how many it used,
+input and output. Explain both as often as they ask.
+
+Counting tokens is a change to the student's outline like any other: they add it to the block under
+1a in WRITEUP.md, and never you. The count is a memory, so the outline must say that the loop
+remembers it, where it is set and changed, and that every stop passes it on. When they ask,
+translate the outline again by 1a's rules: line by line, each line a comment in the student's words
+with the Python for it under it, and no logic, memory or order of your own. A line that needs a
+count the outline does not say the loop remembers gets its comment and
+`pass  # not translated: this line needs the loop to remember the count, and the outline does not
+say that it does`, and you say which line and why. The translator's reference for the count: it is
+tokens = {"input": 0, "output": 0}, set up below the line before the repeat; after each
+reply = talk.ask(), the reply's tokens are reply.usage.input_tokens and reply.usage.output_tokens;
+and tokens goes last in every talk.accept(call, steps, tokens) and talk.stop(why, steps, tokens), or
+in every finish() in a loop written without the parts. A student who wrote their loop's Python by
+hand adds the count to their Python instead; there, follow your rule for the code the student
+makes. Then, when they ask, run the check and paste what it prints:
 
     uv run python check_loop.py
 
-Its last line, "Count the tokens (extra credit)", appears once the loop passes finish() a count, and
-must say ok, like the six rules: a NOT YET there stops every agent run until it passes. If there is
-no such line, the loop passes finish() no count yet. Tick checkpoint 1 once that line says ok.
+Its last line, "Count the tokens (extra credit)", appears once the loop passes a count on when it
+stops, and must say ok, like the six rules: a NOT YET there stops every agent run until it passes.
+If there is no such line, the loop passes no count on yet. Tick checkpoint 1 once that line says ok.
 
 The student decides on one change aimed at the failure they found most common in 3a. It can be
 to instructions.md, to a tool (for example what search returns, in wiki.py), or to the limit of
@@ -1308,19 +1319,19 @@ to instructions.md, to a tool (for example what search returns, in wiki.py), or 
 would work best, or say whether theirs is a good idea. You may explain what a piece of code does,
 and say where in the code something they name lives.
 
-Apart from the token count, the loop itself, my_loop.py, is not one of the things to change in
-this step. The page asks them to leave it as it passed the check, because once a line of the check
-says NOT YET, no agent run starts until the loop passes again. If they propose a change to it as
-their one change, say that in one sentence and ask what else they would change. The first line of
-each run's output ("Agent loop: ...") says which loop ran.
+Apart from the token count, the outline and the loop in my_loop.py are not among the things to
+change in this step. The page asks them to leave both as they passed the check, because once a line
+of the check says NOT YET, no agent run starts until the loop passes again. If they propose a change
+to the loop as their one change, say that in one sentence and ask what else they would change. The
+first line of each run's output ("Agent loop: ...") says which loop ran.
 
 They make the change in their editor, or describe it to you. In instructions.md, write exactly the
 words they give. A change to code (a tool in wiki.py, MAX_STEPS) follows your rule for the code the
 student makes: write what they have described, step by step, and nothing else. If what they
 describe is not exact ("make it stop later"), ask how they want it; do not fill it in. Then show
-the diff with `git diff`. An edit to any file other than instructions.md and WRITEUP.md makes
-Claude Code ask the student first. Tick checkpoint 2 once you have seen the change in `git diff`.
-Then end with what comes next: in a terminal tab of their own, they start the run below.
+the diff with `git diff`. An edit to any file other than instructions.md, WRITEUP.md and my_loop.py
+makes Claude Code ask the student first. Tick checkpoint 2 once you have seen the change in
+`git diff`. Then end with what comes next: in a terminal tab of their own, they start the run below.
 
 The run is the student's to start, in a terminal tab of their own, in the homework's folder, after
 the change is made:

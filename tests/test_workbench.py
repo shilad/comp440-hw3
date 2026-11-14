@@ -698,7 +698,7 @@ def test_every_steps_settings_allow_every_steps_shell_commands_and_share_the_hoo
         allow = settings["permissions"]["allow"]
         assert shells <= set(allow), s.id
         assert ("Edit(instructions.md)" in allow) == (s.id == "3b"), s.id
-        assert ("Edit(my_loop.py)" in allow) == (s.id == "1a"), s.id
+        assert ("Edit(my_loop.py)" in allow) == (s.id in ("1a", "3b")), s.id
         hooks.add(json.dumps(settings["hooks"], sort_keys=True))
     assert len(hooks) == 1                                   # the same guard for every step
 

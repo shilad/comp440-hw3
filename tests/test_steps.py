@@ -52,7 +52,7 @@ EXPECTED = {
     "2b": (2, "2b. Check the evidence yourself", [], LOOKUP, 35),
     "3a": (3, "3a. Sort the failures", [], [], 32),
     "3b": (3, "3b. Make one change", ["runs/part3/after/report.txt"],
-           EVALUATE + CHECK + ["Bash(uv run python check_loop.py)", "Edit(instructions.md)"], 28),
+           EVALUATE + CHECK + ["Bash(uv run python check_loop.py)", "Edit(instructions.md)", "Edit(my_loop.py)"], 28),
     "3c": (3, "3c. Write it up", [], [], 20),
 }
 # Minutes per part (the instructor's "split the difference", morning of Nov 11). Parts 0 to 2,
@@ -130,8 +130,8 @@ TASKS = {
            "that shows it, and say whether the dataset's label is right.",
            "Ask Claude to label the same claims. It gives its labels without seeing yours.",
            "Put Claude's labels in the last column of your table: ask Claude to, or type them in your editor."],
-    "3b": ["Make your loop count tokens, in your editor or by describing it to Claude, then ask Claude to "
-           "run the check until its last line says ok.",
+    "3b": ["Make your loop count tokens: add it to your outline and ask Claude to translate it again (or add "
+           "it to Python you wrote yourself), then ask Claude to run the check until its last line says ok.",
            "Make one change, in your editor or by asking Claude.",
            "In a terminal tab of your own, start the agent's run on your evaluation claims, and let it finish.",
            "In the results viewer, compare the two runs."],
@@ -304,15 +304,26 @@ def test_3b_starts_with_token_counting(a):
     s = a.step("3b")
     brief = flat(s.brief)
     for must in ("The first task is to make the loop count tokens",
-                 "Explain .usage and finish() as often as they ask",
-                 "the code follows your rule for the code the student makes",
+                 "each reply from the model reports how many it used, input and output. Explain both as "
+                 "often as they ask.",
+                 "Counting tokens is a change to the student's outline like any other",
+                 "The count is a memory, so the outline must say that the loop remembers it, where it is set "
+                 "and changed, and that every stop passes it on.",
+                 "translate the outline again by 1a's rules",
+                 "no logic, memory or order of your own",
+                 "reply.usage.input_tokens and reply.usage.output_tokens",
+                 "tokens goes last in every talk.accept(call, steps, tokens) and talk.stop(why, steps, tokens)",
+                 "A student who wrote their loop's Python by hand adds the count to their Python instead",
                  '"Count the tokens (extra credit)"', "Tick checkpoint 1 once that line says ok.",
                  "Tick checkpoint 2 once you have seen the change in `git diff`."):
         assert must in brief, must
     page = flat((REPO / "instructions" / "part3.md").read_text(encoding="utf-8"))
     for must in ("**Words in this step:** A *token* is the unit the Claude API counts text in and charges by",
-                 "add `tokens = {\"input\": 0, \"output\": 0}` to the set-up lines.",
-                 "Pass `tokens` to every `finish(...)` as its last argument.",
+                 "add it to your outline in `WRITEUP.md`, under 1a: the loop remembers how many tokens the "
+                 "model's replies have used, input and output (none yet); each time a reply comes back, it adds "
+                 "that reply's tokens; and every time the loop stops, it passes the count on.",
+                 "and pass `tokens` last in every `talk.accept(...)` and `talk.stop(...)`",
+                 "Apart from the token count, leave your outline and your loop as they passed the check",
                  'Its last line, "Count the tokens (extra credit)", must say `ok`',
                  "It should take about an hour and 20 minutes.",
                  'The agent\'s cost per claim is under "Cost" for `runs/part3/after` in the results viewer, and '
@@ -732,8 +743,8 @@ CODE = [re.compile(x) for x in (
 
 def test_no_brief_and_no_tutor_rule_shows_loop_code(a):
     found = []
-    # 1a's brief holds the translator's reference in the workshop prototype (Nov 13): Claude writes
-    # the Python for the student's outline, so it needs the exact shapes.
+    # 1a's brief holds the translator's reference: Claude writes the Python for the student's
+    # outline, so it needs the exact shapes.
     for where, text in [("tutor", a.tutor)] + [(s.id, s.brief) for s in a.steps if s.id != "1a"]:
         for n, line in enumerate(text.splitlines(), 1):
             for pattern in CODE:
@@ -753,15 +764,17 @@ def test_code_finder_sees_loop_code():
         assert not any(p.search(line) for p in CODE), line
 
 
-def test_only_1a_lets_claude_edit_the_students_loop():
+def test_only_1a_and_3b_let_claude_edit_the_students_loop():
     """The instructor, Nov 11: "i want claude to allow the student to have it generate code, but the
-    structure and ideas should be from the student." Claude may write the loop the student describes
-    in 1a without asking first; no other step's allow list, and not the global one, names my_loop.py,
-    and the files with a finished loop stay closed."""
+    structure and ideas should be from the student." Claude may write the translation of the
+    student's outline without asking first: in 1a, and in 3b for the token count. No other step's
+    allow list, and not the global one, names my_loop.py, and the files with a finished loop stay
+    closed."""
     data = raw()
     named = {s["id"]: [r for r in s.get("allow", []) if "my_loop.py" in r and not r.startswith("Bash(")]
              for s in data["step"]}
     assert named.pop("1a") == ["Edit(my_loop.py)"]
+    assert named.pop("3b") == ["Edit(my_loop.py)"]     # the token count, translated from the outline
     assert not any(named.values()), named
     assert not [r for r in data.get("allow", []) if "my_loop.py" in r]
     assert {"reference_loop.py", "tests/test_loop_check.py"} <= set(data["never_read"])
