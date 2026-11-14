@@ -286,6 +286,13 @@ function counts(s, st, rec, started) {
       if (!c.n) continue;
       rows.push(c.tick === false ? noTick(`${c.n}. ${c.task || c.text}`) : row(c.done, `${c.n}. ${c.task || c.text}`,
         c.slots.length && c.slots.every((x) => x.filled) ? c.slots.map((x) => trim(x.answer, 200)).join(", ") : "", true));
+    } else if (c.slots.length && c.own_task) {
+      // A task whose answer is one block the student writes (1a's outline): the task, then the
+      // block's first lines, or how long it is.
+      const x = c.slots[0], lines = x && x.filled ? x.answer.split("\n").filter((l) => l.trim()) : [];
+      const sub = !lines.length ? "" : lines.length <= 3 ? lines.map((l) => l.trim()).join(" / ")
+        : `Written: ${lines.length} lines, starting "${trim(lines[0], 80)}"`;
+      rows.push(row(c.done, c.task, sub, true));
     } else if (c.slots.length) {
       if (answers && !said) { rows.push(`<p class="answers-note">${codeText(answers)}</p>`); said = true; }
       rows.push(...c.slots.map((x) => row(x.filled, x.question.replace(/^Table: /, "The table: "),

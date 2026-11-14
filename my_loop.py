@@ -1,7 +1,14 @@
-"""Your agent's loop, which you write in step 1a. The six rules it follows are
-on the homework page, under "1a. Write the loop" (also in instructions/part1.md).
+"""Your agent's loop, which you design in step 1a. The homework page says what the
+loop is for, under "1a. Design the loop" (also in instructions/part1.md), and the
+check tells you each rule it must follow when your loop breaks it.
 
-Check it after each rule you write. The check uses a scripted stand-in for the
+You design the loop as an outline in plain words, in WRITEUP.md under 1a. The
+loop below the line that says where it goes is Claude's translation of that
+outline, written with the parts in loop_parts.py: each line of your outline is a
+comment, with about one line of Python for it under it. To change the loop,
+change your outline and ask Claude to translate it again.
+
+Check it after each translation. The check uses a scripted stand-in for the
 model and for Wikipedia, so it needs no key and costs nothing:
 
     uv run python check_loop.py
@@ -12,27 +19,26 @@ runs on this loop and no other: the runs of 1c and later need it to pass.
 
 import anthropic
 
+# The names below include every one the file had before the parts, so that a loop written
+# then still runs.
 from agent import (ACCEPTED, DECLINED, INSTRUCTIONS, MAX_REJECTED, MAX_STEPS, MODEL, NO_ANSWER,
                    OUT_OF_STEPS, RAN_OUT, REJECTED, REJECTED_TOO_OFTEN, REMINDED, REMINDER,
                    TOOLS, answer_problem, clean_answer, finish, run_tool)
+from loop_parts import Conversation
 
-# The six rules:
-#   1. Ask the model.
-#   2. Run its lookups.
-#   3. Send the results back.
-#   4. Check the answer.
-#   5. Enforce the limit.
-#   6. Stop when the model stops.
+# The check's six lines name the rules your loop must follow, and under the first NOT YET line
+# it states that rule in plain words.
 
 
 def run_agent(claim, client=None, max_steps=MAX_STEPS, lookup=run_tool):
-    """Check one claim. Returns what finish() returns."""
+    """Check one claim. Returns what talk.accept() or talk.stop() returns."""
     client = client or anthropic.Anthropic()
     system = INSTRUCTIONS.read_text()
     messages = [{"role": "user", "content": f"Claim: {claim}"}]
     trace, read_so_far = [], []
+    talk = Conversation(claim, client, system, messages, trace, read_so_far, lookup)
     steps = 0          # lookups made so far
-    rejected = 0       # answers the loop has sent back so far
+    rejected = 0       # answers sent back so far
 
     # ---- your loop goes below this line (step 1a) ----
     raise NotImplementedError("The loop is not written yet: see step 1a.")

@@ -56,13 +56,14 @@ Describe Wikidata briefly. Why may it be important to this task?
 
 # Part 1: How the agent works
 
-## 1a. Write the loop
+## 1a. Design the loop
 
-What does your loop send to the model on each turn? Give the line numbers in `my_loop.py`.
+Write your outline of the loop in the block under 1a in `WRITEUP.md`: what it remembers, what it repeats, and every way it stops.
 
->
+```
+```
 
-What are the ways your loop can end? Give the line number of each.
+List each thing your loop remembers from one turn to the next, and say what would go wrong without it.
 
 >
 

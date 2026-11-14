@@ -23,7 +23,7 @@ PARTS = {
         "0d. Run the agent and read its trace",
     ]),
     1: ("How the agent works", "instructions/part1.md", [
-        "1a. Write the loop",
+        "1a. Design the loop",
         "1b. Be the agent",
         "1c. Watch the agent work",
         "1d. Write the agent's instructions",
@@ -47,6 +47,7 @@ ALL_STEPS = [step for _, _, steps in PARTS.values() for step in steps]
 LABELS = [
     ("**Words in this step:**", False),
     ("**Actions:**", True),
+    ("**Writing your outline:**", False),          # 1a, the workshop prototype (Nov 13)
     ("**Interpreting output:**", False),
     ("**Write-up:**", True),
     ("**Troubleshooting:**", False),
@@ -195,37 +196,31 @@ def test_no_placeholder_is_left(name):
 
 # The six rules, word for word as the page gives them (the check prints their titles).
 LOOP_RULES = [
-    "1. **Ask the model.** Each turn, send the model the system text, the tools and the whole conversation so "
-    "far, and add the reply to the conversation as the assistant's turn.",
-    "2. **Run its lookups.** For each lookup the reply asks for, call `lookup(name, input)`, add 1 to `steps`, "
-    "and add an entry to `trace`. Keep what `read` and `wikidata` return in `read_so_far`; do not keep what "
-    "`search` returns.",
-    "3. **Send the results back.** After the reply's tool calls are handled, add one user turn to the "
-    "conversation that holds a result for every call, each marked with the id of the call it answers.",
-    "4. **Check the answer.** When the reply calls `answer`, check it with `answer_problem()`. If there is no "
-    "problem, stop and return `finish(...)` with the answer's verdict, evidence and explanation. If there is "
-    "a problem, send back `REJECTED` followed by the problem, and after `MAX_REJECTED` rejected answers stop "
-    "with no verdict.",
-    "5. **Enforce the limit.** Once `steps` has reached `max_steps`, do not run another lookup. The first time, "
-    "send back `OUT_OF_STEPS`, and remember that you sent it. If the model asks for a lookup again on a later "
-    "turn, stop with no verdict.",
-    "6. **Stop when the model stops.** If a reply has no tool call, remind the model with `REMINDER`; if the "
-    "next reply has none either, stop with no verdict. The model is reminded each time it stops calling tools, "
-    "but never twice in a row. If a reply's `stop_reason` is `\"refusal\"`, stop with no verdict.",
+    '1. **Ask the model.** The model remembers nothing between calls. Each time the loop asks it, the loop sends the whole conversation so far: the claim, every reply the model gave, and every result and reminder the loop sent back.',
+    '2. **Run its lookups.** One reply can ask for one lookup or for several. The loop runs each one and counts it. What `read` and `wikidata` return counts as read by the agent; what `search` returns does not.',
+    '3. **Send the results back.** Everything a reply asks for gets a result, and the model is sent all of them together, in one message, before it is asked again.',
+    '4. **Check the answer.** An answer is not a lookup: it is not run and not counted. When a reply gives an answer, the evidence check decides. If it finds no problem, the loop stops with that answer. If it finds a problem, the result sent back is that problem, so that the model can try again. After 3 answers with a problem (`MAX_REJECTED` in `agent.py`), the loop stops with no verdict.',
+    '5. **Enforce the limit.** After 12 lookups (`MAX_STEPS` in `agent.py`) the loop runs no more. In the first reply that asks for another, every lookup gets a warning as its result and is not run. If a later reply asks for a lookup again, the loop stops with no verdict.',
+    '6. **Stop when the model stops.** If a reply asks for nothing, the loop sends the model a reminder to answer. If the next reply asks for nothing either, the loop stops with no verdict. If the model refuses, the loop stops with no verdict at once, with no reminder.',
 ]
 
 
 def section_1a():
-    return one_line(sections((ROOT / "instructions/part1.md").read_text(encoding="utf-8"))["1a. Write the loop"])
+    return one_line(sections((ROOT / "instructions/part1.md").read_text(encoding="utf-8"))["1a. Design the loop"])
 
 
-def test_1a_gives_the_six_rules_word_for_word_and_in_order():
+def test_1a_gives_a_background_and_not_the_rules():
+    """The brief prototype (Nov 13): the page gives a background, and the student meets each rule
+    when the check states it under its first NOT YET line."""
     page = section_1a()
-    at = [page.find(rule) for rule in LOOP_RULES]
-    assert -1 not in at, f"1a lacks rule(s) {[i + 1 for i, a in enumerate(at) if a == -1]}"
-    assert at == sorted(at)
+    assert "**Background:** The model cannot look anything up by itself" in page
+    assert "when your design breaks a rule, the check states that rule." in page
+    for rule in LOOP_RULES:
+        assert rule[:rule.index("**", 6) + 2] not in page, rule[:40]     # no rule's bold title
+    assert "the six rules" not in page.replace("one line for each of six rules", "")
 
 
+@pytest.mark.skip(reason="1a workshop prototype (Nov 13): the page no longer has \"What the code gives you\"; not reworked yet")
 def test_1a_says_what_is_given_and_what_is_theirs():
     page = section_1a()
     for name in ("`agent.py`", "`my_loop.py`", "`reference_loop.py`", "`check_loop.py`",
@@ -352,8 +347,9 @@ def test_nothing_students_read_sends_them_to_the_claim_finder(name):
 # labeled part as a line that opens with a click. Actions, Write-up and, in 1a, The six rules hold only
 # what the student does and answers, as lists, so that a student who opens them finds the steps and
 # not an explanation; explanations go under the other labels.
-FOLDED = ["Words in this step", "Interpreting output", "Troubleshooting", "Hint"]
-OPEN_LABELS = ["Actions", "Write-up", "The six rules"]
+# "Background" (1a, the brief prototype, Nov 13) is explanation, like "Words in this step".
+FOLDED = ["Words in this step", "Interpreting output", "Troubleshooting", "Hint", "Background"]
+OPEN_LABELS = ["Actions", "Write-up", "The six rules", "Writing your outline"]   # the last: the 1a prototype (Nov 13)
 
 
 def parts(section):

@@ -82,7 +82,7 @@ If you are curious, here are additional details.
 - The homework page lists every step, 0a to 3c, and ticks each one when it is done. Part 3 is extra
   credit. For each step it shows a short summary and its tasks. Below the tasks, the step's instructions,
   from the pages in `instructions/`, open with a click, part by part: Words in this step, Actions,
-  Interpreting output, Write-up, Troubleshooting and Hint (and in 1a, The six rules). Open Actions for
+  Interpreting output, Write-up, Troubleshooting and Hint (and in 1a, Background). Open Actions for
   the exact commands.
 - Claude Code is your tutor and lab assistant for each step. For every step after the first, the homework
   page gives two choices, each with a **Copy** button: a prompt to paste into the Claude session you

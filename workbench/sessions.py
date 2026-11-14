@@ -413,7 +413,7 @@ class StepSession:
         marks = {r.get("n"): r["t"] for r in pages if r["kind"] in ("checkpoint", "milestone")}
         cps, done_at, covered = [], [], set()
         for i, c in enumerate(checkpoints(s), 1):
-            item = {"n": i, "text": c.text, "task": c.task or c.text, "auto": bool(c.files or c.slots), "files": [], "slots": [],
+            item = {"n": i, "text": c.text, "task": c.task or c.text, "own_task": bool(c.task), "auto": bool(c.files or c.slots), "files": [], "slots": [],
                     "tick": c.tick or bool(c.files or c.slots)}
             t = None
             if c.files or c.slots:

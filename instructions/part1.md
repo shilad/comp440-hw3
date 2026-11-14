@@ -6,85 +6,76 @@ evaluation claims. It should take about 3 hours.
 
 Back to the [assignment page](../README.md).
 
-## 1a. Write the loop
+## 1a. Design the loop
 
-In this step you write the agent loop yourself. The loop asks the model for lookups, runs the lookups it
-chooses, sends back what they return, and stops.
+In this step you design the agent's loop. You write an outline of its logic in plain words, and Claude
+translates your outline into Python. The loop asks the model for lookups, runs the lookups it chooses,
+sends back what they return, and stops.
 
 **Words in this step:** A *tool* is one of the four things the agent can call: `search`, `read`,
-`wikidata` and `answer`. A *lookup* is a call to one of the first three. A *tool_use block* is the part
-of the model's reply that asks for a tool, and a *tool_result* is what your loop sends back for one tool
-call. *The reference loop*, in `reference_loop.py`, is a loop I wrote. Your copy's agent uses it only in
-Part 0, before your loop has passed the check; from this step on it runs only on your loop. Claude
-cannot open it; to talk about it, paste its lines into the chat. *The check*, `check_loop.py`, tests the
-loop in `my_loop.py` against the six rules, with a stand-in for the model and for Wikipedia. It needs no
-key and no network, takes a few seconds, and costs nothing.
+`wikidata` and `answer`. A *lookup* is a call to one of the first three. A *reply* is what the model sends
+back each time it is asked; one reply can hold text, tool calls, or both. A *result* is what the loop
+sends the model for one tool call. *The parts*, in `loop_parts.py`, are the pieces the translation of
+your outline is built from: each does one mechanical job, such as the exact call to the model or the
+shape of a result. *The reference loop*, in `reference_loop.py`, is a loop I wrote. Your copy's agent
+uses it only in Part 0, before your loop has passed the check; from this step on it runs only on your
+loop. Claude cannot open it; to talk about it, paste its lines into the chat. *The check*,
+`check_loop.py`, runs the loop in `my_loop.py` in fifteen made-up cases, with a stand-in for the model
+and for Wikipedia, and prints one line for each of six rules. It needs no key and no network,
+takes a few seconds, and costs nothing.
 
 **Actions:**
 
 1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
    have open, or start a new session with its command (type `/exit` first if another session is
    open in that terminal).
-2. Read `agent.py` with Claude: the four tools, the evidence check and `finish()`.
-3. In `my_loop.py`, write the loop below the line that says where it goes, one rule at a time: in your
-   editor, or by describing each part to Claude, which then writes the code you describe. Remember,
-   Claude can help you!
-4. After each rule, run the check (ask Claude, or run `uv run python check_loop.py` in a terminal tab of
-   your own), and fix the first `NOT YET` line.
-5. When every rule passes, open `reference_loop.py` in your editor and compare it with your loop.
-   Don't open it before then: it shows you a finished loop before you have written your own.
-6. Type your answers to the three questions in `WRITEUP.md`, in your editor, under 1a.
+2. Read the Background. It says what the loop is for. It does not say how to arrange it: that is your
+   job.
+3. In your editor, write your outline in the block under 1a in `WRITEUP.md`.
+4. Ask Claude to translate your outline. Claude writes each line of your outline as a comment in
+   `my_loop.py`, with the Python for that line under it, and adds nothing of its own.
+5. Ask Claude to run the check. For the first `NOT YET` line, work out what your outline does in that
+   made-up check; Claude coaches you. Then change your outline, not the Python, and ask Claude to
+   translate it again.
+6. When every rule passes, open `reference_loop.py` in your editor and compare it with your loop. Don't
+   open it before then: it shows you a finished loop before you have designed your own.
+7. Type your answers to the two other questions in `WRITEUP.md`, in your editor, under 1a.
 
-**The six rules:**
+**Background:** The model cannot look anything up by itself, and it remembers nothing between calls:
+each time it is asked, it sees only what it is sent. All it can do is reply. A reply can ask for one or
+more lookups (`search`, `read`, `wikidata`), give an `answer`, or ask for nothing. The loop is the
+program around the model that makes it an agent. It asks the model, does what the reply asks for, tells
+the model what happened, and asks again, until it has an answer it can accept or a reason to give up.
 
-1. **Ask the model.** Each turn, send the model the system text, the tools and the whole conversation so
-   far, and add the reply to the conversation as the assistant's turn.
-2. **Run its lookups.** For each lookup the reply asks for, call `lookup(name, input)`, add 1 to `steps`,
-   and add an entry to `trace`. Keep what `read` and `wikidata` return in `read_so_far`; do not keep what
-   `search` returns.
-3. **Send the results back.** After the reply's tool calls are handled, add one user turn to the
-   conversation that holds a result for every call, each marked with the id of the call it answers.
-4. **Check the answer.** When the reply calls `answer`, check it with `answer_problem()`. If there is no
-   problem, stop and return `finish(...)` with the answer's verdict, evidence and explanation. If there is
-   a problem, send back `REJECTED` followed by the problem, and after `MAX_REJECTED` rejected answers stop
-   with no verdict.
-5. **Enforce the limit.** Once `steps` has reached `max_steps`, do not run another lookup. The first time,
-   send back `OUT_OF_STEPS`, and remember that you sent it. If the model asks for a lookup again on a later
-   turn, stop with no verdict.
-6. **Stop when the model stops.** If a reply has no tool call, remind the model with `REMINDER`; if the
-   next reply has none either, stop with no verdict. The model is reminded each time it stops calling tools,
-   but never twice in a row. If a reply's `stop_reason` is `"refusal"`, stop with no verdict.
+Two limits are set for you: the agent makes at most 12 lookups for a claim, and at most 3 of its answers
+may fail the evidence check. The evidence check looks at an answer and says what is wrong with it, or
+that nothing is: every sentence it quotes must be in something the agent read.
 
-**What the code gives you** (the details the rules and the check rely on):
+You will not know every rule when you start. The check runs your loop in made-up cases, and when your
+design breaks a rule, the check states that rule. Meeting the rules this way is how this step is meant
+to go.
 
-- The call is `client.messages.create(model=MODEL, max_tokens=16000, system=system, tools=TOOLS,
-  messages=messages)`.
-- The reply has `.content` (a list of blocks) and `.stop_reason`. A tool call is a block with
-  `.type == "tool_use"`, `.name`, `.input` and `.id`. It is an object, not a dictionary, so read its
-  parts with a dot, as in `call.name`. One reply can hold several tool calls, and each needs a result.
-- A turn of the conversation is a dictionary with a `"role"` (`"user"` or `"assistant"`) and a
-  `"content"`, a string or a list, like the first one in `my_loop.py`. The assistant's content is the
-  reply's `.content`, as it came back.
-- A result sent back is `{"type": "tool_result", "tool_use_id": call.id, "content": result}`. Every tool
-  call gets one in the next user turn: what a lookup returned, `REJECTED` followed by the problem, or
-  `OUT_OF_STEPS`.
-- In rule 5, "the first time" is the first reply that asks for a lookup when `steps` has already reached
-  `max_steps`. Every lookup in that reply gets `OUT_OF_STEPS.format(n=max_steps)` and is not run. A
-  variable that records that `OUT_OF_STEPS` was sent is how your loop knows to stop on a later turn.
-- A trace entry is `{"tool": name, "input": input, "result": result}`. An accepted answer's result is
-  `ACCEPTED`. A reminder is recorded as tool `"(reminder)"`, input `{}`, result `REMINDED`, and goes to
-  the model as a user turn holding the string itself, `{"role": "user", "content": REMINDER}`, not as a
-  `tool_result`, since the reply it follows has no tool call.
-- Every tool call gets one entry in `trace`, with the result it was given. The results viewer numbers
-  these entries, so a loop that records only lookups shows wrong traces. The one exception is a lookup
-  asked for after `OUT_OF_STEPS` was sent: the loop stops there, and that lookup needs no entry.
-- Clean the answer first: `answer = clean_answer(call.input)`.
-- `finish(claim, verdict, evidence, explanation, trace, steps)` makes what the loop returns.
-  "Stop with no verdict" means `return finish(claim, None, [], why, trace, steps)`, where `why` is
-  `REJECTED_TOO_OFTEN.format(n=rejected)`, `RAN_OUT`, `NO_ANSWER` or `DECLINED`. Stopping always means
-  `return`: a `break` leaves only the innermost loop.
-- `REJECTED`, `OUT_OF_STEPS`, `REMINDER` and the other sentences are in `agent.py`. `OUT_OF_STEPS` and
-  `REJECTED_TOO_OFTEN` have a `{n}` to fill in with `.format(n=...)`.
+**Writing your outline:**
+
+- Write what the loop does, in order, one thing on each line. Indent what happens inside a repeat or an
+  if.
+- Say what the loop remembers from one turn to the next, and where each thing it remembers is set and
+  changed.
+- Say every way the loop stops, and what it stops with: an answer, or no verdict.
+- Write in plain words. You do not need the code's names. Claude translates each line of your outline
+  into one or two lines of Python, with the parts in `loop_parts.py`, which take care of the exact call
+  to the model, the format of the conversation and of each result, and the trace. So you can read the
+  translation line by line and see that Claude added nothing.
+- For example, this is an outline of a number-guessing game, to show the style:
+
+  ```
+  Remember: the secret number, and how many guesses the player has made (none yet).
+  Repeat:
+      Ask the player for a guess, and count it.
+      If the guess is the secret number: say "right", and stop.
+      If the player has made 7 guesses: say what the number was, and stop.
+      Otherwise: say "higher" or "lower".
+  ```
 
 **Interpreting output:** Claude runs this command, or you run it yourself:
 
@@ -100,37 +91,45 @@ partway through starts like this (the lines for rules 5 and 6 are left out here)
 ok         1. Ask the model
 ok         2. Run its lookups
 ok         3. Send the results back
-NOT YET    4. Check the answer: the model's second reply gave an answer that quotes the page it had read, and your loop called lookup() for it.
+NOT YET    4. Check the answer: the model's second reply gave an answer that quotes the page it had read, and your loop ran it as a lookup.
 ```
 
-After the six lines, the check shows what your loop printed (with `print(...)`) during the made-up check
-behind the first `NOT YET` line. When every rule passes, it ends with "Every rule passes. From now on
-your copy's agent runs on your loop (my_loop.py)." and saves `runs/part1/loop-check.txt`. From then on,
-`check.py` and `evaluate.py` start their output with `Agent loop: yours (my_loop.py)`.
+Under the six lines, the check states the rule behind the first `NOT YET` line, in plain words, after
+"The rule". That is how you meet each rule: when your design breaks it. Then it shows what your loop
+printed (with `print(...)`) during the made-up check behind that line. When every rule passes, it ends
+with "Every rule passes. From now on your copy's agent runs on your loop (my_loop.py)." and saves
+`runs/part1/loop-check.txt`. From then on, `check.py` and `evaluate.py` start their output with
+`Agent loop: yours (my_loop.py)`.
+
+In `my_loop.py`, each line of your outline is a comment, and the one or two lines of Python under it
+are Claude's translation of that line. If the Python does something your outline does not say, tell
+Claude: that is a mistake in the translation, not in your outline.
 
 **Write-up:** Answer these questions in `WRITEUP.md`, under 1a:
 
-- What does your loop send to the model on each turn? Give the line numbers in `my_loop.py`.
-- What are the ways your loop can end? Give the line number of each.
+- Write your outline of the loop in the block under 1a in `WRITEUP.md`: what it remembers, what it repeats, and every way it stops.
+- List each thing your loop remembers from one turn to the next, and say what would go wrong without it.
 - Now open `reference_loop.py` and compare it with your loop. Describe one difference in implementation and the resulting effects on agent behavior.
 
 **Troubleshooting:**
 
-- The check reports an error in your code. Its line names the error and the line of `my_loop.py`; ask
-  Claude what the error means.
-- The check says your loop did not stop. It stops a loop that runs for more than a few seconds; read
-  that rule again.
-- You can't finish your loop. Ask Claude to explain the first `NOT YET` line and to help you with that
-  rule, then run the check again. If you are still stuck, post the `NOT YET` line in `#comp440-f26` on
-  Slack.
-- You changed `my_loop.py` after it passed. Run the check again: while a rule is `NOT YET`, `check.py`
-  and `evaluate.py` run no agent and say so, and they use your loop again once every rule passes.
+- The check reports an error in the Python. Tell Claude: the translation is Claude's to fix, unless your
+  outline says to do something that cannot be done.
+- The check says your loop did not stop. It stops a loop that runs for more than a few seconds; read the
+  rule it states, and follow your outline through the made-up check.
+- You can't get a rule to pass. Ask Claude to go through the first `NOT YET` line with you, change your
+  outline, and ask for a new translation. If you are still stuck, post the `NOT YET` line in
+  `#comp440-f26` on Slack.
+- You started this step before it changed, and already wrote Python in `my_loop.py`. You may finish it
+  that way. Write the outline of your finished loop in `WRITEUP.md` all the same.
+- You changed your outline or `my_loop.py` after it passed. Ask Claude to translate and run the check
+  again: while a rule is `NOT YET`, `check.py` and `evaluate.py` run no agent and say so, and they use
+  your loop again once every rule passes.
 
-**Hint:** Write rules 1 to 3 first, then run the check. Claude explains the API, the tools and Python,
-reads `my_loop.py` with you, and says what is wrong and why when the check fails. It writes the code for
-a part once you have said how that part works, step by step. It will not write a part you have not
-described, because the point is that the structure and the ideas are yours and you know what each part
-does. The code says "step" for a lookup: `MAX_STEPS` is the limit of 12 lookups.
+**Hint:** Start with the plainest case: the model asks for one lookup, then gives an answer that passes.
+Outline that first. Then ask what your outline does when the model does something else: asks for two
+things at once, quotes something it never read, keeps asking for lookups, asks for nothing. You may also
+write the Python yourself from your outline; the outline is still what I read.
 
 ## 1b. Be the agent
 
