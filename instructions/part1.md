@@ -1,6 +1,6 @@
 # COMP 440 HW3 Part 1: How the agent works
 
-In this part you build and study the agent. You write its loop, check one claim yourself, watch it work
+In this part you build and study the agent. You design its loop, check one claim yourself, watch it work
 on your 12 development claims, write its instructions, and then start the full run on your 100
 evaluation claims. It should take about 3 hours.
 
@@ -14,31 +14,22 @@ sends back what they return, and stops.
 
 **Words in this step:** A *tool* is one of the four things the agent can call: `search`, `read`,
 `wikidata` and `answer`. A *lookup* is a call to one of the first three. A *reply* is what the model sends
-back each time it is asked; one reply can hold text, tool calls, or both. A *result* is what the loop
-sends the model for one tool call. *The parts*, in `loop_parts.py`, are the pieces the translation of
-your outline is built from: each does one mechanical job, such as the exact call to the model or the
-shape of a result. *The reference loop*, in `reference_loop.py`, is a loop I wrote. Your copy's agent
-uses it only in Part 0, before your loop has passed the check; from this step on it runs only on your
-loop. Claude cannot open it; to talk about it, paste its lines into the chat. *The check*,
-`check_loop.py`, runs the loop in `my_loop.py` in fifteen made-up cases, with a stand-in for the model
-and for Wikipedia, and prints one line for each of six rules. It needs no key and no network,
-takes a few seconds, and costs nothing.
+back each time it is asked. A *result* is what the loop sends the model for one tool call. *The check*,
+`check_loop.py`, runs your loop in fifteen made-up cases, with a stand-in for the model and for
+Wikipedia, at no cost. *The reference loop*, `reference_loop.py`, is a loop I wrote that the agent uses
+only in Part 0; do not open it before your loop passes the check.
 
 **Actions:**
 
 1. Start this step with Claude: paste its prompt from the homework page into the Claude session you
    have open, or start a new session with its command (type `/exit` first if another session is
    open in that terminal).
-2. Read the Background. It says what the loop is for. It does not say how to arrange it: that is your
-   job.
+2. Read the Background. It does not say how to arrange the loop: that is your job.
 3. In your editor, write your outline in the block under 1a in `WRITEUP.md`.
-4. Ask Claude to translate your outline. Claude writes each line of your outline as a comment in
-   `my_loop.py`, with the Python for that line under it, and adds nothing of its own.
+4. Ask Claude to translate your outline into `my_loop.py`. Claude adds nothing of its own.
 5. Ask Claude to run the check. For the first `NOT YET` line, work out what your outline does in that
-   made-up check; Claude coaches you. Then change your outline, not the Python, and ask Claude to
-   translate it again.
-6. When every rule passes, open `reference_loop.py` in your editor and compare it with your loop. Don't
-   open it before then: it shows you a finished loop before you have designed your own.
+   made-up case; Claude coaches you. Then change your outline, not the Python.
+6. When every rule passes, open `reference_loop.py` in your editor and compare it with your loop.
 7. Type your answers to the two other questions in `WRITEUP.md`, in your editor, under 1a.
 
 **Background:** The model cannot look anything up by itself, and it remembers nothing between calls:
@@ -62,10 +53,8 @@ to go.
 - Say what the loop remembers from one turn to the next, and where each thing it remembers is set and
   changed.
 - Say every way the loop stops, and what it stops with: an answer, or no verdict.
-- Write in plain words. You do not need the code's names. Claude translates each line of your outline
-  into one or two lines of Python, with the parts in `loop_parts.py`, which take care of the exact call
-  to the model, the format of the conversation and of each result, and the trace. So you can read the
-  translation line by line and see that Claude added nothing.
+- Write in plain words. Claude translates each line into one or two lines of Python, with the parts in
+  `loop_parts.py`, which do the mechanical work.
 - For example, this is an outline of a number-guessing game, to show the style:
 
   ```
@@ -83,9 +72,9 @@ to go.
 uv run python check_loop.py
 ```
 
-It prints `ok` or `NOT YET` for each rule. A `NOT YET` line says what the stand-in model did and what
-your loop did, not how to fix it; before you start, all six say "the loop is not written yet". A run
-partway through starts like this (the lines for rules 5 and 6 are left out here):
+It prints `ok` or `NOT YET` for each of six rules, and under them, after "The rule", it states the rule
+behind the first `NOT YET` line. A `NOT YET` line says what the stand-in model did and what your loop
+did, as in this run partway through:
 
 ```
 ok         1. Ask the model
@@ -94,42 +83,29 @@ ok         3. Send the results back
 NOT YET    4. Check the answer: the model's second reply gave an answer that quotes the page it had read, and your loop ran it as a lookup.
 ```
 
-Under the six lines, the check states the rule behind the first `NOT YET` line, in plain words, after
-"The rule". That is how you meet each rule: when your design breaks it. Then it shows what your loop
-printed (with `print(...)`) during the made-up check behind that line. When every rule passes, it ends
-with "Every rule passes. From now on your copy's agent runs on your loop (my_loop.py)." and saves
-`runs/part1/loop-check.txt`. From then on, `check.py` and `evaluate.py` start their output with
-`Agent loop: yours (my_loop.py)`.
-
-In `my_loop.py`, each line of your outline is a comment, and the one or two lines of Python under it
-are Claude's translation of that line. If the Python does something your outline does not say, tell
-Claude: that is a mistake in the translation, not in your outline.
+When every rule passes, the check saves `runs/part1/loop-check.txt`, and from then on your copy's agent
+runs on your loop. In `my_loop.py`, each line of your outline is a comment, with Claude's Python for it
+under it.
 
 **Write-up:** Answer these questions in `WRITEUP.md`, under 1a:
 
-- Write your outline of the loop in the block under 1a in `WRITEUP.md`: what it remembers, what it repeats, and every way it stops.
+- Write your outline of the loop in the code block: what it remembers, what it repeats, and every way it stops.
 - List each thing your loop remembers from one turn to the next, and say what would go wrong without it.
 - Now open `reference_loop.py` and compare it with your loop. Describe one difference in implementation and the resulting effects on agent behavior.
 
 **Troubleshooting:**
 
-- The check reports an error in the Python. Tell Claude: the translation is Claude's to fix, unless your
-  outline says to do something that cannot be done.
-- The check says your loop did not stop. It stops a loop that runs for more than a few seconds; read the
-  rule it states, and follow your outline through the made-up check.
-- You can't get a rule to pass. Ask Claude to go through the first `NOT YET` line with you, change your
-  outline, and ask for a new translation. If you are still stuck, post the `NOT YET` line in
-  `#comp440-f26` on Slack.
-- You started this step before it changed, and already wrote Python in `my_loop.py`. You may finish it
-  that way. Write the outline of your finished loop in `WRITEUP.md` all the same.
-- You changed your outline or `my_loop.py` after it passed. Ask Claude to translate and run the check
-  again: while a rule is `NOT YET`, `check.py` and `evaluate.py` run no agent and say so, and they use
-  your loop again once every rule passes.
+- The Python does something your outline does not say, or the check reports an error in it. Tell Claude:
+  the translation is Claude's to fix.
+- You can't get a rule to pass. Ask Claude to go through the first `NOT YET` line with you; if you are
+  still stuck, post that line in `#comp440-f26` on Slack.
+- You wrote Python in `my_loop.py` before this step changed. You may finish it that way, and write the
+  outline of your finished loop in `WRITEUP.md` all the same.
 
 **Hint:** Start with the plainest case: the model asks for one lookup, then gives an answer that passes.
-Outline that first. Then ask what your outline does when the model does something else: asks for two
-things at once, quotes something it never read, keeps asking for lookups, asks for nothing. You may also
-write the Python yourself from your outline; the outline is still what I read.
+Then ask what your outline does when the model does something else: asks for two things at once, quotes
+something it never read, keeps asking for lookups, asks for nothing. You may also write the Python
+yourself; the outline is still what I read.
 
 ## 1b. Be the agent
 

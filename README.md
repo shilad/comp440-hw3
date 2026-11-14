@@ -82,8 +82,8 @@ If you are curious, here are additional details.
 - The homework page lists every step, 0a to 3c, and ticks each one when it is done. Part 3 is extra
   credit. For each step it shows a short summary and its tasks. Below the tasks, the step's instructions,
   from the pages in `instructions/`, open with a click, part by part: Words in this step, Actions,
-  Interpreting output, Write-up, Troubleshooting and Hint (and in 1a, Background). Open Actions for
-  the exact commands.
+  Interpreting output, Write-up, Troubleshooting and Hint (and in 1a, Background and Writing your
+  outline). Open Actions for the exact commands.
 - Claude Code is your tutor and lab assistant for each step. For every step after the first, the homework
   page gives two choices, each with a **Copy** button: a prompt to paste into the Claude session you
   already have open, or a command to paste into a terminal tab in the homework's folder to start a new
@@ -95,7 +95,8 @@ If you are curious, here are additional details.
   paragraph put a line with just `>` between the two.
 - Claude runs commands for you, explains the code, the tools, Wikipedia's API and the scores as often as
   you ask, and pastes a program's output into `WRITEUP.md` where a question asks for it. In step 1a it
-  writes the code of your loop as you describe it, but the structure and the ideas must be yours.
+  translates your outline of the loop into Python and coaches you, but the structure and the ideas must
+  be yours.
 - The results viewer, **Results** at the top of the homework page, is where you read your runs: each
   run's accuracy, lookups and time, each claim's verdicts from all three versions, the agent's trace one
   entry at a time, and two runs side by side.
@@ -114,7 +115,7 @@ If you are curious, here are additional details.
 | Part | What you do | Weight |
 |---|---|---|
 | [Part 0: Set up and check one claim](instructions/part0.md) | Get your copy running, then check one claim three ways: with an LLM alone, with one Wikipedia search, and with the agent | 15% |
-| [Part 1: How the agent works](instructions/part1.md) | Write the agent's loop, check one claim yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 35% |
+| [Part 1: How the agent works](instructions/part1.md) | Design the agent's loop, check one claim yourself with its tools, watch it work, write its instructions, and start the full run while you predict how it will do | 35% |
 | [Part 2: The agent against the baselines](instructions/part2.md) | Compare accuracy by how many articles a claim needs, and check the agent's evidence yourself | 50% |
 | [Part 3 (extra credit): Why the agent fails, and one change](instructions/part3.md) | Sort the agent's failures on your claims, make one change, and write up what you found | Extra credit |
 

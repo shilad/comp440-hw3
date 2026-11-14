@@ -58,7 +58,7 @@ Describe Wikidata briefly. Why may it be important to this task?
 
 ## 1a. Design the loop
 
-Write your outline of the loop in the block under 1a in `WRITEUP.md`: what it remembers, what it repeats, and every way it stops.
+Write your outline of the loop in the code block: what it remembers, what it repeats, and every way it stops.
 
 ```
 ```

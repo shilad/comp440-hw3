@@ -220,12 +220,24 @@ def test_1a_gives_a_background_and_not_the_rules():
     assert "the six rules" not in page.replace("one line for each of six rules", "")
 
 
-@pytest.mark.skip(reason="1a workshop prototype (Nov 13): the page no longer has \"What the code gives you\"; not reworked yet")
-def test_1a_says_what_is_given_and_what_is_theirs():
+def test_1a_says_what_the_page_gives_and_what_is_the_students():
+    """The new 1a (Nov 13): the page names the files and the command, says the arrangement of the
+    loop is the student's, that Claude translates it and adds nothing, and that the student changes
+    the outline, not the Python."""
     page = section_1a()
-    for name in ("`agent.py`", "`my_loop.py`", "`reference_loop.py`", "`check_loop.py`",
+    for name in ("`my_loop.py`", "`loop_parts.py`", "`reference_loop.py`", "`check_loop.py`", "`WRITEUP.md`",
                  "uv run python check_loop.py", "runs/part1/loop-check.txt"):
         assert name in page, f"1a doesn't name {name}"
+    for must in ("It does not say how to arrange the loop: that is your job.",
+                 "In your editor, write your outline in the block under 1a in `WRITEUP.md`.",
+                 "Ask Claude to translate your outline into `my_loop.py`. Claude adds nothing of its own.",
+                 "Then change your outline, not the Python.",
+                 "Say what the loop remembers from one turn to the next",
+                 "Say every way the loop stops, and what it stops with: an answer, or no verdict.",
+                 "each line of your outline is a comment, with Claude's Python for it under it.",
+                 "do not open it before your loop passes the check.",
+                 "Tell Claude: the translation is Claude's to fix."):
+        assert must in page, must
     # No way to keep the reference loop (instructor, Nov 11), anywhere a student reads.
     for name in OWNED:
         text = one_line((ROOT / name).read_text(encoding="utf-8"))

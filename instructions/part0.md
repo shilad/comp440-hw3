@@ -168,7 +168,7 @@ uv run python check.py --method agent --out runs/part0 'The composer of "Persian
 ```
 
 The first line names the loop: `Agent loop: the reference loop (reference_loop.py)`, a loop I wrote (you
-write your own in Part 1). Each numbered entry
+design your own in Part 1). Each numbered entry
 is one tool call (`search`, `read`, `wikidata` or `answer`): what it asked for, then a short version of
 what came back. Then come the verdict, the evidence, the explanation, and the line of lookups and
 time. The entry numbers count answers too, but the Lookups count does not, so it can be smaller

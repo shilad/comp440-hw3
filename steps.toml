@@ -538,7 +538,7 @@ quoting the output.
 The agent chooses its own lookups, one at a time, up to the limit of 12 lookups. (How and when
 its loop ends is a question for step 1a; do not list the ways here.) The output's first line is
 "Agent loop: the reference loop (reference_loop.py)": in Part 0 the agent always runs on the
-reference loop, and the student writes their own loop in step 1a. Explain that in one sentence if
+reference loop, and the student designs their own loop in step 1a. Explain that in one sentence if
 they ask. Then the output lists each lookup with the start of what came back (cut to 160
 characters), then the verdict, the evidence, the explanation, and one line of lookups and
 time.
@@ -702,8 +702,8 @@ When the student asks, read the block and write the loop in my_loop.py below the
   wikidata find as read by the agent. Counting it is steps += 1.
 - "Check the answer" is problem = talk.problem_with(call): None if it passes, or else the sentence
   to send back about its problem.
-- "Give a call this result" is talk.give(call, result); it also records the trace entry. "Send the
-  results" is talk.send_results(). "Remind the model" is talk.remind().
+- "Give a call this result" is talk.give(call, result). "Send the results" is talk.send_results().
+  "Remind the model" is talk.remind(). The parts record every trace entry themselves: never write one.
 - "Stop with the answer" is return talk.accept(call, steps). "Stop with no verdict" is
   return talk.stop(why, steps), where why fits the reason: REJECTED_TOO_OFTEN.format(n=rejected),
   RAN_OUT, NO_ANSWER or DECLINED. Stopping is always return: a break leaves only the innermost loop.

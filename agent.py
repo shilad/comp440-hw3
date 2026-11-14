@@ -7,12 +7,13 @@ sends back and records, and finish(), which every loop returns.
 The loop itself is in another file. Each turn it sends the model the
 conversation so far, runs the lookups the model asked for, and adds what they
 returned to the conversation, until the model gives an answer that passes the
-evidence check or a limit ends it first. You write it in my_loop.py, in step
-1a. In Part 0, before your loop has ever passed the check (uv run python
-check_loop.py), the agent uses the reference loop in reference_loop.py. Once
-your loop has passed, the agent runs on your loop and no other: if a later
-check finds a rule broken, no agent run starts until your loop passes again.
-run_agent(), at the bottom of this file, decides.
+evidence check or a limit ends it first. You design it in step 1a, as an
+outline that Claude translates into my_loop.py. In Part 0, before your loop
+has ever passed the check (uv run python check_loop.py), the agent uses the
+reference loop in reference_loop.py. Once your loop has passed, the agent runs
+on your loop and no other: if a later check finds a rule broken, no agent run
+starts until your loop passes again. run_agent(), at the bottom of this file,
+decides.
 """
 
 import re

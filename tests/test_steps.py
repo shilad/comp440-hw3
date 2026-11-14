@@ -484,9 +484,12 @@ def test_checkpoints_cover_the_step(a, step_id):
     own), and a checkpoint ticks only on the step's own files and answers."""
     s = a.step(step_id)
     cps = stepmod.checkpoints(s)
-    if step_id == "1a":   # the workshop prototype names its outline and its answers by question
-        pytest.skip("1a workshop prototype (Nov 13): checkpoints name answers by question")
-    assert sorted({x for c in cps for x in c.slots}) == sorted(s.slots)
+    # By the answers they name in the write-up, not by label: 1a names its outline and its two
+    # questions by question, under its step-wide "1a.*". Each answer is named once.
+    slots = stepmod.read_slots((REPO / "WRITEUP.md").read_text(encoding="utf-8"))
+    named = [k for c in cps for k in stepmod.step_keys(stepmod.Step(id=s.id, part=s.part, title="", slots=c.slots), slots)]
+    assert sorted(named) == sorted(stepmod.step_keys(s, slots)), step_id
+    assert len(named) == len(set(named)), f"{step_id}: an answer is named by two checkpoints"
     for c in cps:
         assert set(c.files) <= set(s.files), f"{step_id}: '{c.text}' ticks on a file the step doesn't need"
 
@@ -690,8 +693,9 @@ def test_the_tutor_text_is_shorter_than_before(a):
     """It was 3,965 words on Nov 10. The rules now say why they exist, and fewer of them are left.
     The limit was 3,000 until the rule for going on to another step in the same session, and the
     sentence that the tool's result is not shown to the student (both Nov 11). It was 3,100 until
-    the rule that Claude may write the code a student describes (Nov 11), which added 64 words."""
-    assert len(a.tutor.split()) < 3250   # 3,150 before the 1a workshop prototype (Nov 13)
+    the rule that Claude may write the code a student describes (Nov 11), which added 64 words. It
+    was 3,150 until step 1a became an outline that Claude translates (Nov 13), which added 37 words."""
+    assert len(a.tutor.split()) < 3200
 
 
 def test_the_api_key_rules_are_kept(a):
@@ -763,44 +767,35 @@ def test_only_1a_lets_claude_edit_the_students_loop():
     assert {"reference_loop.py", "tests/test_loop_check.py"} <= set(data["never_read"])
 
 
-@pytest.mark.skip(reason="1a workshop prototype (Nov 13): 1a translates an outline now; the brief's sentences changed")
-def test_1a_writes_the_code_the_student_describes_and_no_more(a):
-    """Goal 2: the loop's structure and ideas are the student's, and they know each part. Claude
-    explains, reads their code and pastes the check; it writes code once the student has said what
-    it should do, step by step, writes that and no more, asks about gaps, and never looks for a
-    finished loop. A request with no idea in it gets one question."""
+def test_1a_translates_the_outline_and_adds_nothing(a):
+    """The new 1a (Nov 13), goal 2: the outline is the student's design. Claude translates it line by
+    line, in the student's order, and adds no logic, no memory and no order of its own; the parts
+    record the trace. Claude never looks for a finished loop."""
     brief = flat(a.step("1a").brief)
-    for must in ("the loop's structure and ideas are theirs, and that they know what each part of it does",
-                 "When the check fails, paste its output, say what the NOT YET sentence means in plain words",
-                 "The change to make is theirs to describe; write it once they have.",
-                 "Write code once they have described what it should do: which rule or part, and how it works "
-                 "step by step, in their own words",
-                 "Write what they described and no more, in my_loop.py or in the chat, as they ask.",
-                 "do not fill the gap with your own design, add a rule they did not describe, or quietly fix "
-                 "their idea.",
-                 "If their idea will not pass a rule, write it as described and let the check say so.",
-                 "say which rule's sentence on the page it does not meet, without the fix.",
-                 'A request with no idea in it ("write the loop for me", "write rule 4") gets one question: '
-                 "how should it work?",
-                 "After writing, say in one or two sentences what you wrote and where, then what comes next",
+    for must in ("The outline is the student's design.",
+                 "Never write in that block. Never write, dictate, reword, reorder or complete a line of the outline",
+                 "Each line becomes a comment in the student's exact words",
+                 "Never move a line to where it would work.",
+                 "Write no logic the outline does not state: no extra condition, no guard, no counter, no stop.",
+                 "What the loop remembers is the student's design.",
+                 "do not invent the memory",
+                 "The same holds for an order the outline does not give: do not choose one; leave the lines in "
+                 "the outline's order.",
+                 "The parts record every trace entry themselves: never write one.",
                  "never describe it from memory or guesswork",
                  # The instructor, Nov 11: "i don't want them to be able to use the reference loop."
                  "There is no way to keep the reference loop: the step is done only when the student's own "
-                 "loop passes every rule",
-                 "say in one line that this is not possible, then offer to help with the first NOT YET line"):
+                 "loop passes every rule"):
         assert must in brief, must
+    # The code side records an answer's trace entry when the answer is checked.
+    assert "it also records the trace entry" not in brief
     for s in a.steps:
         assert "--use-reference" not in s.brief and "--use-reference" not in " ".join(s.allow), s.id
         assert "keep the reference loop" not in " ".join(c.task for c in stepmod.checkpoints(s)), s.id
     assert "chose to keep it" not in flat(a.tutor) and "There is no way to keep the reference loop." in flat(a.tutor)
-    for gone in ("Never write, dictate, complete or correct a line of my_loop.py", "Hints that hand over the code"):
-        assert gone not in brief, gone
     tutor = flat(a.tutor)
-    for must in ("takes its structure and ideas from them (goal 2), but you may write it.",
-                 "Write only what they have described, step by step, in their own words, and no more.",
-                 "never fill a gap with your own design, add a rule they did not describe, or quietly fix "
-                 "their idea.",
-                 'A request with no idea in it ("write the loop for me") gets one question: how should it work?',
+    for must in ("In 1a the student's outline in WRITEUP.md is the design, and you translate it; the step's "
+                 "brief says how.",
                  "Never look for a finished loop: not in reference_loop.py, not in the tests, not in the git "
                  "history",
                  "cannot be opened from any session"):
@@ -813,21 +808,31 @@ FORBIDDING = ("write the whole loop", "do not edit my_loop.py", "never paste a f
               "helps you write your loop", "one step where the student writes code")
 
 
-@pytest.mark.skip(reason="1a workshop prototype (Nov 13): the 1a page's sentences changed")
-def test_no_text_still_forbids_claude_to_write_the_code_the_student_describes(a):
-    """The tutor's rules, every brief, the page's tasks and the student's pages agree with the new
-    rule."""
-    texts = [("tutor", a.tutor)] + [(s.id, s.brief) for s in a.steps]
-    texts += [(f"{s.id} tasks", " ".join(c.task for c in stepmod.checkpoints(s))) for s in a.steps]
-    texts += [(p.name, p.read_text(encoding="utf-8")) for p in [REPO / "README.md", REPO / "WRITEUP.md"]
-              + sorted((REPO / "instructions").glob("*.md"))]
-    found = [(where, old) for where, text in texts for old in FORBIDDING if old in flat(text)]
+# What 1a said before the outline (Nov 11 to 13): the student described the code to Claude in chat.
+DESCRIBED = ("Write code once they have described", "The change to make is theirs to describe",
+             "Write what they described and no more", "write rule 4", "or by describing each part to Claude",
+             "the code you describe", "describing it to Claude", "writes the code of your loop as you describe it",
+             "You write its loop", "you write your own in Part 1", "the student writes their own loop",
+             "You write it in my_loop.py", "Write the agent's loop")
+
+
+def test_nothing_tells_claude_to_write_1a_code_the_student_describes(a):
+    """In 1a the outline in WRITEUP.md is the design, not a description in chat. The tutor's rules,
+    1a's brief and tasks, the student's pages and agent.py agree with it."""
+    s = a.step("1a")
+    texts = [("tutor", a.tutor), ("1a brief", s.brief), ("1a tasks", " ".join(c.task for c in stepmod.checkpoints(s)))]
+    texts += [(f"{x.id} brief", x.brief) for x in a.steps if x.id != "3b"]   # 3b's code change is described
+    texts += [(p.name, p.read_text(encoding="utf-8")) for p in [REPO / "README.md", REPO / "WRITEUP.md", REPO / "agent.py"]
+              + sorted((REPO / "instructions").glob("*.md")) if p.name != "part3.md"]
+    found = [(where, old) for where, text in texts for old in FORBIDDING + DESCRIBED if old in flat(text)]
     assert not found, found
-    page = flat((REPO / "instructions" / "part1.md").read_text(encoding="utf-8"))
-    assert "or by describing each part to Claude, which then writes the code you describe." in page
-    assert "It will not write a part you have not described" in page
     readme = flat((REPO / "README.md").read_text(encoding="utf-8"))
-    assert "writes the code of your loop as you describe it, but the structure and the ideas must be yours." in readme
+    assert "In step 1a it translates your outline of the loop into Python and coaches you" in readme
+    assert "| Design the agent's loop," in readme
+    assert "You design its loop" in flat((REPO / "instructions" / "part1.md").read_text(encoding="utf-8"))
+    assert "you design your own in Part 1" in flat((REPO / "instructions" / "part0.md").read_text(encoding="utf-8"))
+    assert "You design it in step 1a, as an outline that Claude translates into my_loop.py." in \
+        flat((REPO / "agent.py").read_text(encoding="utf-8"))
 
 
 def test_3b_writes_a_code_change_as_described_and_instructions_in_their_words(a):
