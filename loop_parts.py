@@ -11,6 +11,7 @@ what you write.
     reply = talk.ask()            # the model's next reply
     reply.refused                 # True if the model refused to check the claim
     reply.calls                   # the tool calls the reply asks for (empty if none)
+    reply.usage                   # the tokens it used: .input_tokens, .output_tokens
     call.is_answer, call.is_lookup, call.name
     talk.run(call)                # run a lookup; returns what it found
     talk.problem_with(call)       # the evidence check on an answer: what to send back, or None
@@ -19,6 +20,7 @@ what you write.
     talk.remind()                 # send the model the reminder to answer
     talk.accept(call, steps)      # what the loop returns for an accepted answer
     talk.stop(why, steps)         # what the loop returns with no verdict
+                                  # (both take a token count last, once the loop keeps one: 3b)
 """
 
 import agent
@@ -42,6 +44,9 @@ class Reply:
     def __init__(self, response):
         self.refused = response.stop_reason == "refusal"
         self.calls = [Call(block) for block in response.content if block.type == "tool_use"]
+        # The tokens this reply used, as the Claude API reports them: .usage.input_tokens and
+        # .usage.output_tokens. Nothing here counts them: that is step 3b's first task.
+        self.usage = response.usage
 
 
 class Conversation:
@@ -97,14 +102,16 @@ class Conversation:
         self.trace.append({"tool": "(reminder)", "input": {}, "result": REMINDED})
         self.messages.append({"role": "user", "content": REMINDER})
 
-    def accept(self, call, steps):
-        """Record the answer as accepted, and return what finish() returns for it."""
+    def accept(self, call, steps, tokens=None):
+        """Record the answer as accepted, and return what finish() returns for it. A loop that
+        counts tokens (step 3b) passes its count last, as {"input": ..., "output": ...}."""
         answer = clean_answer(call.input)
         self.trace.append({"tool": "answer", "input": call.input, "result": ACCEPTED})
         return finish(self.claim, answer["verdict"], answer["evidence"], answer["explanation"],
-                      self.trace, steps)
+                      self.trace, steps, tokens)
 
-    def stop(self, why, steps):
+    def stop(self, why, steps, tokens=None):
         """Return what finish() returns with no verdict. why is one of the ready-made sentences
-        in agent.py: RAN_OUT, NO_ANSWER, DECLINED or REJECTED_TOO_OFTEN.format(n=rejected)."""
-        return finish(self.claim, None, [], why, self.trace, steps)
+        in agent.py: RAN_OUT, NO_ANSWER, DECLINED or REJECTED_TOO_OFTEN.format(n=rejected). A
+        loop that counts tokens (step 3b) passes its count last."""
+        return finish(self.claim, None, [], why, self.trace, steps, tokens)

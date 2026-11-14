@@ -53,7 +53,7 @@ LOOKUPS = ("search", "read", "wikidata")
 PLENTY = 20         # the limit of lookups in the made-up checks that do not test the limit
 LIMIT = 2           # the limit in the two that do
 PASSED = "Every rule passes. From now on your copy's agent runs on your loop (my_loop.py)."
-FAILED = "Not yet. Fix the first NOT YET line, then run this again."
+FAILED = "Not yet. Work on the first NOT YET line, then run this again."
 FELL_BACK = "Your loop passed the check earlier and does not pass now."
 NOT_PASSING_NOW = ("Your loop passed earlier and does not pass now, so no agent run starts until every "
                    "rule passes again.")

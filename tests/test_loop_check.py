@@ -181,7 +181,7 @@ def test_no_rule_is_stated_when_every_rule_passes(tmp_path, monkeypatch, capsys)
 
 
 def test_the_skeleton_names_no_rule_and_gives_nothing_more():
-    """The brief prototype: the student meets each rule when the check states it."""
+    """The page does not list the rules: the student meets each one when the check states it."""
     source = (ROOT / "my_loop.py").read_text()
     assert "# The check's six lines name the rules your loop must follow" in source
     for title in check_loop.RULES:
@@ -933,7 +933,7 @@ def test_a_loop_that_stops_at_the_second_lookup_of_one_reply_at_the_limit_is_not
         "steps.', instead of sending back the warning for each of the two")
 
 
-# The stricter check (proto-rec): a second, separate stall must be reminded again. These students'
+# A second, separate stall must be reminded again. These students'
 # loops set their reminder memory and never reset it, which the check did not find before.
 STALL = ("the model's first reply asked for nothing and your loop reminded it, its second reply asked "
         "for a search, and its third reply asked for nothing again; your loop stopped there instead "
@@ -1184,6 +1184,46 @@ def test_a_wrong_count_fails_the_token_line_and_nothing_else(tmp_path, monkeypat
     saved.write_text("yours\n")
     assert check_loop.main([]) == 1
     assert agent.which_loop() == "not passed" and not agent.counts_tokens()
+
+
+# The same count in a loop built with the parts (step 3b): each reply's usage added up, and the
+# count passed last to talk.accept() and talk.stop().
+KIT_COUNTING = kit(("    rejected = 0        # answers sent back so far\n",
+                    "    rejected = 0        # answers sent back so far\n"
+                    '    tokens = {"input": 0, "output": 0}\n'),
+                   ("        reply = talk.ask()\n",
+                    "        reply = talk.ask()\n"
+                    '        tokens["input"] += reply.usage.input_tokens\n'
+                    '        tokens["output"] += reply.usage.output_tokens\n')
+                   ).replace(", steps)", ", steps, tokens)")
+
+
+def test_a_loop_built_with_the_parts_can_count_tokens(tmp_path, monkeypatch, saved, capsys):
+    assert KIT_COUNTING.count(", steps, tokens)") == 5
+    a_loop(tmp_path, KIT_COUNTING, monkeypatch)
+    assert check_loop.main([]) == 0
+    printed = capsys.readouterr().out.splitlines()
+    assert printed == [f"ok         {n}. {title}" for n, title in enumerate(check_loop.RULES, 1)] \
+        + [TOKEN_LINE, "", check_loop.PASSED]
+    assert agent.which_loop() == "yours" and agent.counts_tokens()
+
+
+@pytest.mark.parametrize("old, new, phrase", [
+    ('        tokens["output"] += reply.usage.output_tokens\n', "",
+     "stopped with tokens {'input': 4266, 'output': 0}"),
+    ("talk.stop(DECLINED, steps, tokens)", "talk.stop(DECLINED, steps)",
+     "the model's first reply refused to check the claim, and your loop stopped with tokens None"),
+])
+def test_a_wrong_count_with_the_parts_fails_the_token_line_only(tmp_path, old, new, phrase):
+    assert KIT_COUNTING.count(old) == 1
+    printed = shown(a_loop(tmp_path, KIT_COUNTING.replace(old, new)))
+    assert printed[:6] == [f"ok         {n}. {title}" for n, title in enumerate(check_loop.RULES, 1)]
+    assert printed[6].startswith(f"NOT YET    {agent.TOKEN_RULE}: ") and phrase in printed[6], printed[6]
+
+
+def test_the_parts_count_nothing_by_themselves(tmp_path):
+    """A loop built with the parts, as 1a leaves it, passes no count: no token line, no cost."""
+    assert check_loop.check(a_loop(tmp_path, KIT_REFERENCE)) == [None] * 6
 
 
 def test_counts_tokens_follows_the_file(saved):
