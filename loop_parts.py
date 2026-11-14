@@ -1,7 +1,8 @@
 """The parts your loop is built from, in step 1a.
 
 Each part does one mechanical job: the exact call to the Claude API, the shape
-of what is sent back for a tool call, the trace entries, what finish() is given.
+of what is sent back for a tool call, the trace entries (every lookup, every
+answer checked, every reminder), what finish() is given.
 Your loop in my_loop.py decides when each part is used, and in what order. That
 order, and what the loop counts and remembers, is the agent's logic, and it is
 what you write.
@@ -69,13 +70,20 @@ class Conversation:
 
     def problem_with(self, call):
         """The evidence check on an answer: None if it passes, or else the sentence to send back
-        about its problem, which starts "Answer rejected."."""
+        about its problem, which starts "Answer rejected.". An answer with a problem is recorded
+        in the trace here, when it is checked, so the trace is complete even if the loop stops
+        before it gives the answer its result. (An answer that passes is recorded by accept().)"""
         problem = agent.answer_problem(clean_answer(call.input), self.read_so_far)
-        return None if problem is None else REJECTED + problem
+        if problem is None:
+            return None
+        self.trace.append({"tool": call.name, "input": call.input, "result": REJECTED + problem})
+        return REJECTED + problem
 
     def give(self, call, result):
-        """Set the result the model will be sent for this call, and record it in the trace."""
-        self.trace.append({"tool": call.name, "input": call.input, "result": result})
+        """Set the result the model will be sent for this call. A lookup's result is recorded in
+        the trace here; an answer's was recorded when it was checked."""
+        if not call.is_answer:
+            self.trace.append({"tool": call.name, "input": call.input, "result": result})
         self.results.append({"type": "tool_result", "tool_use_id": call.id, "content": result})
 
     def send_results(self):
